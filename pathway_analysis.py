@@ -59,8 +59,6 @@ class KShortestEnumerator(object):
 
 		dvchain = list(decompose_list(self.__dvars))
 		ivchain = list(decompose_list(self.__ivars))
-		print(dvchain)
-		print(ivchain)
 		for var,ivar in zip(dvchain, ivchain):
 
 			a, b, c, d = [Variable(ivar.name+name, type='binary') for name in ['a','b','c','d']]
@@ -184,8 +182,6 @@ class LinearSystem(object):
 		vd = list(chain(vi, vrf, vrb))
 
 		Ci = linear_constraints_from_matrix(S_full, vd, lb=0,ub=0, name="Ci")
-		for cns in Ci:
-			print(cns)
 		model = Model(name="linear_problem")
 
 		model.add(Ci)
@@ -227,8 +223,6 @@ class Solution(object):
 
 class KShortestSolution(Solution):
 	def __init__(self, value_map, status, vmap, imap):
-		print(vmap)
-		print(imap)
 		var_sum, indicator_sum = [{i: value_map[vs[0]] - value_map[vs[1]] if isinstance(vs, list) and type(vs) is not str else value_map[vs] for i, vs in mapd.items()} for mapd in [vmap, imap]]
 		super().__init__(value_map, status, var_sum = var_sum, indicator_sum = indicator_sum, size = sum(0 not in v if isinstance(v,list) else v != 0 for v in indicator_sum.values()))
 
