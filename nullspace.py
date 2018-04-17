@@ -1,8 +1,23 @@
+'''
+Module containing nullspace analysis tools.
+
+Compression pipeline:
+    - remove conservation relations
+    - remove FVA blocked reactions
+    - generate kernel
+    - remove kernel blocked reactions
+    - generate subset matrix
+    - populate subsets
+
+'''
+
 from sympy import Matrix
 from numpy import array, float64
 
 def compute_nullspace(A):
     return array(Matrix(A).nullspace()[0]).astype(float64)
+
+
 
 if __name__ == '__main__':
     A = [[2, 3, 5], [-4, 2, 3], [0, 0, 0]]
@@ -10,3 +25,4 @@ if __name__ == '__main__':
     assert(sum(array([[-0.0625],
                [-1.625],
                [1.]]) == compute_nullspace(A))[0] == 3)
+

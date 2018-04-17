@@ -1,6 +1,6 @@
 if __name__ == '__main__':
 
-    from pathway_analysis import LinearSystem, DualLinearSystem, KShortestEnumerator
+    from pathway_analysis import IrreversibleLinearSystem, DualLinearSystem, KShortestEnumerator
     import numpy as np
     import pandas as pd
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     b = np.array([-1]).reshape(1, )
 
     dsystem = DualLinearSystem(S, irrev, T, b)
-    lsystem = LinearSystem(S, irrev)
+    lsystem = IrreversibleLinearSystem(S, irrev)
     ksh = KShortestEnumerator(dsystem)
 
     done = False
