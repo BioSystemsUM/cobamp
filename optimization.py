@@ -128,5 +128,3 @@ class LinearSystemOptimizer(object):
 		maximum = self.optimize(np.array([i]), False)[0][vars[i].name]
 		return minimum, maximum
 
-	def var_ranges():
-		return {self.lsystem.name for
