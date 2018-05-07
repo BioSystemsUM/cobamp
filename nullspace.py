@@ -14,7 +14,7 @@ from numpy import abs, where, compress, concatenate, ones, array, dot
 from numpy.linalg import svd
 from sympy import Matrix
 
-EPSILON = 2 ** -52
+EPSILON = 1e-10
 PRECISION = 1e-10
 
 def compute_nullspace(A, eps=1e-9, left=True):

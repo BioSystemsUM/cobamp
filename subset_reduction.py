@@ -2,11 +2,13 @@
 Inspired by Metatool's code
 '''
 
-from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, diag_indices_from, argmin, isin, sign, append, delete
+from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, diag_indices_from, argmin, isin, sign, append, delete, unique, where, array, dot
 from numpy.linalg import norm
 
-from nullspace import *
+from nullspace import compute_nullspace, nullspace_blocked_reactions
 
+EPSILON = 2 ** -52
+PRECISION = 1e-10
 
 def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	m, n = S.shape
@@ -43,7 +45,7 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 			temp = zeros([len(irrv_subsets), n])
 			temp[:, kept_reactions] = irrv_subsets
 			irrv_subsets = temp
-	rd, rdind, dummy = reduce(S, sub)
+	rd, rdind, dummy = reduce(S, sub, irrev_reduced)
 
 	return rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
 
@@ -73,9 +75,10 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 
 	for i in range(cr.shape[0] - 1, -1, -1):
 		reactions = where(cr[:, i] != 0)[0]
-		in_subset_reactions =isin(reactions, in_subset)
-		if in_subset_reactions.any():
-			print('Estou aqui')
+		in_subset_indexes = where(in_subset)[0]
+		in_subset_reactions = isin(reactions, in_subset_indexes)
+		if i == 338:
+			print('dafuq')
 		reactions = reactions[logical_not(in_subset_reactions)]
 		if len(reactions) > 0:
 			in_subset[reactions] = True
@@ -89,35 +92,35 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 				min_ind = argmin(abs(lengths - mean(lengths)))
 				lengths /= lengths[min_ind]
 				sub[sub.shape[0] - 1, reactions] = lengths * cr[reactions, i]
-		print(i, sub.shape)
 
-	ind = where(sub[:, irrev_sub] < 0)[1]
+	ind = where(sub[:, irrev] < 0)[0]
 	if len(ind) > 0:
 		sub[ind, :] = -sub[ind, :]
-		ind = where(sub[:, irrev_sub] < 0)[1]
+		ind = where(sub[:, irrev] < 0)[0]
 		if len(ind) > 0:
 			irrev_violating_subsets = sub[ind, :]
-			sub = delete(sub, ind, 1)
-			irrev_sub = irrev_sub[logical_not(ind)]
+			sub = delete(sub, ind, 0)
+			irrv_to_keep = delete(array(range(len(irrev))), ind, 0)
+			irrev_sub = irrev[irrv_to_keep]
 
 	return sub, irrev_sub, irrev_violating_subsets
 
 
 def reduce(S, sub, irrev_reduced=None):
-	reduced = S * sub.T
-	reduced[abs(reduced) < EPSILON] = 0
-	reduced_indexes = where(nonzero(reduced))[1]
-	reduced = reduced[:, reduced_indexes]
+	reduced = dot(S,sub.T)
+	reduced[abs(reduced) < PRECISION] = 0
+	reduced_indexes = unique(nonzero(reduced)[0])
+	reduced = reduced[reduced_indexes,:]
 
 	rdm, rdn = reduced.shape
 	if rdn == 0 or rdm == 0:
 		reduced = zeros(1, rdn)
 
-	if irrev_reduced is not None:
-		ind = nonzero(reduced)[1]
-		reduced = reduced[:, ind]
-		irrev_reduced = irrev_reduced[ind]
-	else:
-		irrev_reduced = []
+	# if irrev_reduced is not None:
+	# 	ind = unique(nonzero(reduced)[1])
+	# 	reduced = reduced[:, ind]
+	# 	irrev_reduced = irrev_reduced[ind]
+	# else:
+	# 	irrev_reduced = []
 
 	return reduced, reduced_indexes, irrev_reduced
