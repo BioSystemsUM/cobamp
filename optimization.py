@@ -1,36 +1,34 @@
 from optlang import Model, Variable, Constraint, Objective
+from optlang.symbolics import Zero
 import numpy as np
 from itertools import chain
 from multiprocessing import Pool, cpu_count
-from sympy import Add, Tuple
 
 
-def constraint_fx(t):
-	S, v, i, lb, ub, name = t
-	# print('Constraint',i)
-	return Constraint(Add(*[S[j] * v[j] for j in range(S.shape[0])]), lb=lb, ub=ub, name=name + str(i))
+def get_linear_coefficients_from_vector(a, vars):
+	return {vars[i]:a[i] for i in np.nonzero(a)[0]}
 
-
-def linear_constraints_from_matrix(S, v, lb=None, ub=None, name="", verbose=False):
-	pool = Pool(cpu_count())
-	M = S.shape[0]
-	cv = pool.map(constraint_fx, zip(S,[v]*M,range(M),[lb]*M,[ub]*M,[name]*M))
-	#cv = [constraint_fx(i) for i in range(S.shape[0])]
+def set_constraint_from_vector(c, a, vars, verbose):
+	coefx = get_linear_coefficients_from_vector(a, vars)
+	c.set_linear_coefficients(coefx)
 	if verbose:
-		for c in cv:
-			print(c)
-	return cv
+		print(c)
+	return c
 
-#
-# M,N = S.shape
-# v = [Variable('v' + str(i)) for i in range(N)]
-# cns = linear_constraints_from_matrix(S[:10,:],v)
-#
-# nzs = nonzero(S)
-# ids = list(zip(nzs[0],nzs[1]))
-# sums = [[]]*S.shape[0]
-# for c, r in ids:
-# 	sums[c].extend([S[c, r] * v[r]])
+def set_constraint_from_vector_fx(t):
+	return set_constraint_from_vector(*t)
+
+def linear_constraints_from_matrix(model, S, v, lb=None, ub=None, name="", verbose=False):
+	M,N = S.shape
+	constraint_list = [Constraint(Zero, lb=lb, ub=ub, name=name+str(i)) for i in range(M)]
+	model.add(constraint_list)
+	model.update()
+
+	pool = Pool(cpu_count())
+	pool_args = zip(constraint_list, S, [v]*M, [verbose]*M)
+	pool.map(set_constraint_from_vector_fx, pool_args)
+
+	return constraint_list
 
 
 class IrreversibleLinearSystem(object):
@@ -68,8 +66,8 @@ class IrreversibleLinearSystem(object):
 
 		vd = list(chain(vi, vrf, vrb))
 
-		Ci = linear_constraints_from_matrix(S_full, vd, lb=0, ub=0, name="Ci")
 		model = Model(name="linear_problem")
+		Ci = linear_constraints_from_matrix(model, S_full, vd, lb=0, ub=0, name="Ci")
 
 		model.add(Ci)
 

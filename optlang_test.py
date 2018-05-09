@@ -3,6 +3,7 @@ if __name__ == '__main__':
 	from pathway_analysis import IrreversibleLinearSystem, DualLinearSystem, KShortestEnumerator
 	import numpy as np
 	import pandas as pd
+	import pprofile
 
 	S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
 				  [0, 1, -1, 0, 0, 0, 0, 0, 0],
@@ -18,11 +19,20 @@ if __name__ == '__main__':
 
 	dsystem = DualLinearSystem(S, irrev, T, b)
 	lsystem = IrreversibleLinearSystem(S, irrev)
-	
-	ksh = KShortestEnumerator(dsystem)
-		
-	solution_iterator = ksh.population_iterator(3)
 
+	profiler = pprofile.Profile()
+	with profiler:
+		ksh = KShortestEnumerator(dsystem)
+
+	profiler.dump_stats('/home/skapur/KShortestEnumerator_profiler.txt')
+
+	prf = profiler.run('ksh = KShortestEnumerator(dsystem)')
+	with open('/home/skapur/KShortestEnumerator_callgrind.txt','w') as f:
+		prf.callgrind(f)
+	with open('/home/skapur/KShortestEnumerator_annotation.txt', 'w') as f:
+		prf.annotate(f)
+	prf.print_stats()
+	solution_iterator = ksh.population_iterator(3)
 	data = []
 	sol_list = []
 	for sols in solution_iterator:

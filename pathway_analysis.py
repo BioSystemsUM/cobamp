@@ -1,4 +1,5 @@
 from optlang import Model, Variable, Constraint, Objective
+from optlang.symbolics import Add
 import numpy as np
 from itertools import chain
 from optimization import IrreversibleLinearSystem, Solution, linear_constraints_from_matrix
@@ -31,7 +32,7 @@ class KShortestEnumerator(object):
 		self.__add_kshortest_indicators()
 		self.__add_exclusivity_constraints()
 		self.__size_constraint = None
-		self.__objective_expression = sum(decompose_list(self.__ivars))
+		self.__objective_expression = Add(*decompose_list(self.__ivars))
 		self.__set_objective()
 		self.__integer_cuts = []
 		self.__fix_indicators()
@@ -248,15 +249,17 @@ class DualLinearSystem(IrreversibleLinearSystem):
 
 		vd = list(chain(u, vp, vn, w))
 
-		Ci = linear_constraints_from_matrix(Sdi, vd, lb=0, name="Ci")
-		Cr = linear_constraints_from_matrix(Sdr, vd, lb=0, ub=0, name="Cr")
+		model = Model(name="dual_problem")
+		model.add(vd)
+
+		Ci = linear_constraints_from_matrix(model, Sdi, vd, lb=0, name="Ci")
+		Cr = linear_constraints_from_matrix(model, Sdr, vd, lb=0, ub=0, name="Cr")
 		Cb = Constraint(sum([self.b[i] * w[i] for i in range(self.T.shape[0])]) + self.__c, lb=0,ub=0, name="Cb")
 
-		model = Model(name="dual_problem")
 
-		model.add(Ci)
-		model.add(Cr)
-		model.add(Cb)
+		# model.add(Ci)
+		# model.add(Cr)
+		# model.add(Cb)
 
 		self.__dvars = list(map(list,zip(vp, vn)))
 		self.__model = model
