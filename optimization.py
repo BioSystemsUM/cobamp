@@ -1,14 +1,37 @@
 from optlang import Model, Variable, Constraint, Objective
 import numpy as np
 from itertools import chain
+from multiprocessing import Pool, cpu_count
+from sympy import Add, Tuple
+
+
+def constraint_fx(t):
+	S, v, i, lb, ub, name = t
+	# print('Constraint',i)
+	return Constraint(Add(*[S[j] * v[j] for j in range(S.shape[0])]), lb=lb, ub=ub, name=name + str(i))
+
 
 def linear_constraints_from_matrix(S, v, lb=None, ub=None, name="", verbose=False):
-	cv = [Constraint(sum([S[i, j] * v[j] for j in range(S.shape[1])]), lb=lb, ub=ub, name=name + str(i)) for i in
-		  range(S.shape[0])]
+	pool = Pool(cpu_count())
+	M = S.shape[0]
+	cv = pool.map(constraint_fx, zip(S,[v]*M,range(M),[lb]*M,[ub]*M,[name]*M))
+	#cv = [constraint_fx(i) for i in range(S.shape[0])]
 	if verbose:
 		for c in cv:
 			print(c)
 	return cv
+
+#
+# M,N = S.shape
+# v = [Variable('v' + str(i)) for i in range(N)]
+# cns = linear_constraints_from_matrix(S[:10,:],v)
+#
+# nzs = nonzero(S)
+# ids = list(zip(nzs[0],nzs[1]))
+# sums = [[]]*S.shape[0]
+# for c, r in ids:
+# 	sums[c].extend([S[c, r] * v[r]])
+
 
 class IrreversibleLinearSystem(object):
 	def __init__(self, S, irrev):
@@ -45,15 +68,16 @@ class IrreversibleLinearSystem(object):
 
 		vd = list(chain(vi, vrf, vrb))
 
-		Ci = linear_constraints_from_matrix(S_full, vd, lb=0,ub=0, name="Ci")
+		Ci = linear_constraints_from_matrix(S_full, vd, lb=0, ub=0, name="Ci")
 		model = Model(name="linear_problem")
 
 		model.add(Ci)
 
-		self.__dvars = vi + list(map(list,zip(vrf, vrb)))
+		self.__dvars = vi + list(map(list, zip(vrf, vrb)))
 		self.__model = model
 
 		return S_full
+
 
 class LinearSystem(object):
 	def __init__(self, S, lb, ub):
@@ -70,7 +94,7 @@ class LinearSystem(object):
 	def build_problem(self):
 		# Defining useful length constants
 		nM, nR = self.S.shape
-		self.v = [Variable('v'+i) for i in range(nR)]
+		self.v = [Variable('v' + i) for i in range(nR)]
 		c = linear_constraints_from_matrix(self.S, self.v, self.lb, self.ub, "C")
 		self.model.add(c)
 
@@ -107,24 +131,24 @@ class Solution(object):
 
 class LinearSystemOptimizer(object):
 
-    def __init__(self, lsystem):
-        self.lsystem = lsystem
-        self.__model = lsystem.get_model()
+	def __init__(self, lsystem):
+		self.lsystem = lsystem
+		self.__model = lsystem.get_model()
 
-	def optimize(objective, minimize=False):
-		self.__model.objective = Objective(sum([objective[i] * self.lsystem.v[i] for i in range(objective.shape[0])]))
+	def optimize(self, objective, minimize=False):
+		self.__model.objective = Objective(
+			sum([objective[i] * self.lsystem.v[i] for i in range(objective.shape[0])]))
 		sol = status = None
 		try:
 			status = self.model.optimize()
 			if status == 'optimal':
-				value_map = {v.name:v.primal for v in self.model.variables}
+				value_map = {v.name: v.primal for v in self.model.variables}
 				sol = Solution(value_map, status)
 		except:
 			pass
 		return sol, status
 
-	def var_range(i):
+	def var_range(self,i):
 		minimum = self.optimize(np.array([i]), True)[0][vars[i].name]
 		maximum = self.optimize(np.array([i]), False)[0][vars[i].name]
 		return minimum, maximum
-

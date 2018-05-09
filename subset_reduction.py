@@ -116,6 +116,15 @@ def reduce(S, sub, irrev_reduced=None):
 	if rdn == 0 or rdm == 0:
 		reduced = zeros(1, rdn)
 
+	# rd - compressed stoichiometric matrix -> numpy.array
+	# sub - subset matrix, n-subsets by n-reactions -> numpy.array
+	# irrev_reduced - subset reversibilities -> numpy.array of type bool
+	# rdind - metabolite indices -> numpy.array of type int
+	# irrev_violating_subsets -> same as sub, but list if empty
+	# kept_reactions -> indexes for reactions used in the network compression
+	# kernel -> numpy.array with the right nullspace of S
+	# correlation_matrix -> numpy.array with reaction correlation matrix
+
 	# if irrev_reduced is not None:
 	# 	ind = unique(nonzero(reduced)[1])
 	# 	reduced = reduced[:, ind]

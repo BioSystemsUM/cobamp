@@ -1,11 +1,14 @@
 from optlang import Model, Variable, Constraint, Objective
 import numpy as np
 from itertools import chain
-from optimization import IrreversibleLinearSystem, Solution
+from optimization import IrreversibleLinearSystem, Solution, linear_constraints_from_matrix
 
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
 
 class KShortestEnumerator(object):
+	ENUMERATION_METHOD_ITERATE = 'iterate'
+	ENUMERATION_METHOD_POPULATE = 'populate'
+
 	def __init__(self, linear_system):
 
 		# Get linear system constraints and variables
@@ -14,6 +17,7 @@ class KShortestEnumerator(object):
 		self.model = linear_system.get_model()
 		self.__dvars = linear_system.get_dvars()
 		self.__c = linear_system.get_c_variable()
+		self.__solzip = lambda x: zip(self.model.problem.variables.get_names(), x)
 
 		# Open log files
 		self.resf = open('results', 'w')
@@ -32,6 +36,7 @@ class KShortestEnumerator(object):
 		self.__integer_cuts = []
 		self.__fix_indicators()
 		self.set_size_constraint(1)
+		self.__current_size = 1
 		self.__generate_var_map()
 		self.model.update()
 
@@ -99,6 +104,7 @@ class KShortestEnumerator(object):
 				if value_map[var_it.name] == 1:
 					var_list.append(var_it)
 		constraint = Constraint(sum(var_list), name="IntCut"+str(self.__integer_cut_count()), ub=size-1)
+	
 		self.model.add(constraint)
 		self.model.update()
 		self.__integer_cuts.append(constraint)
@@ -122,25 +128,71 @@ class KShortestEnumerator(object):
 
 	def __optimize(self):
 		'''
-		:return: tuple (KShortestSolution sol, str status)
+		:return: tuple (KShortestSolution sol)
 		'''
-		sol = status = None
+		sol = None
 		# try:
 		status = self.model.optimize()
 		if status == 'optimal':
 			value_map = {v.name:v.primal for v in self.model.variables}
 			sol = KShortestSolution(value_map, status, vmap=self.__dvar_map, imap=self.__ivar_map)
-		return sol, status
+		return sol
 
 	def __populate(self):
-		assert self.model
+
+		sols = []
+		first_sol = self.__optimize()
+		if first_sol is not None:
+			self.__add_integer_cut(first_sol.var_values(), first_sol.attribute_value('size'))
+			sols.append(first_sol)
+		else:
+			print('Size constraint infeasible or solution space exhausted')
+		self.model.problem.populate_solution_pool()
+		n_sols = self.model.problem.solution.pool.get_num()
+		for i in range(n_sols):
+			value_map = dict(self.__solzip(self.model.problem.solution.pool.get_values(i)))
+			sol = KShortestSolution(value_map, None, vmap=self.__dvar_map, imap=self.__ivar_map)
+			sols.append(sol)
+		for sol in sols:
+			self.__add_integer_cut(sol.var_values(), sol.attribute_value('size'))
+
+		return sols
+
+	def enumeration_methods(self):
+		return {self.ENUMERATION_METHOD_ITERATE: self.get_single_solution, self.ENUMERATION_METHOD_POPULATE: self.populate_next_size}
+	
+	def solution_iterator(self):
+		self.reset_enumerator_state()
+		self.set_size_constraint(1,None)
+		failed = False
+		while not failed:
+			try:
+				result = self.get_single_solution()
+				yield result
+			except Exception as e:
+				print('Enumeration ended:',e)
+				failed = False
+
+	def population_iterator(self, max_size):
+		self.reset_enumerator_state()
+		for i in range(1, max_size+1):
+			try:
+				self.set_size_constraint(i, i)
+				sols = self.populate_current_size()
+				yield sols if sols is not None else []
+			except:
+				print('No solutions or error occurred at size ',i)
+
+	def populate_current_size(self):
+		sols = self.__populate()
+		return sols
 
 	def get_single_solution(self):
-		sol, status = self.__optimize()
+		sol = self.__optimize()
 		if sol is None:
 			raise Exception('Solution is empty')
 		self.__add_integer_cut(sol.var_values(), sol.attribute_value('size'))
-		return sol, status
+		return sol
 
 	def reset_enumerator_state(self):
 		self.model.remove(self.__integer_cuts)
@@ -210,31 +262,3 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		self.__model = model
 
 		return Sdi, Sdr
-
-
-if __name__ == '__main__':
-	S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
-				  [0, 1, -1, 0, 0, 0, 0, 0, 0],
-				  [0, 1, 0, -1, -1, 0, 0, 0, 0],
-				  [0, 0, 0, 0, 0, 1, -1, 0, 0],
-				  [0, 0, 0, 0, 0, 0, 1, -1, 0],
-				  [0, 0, 0, 0, 1, 0, 0, 1, -1]])
-
-	irrev = [0, 1, 2, 4, 5, 6, 7, 8]
-	T = np.array([0] * S.shape[1]).reshape(1, S.shape[1])
-	T[0, 8] = -1
-	b = np.array([-1]).reshape(1, )
-
-	system = DualLinearSystem(S, irrev, T, b)
-	ksh = KShortestEnumerator(system)
-	sols = [sol for sol in ksh.solution_iterator()]
-
-	import pandas as pd
-	vdf = pd.DataFrame({i: {k: v for k, v in sols[i].var_values().items()} for i in range(len(sols))})
-	vdf.to_csv('test_sols.csv')
-
-	print([np.where(sol.attribute_value('indicator_sum'))[0] for sol in sols])
-
-	with open('test_model.txt', 'w') as f:
-		f.write(ksh.model.to_lp())
-	ksh.log_close()

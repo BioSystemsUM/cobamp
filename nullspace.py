@@ -10,9 +10,8 @@ Compression pipeline:
     - populate subsets
 
 '''
-from numpy import abs, where, compress, concatenate, ones, array, dot
+from numpy import abs, where, compress, concatenate, ones, array
 from numpy.linalg import svd
-from sympy import Matrix
 
 EPSILON = 1e-10
 PRECISION = 1e-10
