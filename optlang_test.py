@@ -24,14 +24,6 @@ if __name__ == '__main__':
 	with profiler:
 		ksh = KShortestEnumerator(dsystem)
 
-	profiler.dump_stats('/home/skapur/KShortestEnumerator_profiler.txt')
-
-	prf = profiler.run('ksh = KShortestEnumerator(dsystem)')
-	with open('/home/skapur/KShortestEnumerator_callgrind.txt','w') as f:
-		prf.callgrind(f)
-	with open('/home/skapur/KShortestEnumerator_annotation.txt', 'w') as f:
-		prf.annotate(f)
-	prf.print_stats()
 	solution_iterator = ksh.population_iterator(3)
 	data = []
 	sol_list = []
@@ -41,3 +33,4 @@ if __name__ == '__main__':
 		sol_list.extend(sols)
 
 	df = pd.DataFrame(data).apply(lambda x: np.where(x)[0].tolist(), 1)
+	print(df)

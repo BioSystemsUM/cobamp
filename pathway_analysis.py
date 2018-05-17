@@ -1,15 +1,17 @@
 from optlang import Model, Variable, Constraint, Objective
-from optlang.symbolics import Add
+import cplex
+from optlang.symbolics import Add, Zero
 import numpy as np
 from itertools import chain
 from optimization import IrreversibleLinearSystem, Solution, linear_constraints_from_matrix
 
+CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
 
 class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
-
+	SIZE_CONSTRAINT_NAME = 'KShortestSizeConstraint'
 	def __init__(self, linear_system):
 
 		# Get linear system constraints and variables
@@ -25,69 +27,90 @@ class KShortestEnumerator(object):
 		self.logf = open('log', 'w')
 
 		# Setup CPLEX parameters
-		# TODO: Generalize parameter setup to other solvers
 		self.__set_model_parameters()
 
 		# Setup k-shortest constraints
 		self.__add_kshortest_indicators()
 		self.__add_exclusivity_constraints()
 		self.__size_constraint = None
-		self.__objective_expression = Add(*decompose_list(self.__ivars))
+		# TODO: change this to cplex notation
+		self.__objective_expression = list(zip(list(self.__indicator_map.values()), [1]*len(self.__indicator_map.keys())))
+		print(self.__objective_expression)
 		self.__set_objective()
 		self.__integer_cuts = []
-		self.__fix_indicators()
 		self.set_size_constraint(1)
 		self.__current_size = 1
 		self.__generate_var_map()
 		self.model.update()
 
-	def __fix_indicators(self):
-		self.get_model()
-
 	def __set_model_parameters(self):
-		# self.model.problem.parameters.mip.tolerances.integrality.set(1e-9)
-		# self.model.problem.parameters.feasopt.tolerance.set(1e-9)
-		# self.model.problem.parameters.workmem.set(4096)
-		# self.model.problem.parameters.clocktype.set(1)
-		# self.model.problem.parameters.advance.set(0)
-		# self.model.problem.parameters.mip.strategy.fpheur.set(1)
-		# self.model.problem.parameters.emphasis.numerical.set(1)
-		# self.model.problem.parameters.emphasis.mip.set(0)
-		# self.model.problem.parameters.mip.display.set(5)
-		# self.model.problem.parameters.simplex.tolerances.optimality.set(1e-9)
-		# self.model.problem.parameters.mip.cuts.disjunctive.set(-1)
-		# self.model.problem.set_results_stream(self.resf)
-		# self.model.problem.set_log_stream(self.logf)
-		pass
+		self.model.parameters.mip.tolerances.integrality.set(1e-9)
+		self.model.parameters.feasopt.tolerance.set(1e-9)
+		self.model.parameters.workmem.set(4096)
+		self.model.parameters.clocktype.set(1)
+		self.model.parameters.advance.set(0)
+		self.model.parameters.mip.strategy.fpheur.set(1)
+		self.model.parameters.emphasis.numerical.set(1)
+		self.model.parameters.emphasis.mip.set(0)
+		self.model.parameters.mip.display.set(5)
+		self.model.parameters.simplex.tolerances.optimality.set(1e-9)
+		self.model.parameters.mip.cuts.disjunctive.set(-1)
+		self.model.set_results_stream(self.resf)
+		self.model.set_log_stream(self.logf)
+		self.model.parameters.mip.limits.populate.set(999999)
 
 	def __add_kshortest_indicators(self):
 		"""
 
 		:return:
 		"""
-		ivars = [[Variable(name=subvar.name + "_ind", type='binary') for subvar in var] if isinstance(var, list) else Variable(name=var.name + "_ind", type='binary') for var in self.__dvars]
-		self.__ivars = ivars
+		btype = self.model.variables.type.binary
+		ivars = [[(subvar + "_ind", 0, 1, btype) for subvar in var] if isinstance(var, tuple) else (var + "_ind", 0, 1, btype) for var in self.__dvars]
 
-		dvchain = list(decompose_list(self.__dvars))
-		ivchain = list(decompose_list(self.__ivars))
-		for var,ivar in zip(dvchain, ivchain):
+		dvnames = list(chain(*list(decompose_list(self.__dvars))))
+		ivchain = list(decompose_list(ivars))
 
-			a, b, c, d = [Variable(ivar.name+name, type='binary') for name in ['a','b','c','d']]
-			inactive = [Constraint(ivar + a, name='Inact1_'+ivar.name,lb=1, ub=1), Constraint(b - a, name='Inact2_'+ivar.name, lb=0),Constraint(var, name='Inact3_'+ivar.name, lb=0,ub=0, indicator_variable=b, active_when=1)]
-			active = [Constraint(-ivar + c, name='Act1_'+ivar.name,lb=0, ub=0),Constraint(d - c, name='Act2_'+ivar.name, lb=0),Constraint(var - self.__c, name='Act3_'+ivar.name, lb=0, indicator_variable=d, active_when=1)]
-			self.model.add(active)
-			self.model.add(inactive)
+		ivnames, ivlb, ivub, ivtype = list(zip(*ivchain))
+		self.model.variables.add(names=ivnames, lb=ivlb, ub=ivub, types=''.join(ivtype))
+		self.__ivars = ivnames
+		print(dvnames)
+		print(ivnames)
+
+		self.__indicator_map = {}
+		for var,ivar in zip(dvnames, ivnames):
+			self.__indicator_map[var] = ivar
+			auxvars =[(ivar+name, 0, 1, btype) for name in ['a','b','c','d']]
+			auxname, auxlb, auxub, auxtype = list(zip(*auxvars))
+			a,b,c,d = auxname
+			self.model.variables.add(names=auxname, lb=auxlb, ub=auxub, types=auxtype)
+
+			# auxiliary constraints
+			aux_lin = [
+				([ivar, a], [1, 1]),
+				([a, b], [-1, 1]),
+				([ivar, c], [-1, 1]),
+				([c, d], [-1, 1])
+			]
+			aux_names = ['C'+ivar+'_helper'+str(i) for i in range(4)]
+			self.model.linear_constraints.add(lin_expr=aux_lin, senses='EGEG', rhs=[1,0,0,0], names=aux_names)
+
+			ind_lin = [([var], [1])]*2
+			ind_names = ['C'+ivar+'_ind'+'1', 'C'+ivar+'_ind'+'2']
+			print(ind_lin)
+			self.model.indicator_constraints.add(lin_expr=ind_lin[0], sense='E', rhs=1, indvar=ivar, complemented=0, name=ind_names[0])
+			self.model.indicator_constraints.add(lin_expr=ind_lin[1], sense='G', rhs=0, indvar=ivar, complemented=0, name=ind_names[1])
 
 	def __generate_var_map(self):
 		self.__dvar_map, self.__ivar_map = [{i: [v.name for v in dv] if isinstance(dv, list) else dv.name for i,dv in enumerate(varset)} for varset in [self.__dvars, self.__ivars]]
 
 	def __add_exclusivity_constraints(self):
-		Cexclusive = [Constraint(sum(ivarpair), ub=1, name='_'.join([ivar.name for ivar in ivarpair])) for ivarpair in self.__ivars if isinstance(ivarpair, list)]
-		self.model.add(Cexclusive)
+		lin_exprs = [([self.__indicator_map[var] for var in vlist],[1]*len(vlist)) for vlist in self.__dvars if isinstance(vlist, tuple)]
+		nc = len(lin_exprs)
+		self.model.linear_constraints.add(lin_exprs, senses='L'*nc, rhs=[1]*nc, names=['E'+str(i) for i in range(nc)])
 
 	def __set_objective(self):
-		objective = Objective(self.__objective_expression, direction='min')
-		self.model.objective = objective
+		self.model.objective.set_sense(self.model.objective.sense.minimize)
+		self.model.objective.set_linear(self.__objective_expression)
 
 	def __get_ivar_sum_vector(self, value_map):
 		return dict([[(svar.name for svar in var),sum(value_map[svar.name] for svar in var) if isinstance(var, list) else var.name, value_map[var.name]] for var in self.__ivars])
@@ -104,13 +127,16 @@ class KShortestEnumerator(object):
 			else:
 				if value_map[var_it.name] == 1:
 					var_list.append(var_it)
-		constraint = Constraint(sum(var_list), name="IntCut"+str(self.__integer_cut_count()), ub=size-1)
+		constraint = Constraint(Add(*var_list), name="IntCut"+str(self.__integer_cut_count()), ub=size-1)
 	
 		self.model.add(constraint)
 		self.model.update()
 		self.__integer_cuts.append(constraint)
 
 	def set_size_constraint(self, start_at, end_at=None):
+		# TODO: Find a way to add a single constraint with two bounds.
+		if self.SIZE_CONSTRAINT_NAME in self.model.linear_constraints.get_names():
+
 		if not self.__size_constraint is None:
 			self.model.remove(self.__size_constraint)
 		sc = Constraint(self.__objective_expression, name="SolSz", lb=start_at, ub=end_at)
@@ -212,10 +238,10 @@ class KShortestSolution(Solution):
 
 class DualLinearSystem(IrreversibleLinearSystem):
 	def __init__(self, S, irrev, T, b):
-		self.__model = None
+		self.__model = cplex.Cplex()
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
-		self.__c = None
+		self.__c = "C"
 
 	def get_model(self):
 		return self.__model
@@ -233,35 +259,43 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		# Defining useful length constants
 		nM, nR = self.S.shape
 		# nRi, nRr = len(irrev), nR - len(irrev)
-		veclens = [("u", nM), ("vp", nR), ("vn", nR), ("w", self.T.shape[1])]
+		veclens = [("u", nM), ("vp", nR), ("vn", nR), ("w", self.T.shape[0])]
 		I = np.identity(nR)
 		Sxi, Sxr = self.S[:, self.irrev].T, np.delete(self.S, self.irrev, axis=1).T
 		Ii, Ir = I[self.irrev, :], np.delete(I, self.irrev, axis=0)
 		Ti, Tr = self.T[:, self.irrev].T, np.delete(self.T, self.irrev, axis=1).T
 
-		u, vp, vn, w = [[Variable(pref + str(i), lb=0 if pref != "u" else None) for i in range(n)] for pref, n in
+		u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else -CPLEX_INFINITY, CPLEX_INFINITY) for i in range(n)] for pref, n in
 						veclens]
 
-		c = Variable(name="C", lb=1)
-		self.__c = c
 		Sdi = np.concatenate([Sxi, Ii, -Ii, Ti], axis=1)
 		Sdr = np.concatenate([Sxr, Ir, -Ir, Tr], axis=1)
+		Sd = np.concatenate([Sdi,Sdr], axis=0)
+		vd = chain(u,vp,vn,w)
+		names, lb, ub = list(zip(*vd))
+		self.__model.variables.add(names=names, lb=lb, ub=ub)
 
-		vd = list(chain(u, vp, vn, w))
+		np_names = np.array(names)
+		nnz = list(map(lambda y: np.nonzero(y)[1],zip(Sd)))
+		print(nnz)
 
-		model = Model(name="dual_problem")
-		model.add(vd)
+		lin_expr = [(np_names[x], row[x]) for row,x in zip(Sd, nnz)]
+		rhs = [0] * (Sdi.shape[0] + Sdr.shape[0])
+		senses = 'G' * Sdi.shape[0] + 'E' * Sdr.shape[0]
+		cnames = ['Ci'+str(i) for i in range(Sdi.shape[0])] + ['Cr'+str(i) for i in range(Sdr.shape[0])]
 
-		Ci = linear_constraints_from_matrix(model, Sdi, vd, lb=0, name="Ci")
-		Cr = linear_constraints_from_matrix(model, Sdr, vd, lb=0, ub=0, name="Cr")
-		Cb = Constraint(sum([self.b[i] * w[i] for i in range(self.T.shape[0])]) + self.__c, lb=0,ub=0, name="Cb")
+		for row in lin_expr:
+			print(row)
+		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 
+		self.__model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
 
-		# model.add(Ci)
-		# model.add(Cr)
-		# model.add(Cb)
+		b_coefs = self.b.tolist()+[1]
+		b_names = list(list(zip(*w))[0] + tuple(['C']))
+		print([(b_coefs,b_names)])
+		self.__model.linear_constraints.add(lin_expr=[(b_names,b_coefs)], senses=['E'], rhs=[0], names=['Cb'])
 
-		self.__dvars = list(map(list,zip(vp, vn)))
-		self.__model = model
+		vp_names = list(zip(*vp))[0]
+		vn_names = list(zip(*vn))[0]
 
-		return Sdi, Sdr
+		self.__dvars = list(zip(vp_names, vn_names))
