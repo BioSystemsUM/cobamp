@@ -111,7 +111,7 @@ class Solution(object):
 		else:
 			raise TypeError('\'item\' is not a sequence or string.')
 
-	def __set_attribute(self, key, value):
+	def set_attribute(self, key, value):
 		self.__attribute_dict[key] = value
 
 	def var_values(self):
