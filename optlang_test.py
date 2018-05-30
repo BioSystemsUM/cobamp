@@ -27,6 +27,7 @@ if __name__ == '__main__':
 	solution_iterator = ksh.population_iterator(3)
 	data = []
 	sol_list = []
+
 	for sols in solution_iterator:
 		isums = [sol.attribute_value('indicator_sum') for sol in sols]
 		data.extend(isums)

@@ -41,24 +41,36 @@ class KShortestEnumerator(object):
 		print(self.__objective_expression)
 		self.__set_objective()
 		self.__integer_cuts = []
+		self.__exclusion_cuts = []
 		self.set_size_constraint(1)
 		self.__current_size = 1
 
 	def __set_model_parameters(self):
 		self.model.parameters.mip.tolerances.integrality.set(1e-9)
-		self.model.parameters.feasopt.tolerance.set(1e-9)
 		self.model.parameters.workmem.set(4096)
 		self.model.parameters.clocktype.set(1)
 		self.model.parameters.advance.set(0)
 		self.model.parameters.mip.strategy.fpheur.set(1)
-		self.model.parameters.emphasis.numerical.set(1)
-		self.model.parameters.emphasis.mip.set(0)
-		self.model.parameters.mip.display.set(5)
-		self.model.parameters.simplex.tolerances.optimality.set(1e-9)
-		self.model.parameters.mip.cuts.disjunctive.set(-1)
+		self.model.parameters.emphasis.mip.set(2)
 		self.model.set_results_stream(self.resf)
 		self.model.set_log_stream(self.logf)
-		self.model.parameters.mip.limits.populate.set(999999)
+		self.model.parameters.mip.limits.populate.set(100)
+		self.model.parameters.mip.pool.capacity.set(100)
+		self.model.parameters.mip.pool.intensity.set(4)
+		self.model.parameters.mip.pool.absgap.set(0)
+		self.model.parameters.mip.pool.replace.set(2)
+
+	def exclude_solutions(self, sols):
+		for sol in sols:
+			if isinstance(sol, KShortestSolution):
+				self.__add_integer_cut(sol.var_values())
+			elif isinstance(sol, list) or isinstance(sol, tuple):
+				ivars = [self.__indicator_map[k] for k in list(chain(*[self.__dvars[i] for i in sol]))]
+				lin_expr = (ivars, [1]*len(ivars))
+				sense = ['L']
+				rhs = [len(sol)-1]
+				names = ['exclusion_cuts'+str(len(self.__exclusion_cuts))]
+				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
 
 	def __add_kshortest_indicators(self):
 		"""
@@ -98,9 +110,9 @@ class KShortestEnumerator(object):
 
 			ind_lin = [([var], [1]),([var, 'C'],[1, -1])]
 			ind_names = ['C' + ivar + '_ind' + '1', 'C' + ivar + '_ind' + '2']
-			self.model.indicator_constraints.add(lin_expr=ind_lin[0], sense='E', rhs=1, indvar=ivar, complemented=1,
+			self.model.indicator_constraints.add(lin_expr=ind_lin[0], sense='E', rhs=0, indvar=b, complemented=0,
 												 name=ind_names[0])
-			self.model.indicator_constraints.add(lin_expr=ind_lin[1], sense='G', rhs=0, indvar=ivar, complemented=0,
+			self.model.indicator_constraints.add(lin_expr=ind_lin[1], sense='G', rhs=0, indvar=d, complemented=0,
 												 name=ind_names[1])
 
 	def __add_exclusivity_constraints(self):
@@ -182,12 +194,6 @@ class KShortestEnumerator(object):
 	def __populate(self):
 
 		sols = []
-		first_sol = self.__optimize()
-		if first_sol is not None:
-			self.__add_integer_cut(first_sol.var_values())
-			sols.append(first_sol)
-		else:
-			print('Size constraint infeasible or solution space exhausted')
 		self.model.populate_solution_pool()
 		n_sols = self.model.solution.pool.get_num()
 		for i in range(n_sols):
@@ -196,7 +202,6 @@ class KShortestEnumerator(object):
 			sols.append(sol)
 		for sol in sols:
 			self.__add_integer_cut(sol.var_values())
-
 		return sols
 
 	def enumeration_methods(self):
