@@ -312,7 +312,7 @@ class DualLinearSystem(IrreversibleLinearSystem):
 
 		b_coefs = self.b.tolist() + [1]
 		b_names = list(list(zip(*w))[0] + tuple(['C']))
-		self.__model.linear_constraints.add(lin_expr=[(b_names, b_coefs)], senses=['E'], rhs=[0], names=['Cb'])
+		self.__model.linear_constraints.add(lin_expr=[(b_names, b_coefs)], senses=['L'], rhs=[0], names=['Cb'])
 
 		vp_names = list(zip(*vp))[0]
 		vn_names = list(zip(*vn))[0]
