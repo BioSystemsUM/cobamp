@@ -39,7 +39,7 @@ class KShortestEnumerator(object):
 		self.__objective_expression = list(
 			zip(list(self.__indicator_map.values()), [1] * len(self.__indicator_map.keys())))
 		print(self.__objective_expression)
-		self.__set_objective()
+		#self.__set_objective()
 		self.__integer_cuts = []
 		self.__exclusion_cuts = []
 		self.set_size_constraint(1)
@@ -54,8 +54,8 @@ class KShortestEnumerator(object):
 		self.model.parameters.emphasis.mip.set(2)
 		self.model.set_results_stream(self.resf)
 		self.model.set_log_stream(self.logf)
-		self.model.parameters.mip.limits.populate.set(100)
-		self.model.parameters.mip.pool.capacity.set(100)
+		self.model.parameters.mip.limits.populate.set(100000)
+		self.model.parameters.mip.pool.capacity.set(100000)
 		self.model.parameters.mip.pool.intensity.set(4)
 		self.model.parameters.mip.pool.absgap.set(0)
 		self.model.parameters.mip.pool.replace.set(2)
