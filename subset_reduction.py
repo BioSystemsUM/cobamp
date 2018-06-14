@@ -19,7 +19,6 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	kept_reactions = array([True] * n)
 	kept_reactions[to_remove] = False
 	kept_reactions = where(kept_reactions)[0]
-	print(kept_reactions)
 
 	ktol = EPSILON * sum(kept_reactions)
 
@@ -77,8 +76,6 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 		reactions = where(cr[:, i] != 0)[0]
 		in_subset_indexes = where(in_subset)[0]
 		in_subset_reactions = isin(reactions, in_subset_indexes)
-		if i == 338:
-			print('dafuq')
 		reactions = reactions[logical_not(in_subset_reactions)]
 		if len(reactions) > 0:
 			in_subset[reactions] = True
