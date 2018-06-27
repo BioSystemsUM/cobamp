@@ -1,9 +1,7 @@
-from optlang import Model, Variable, Constraint, Objective
 import cplex
-from optlang.symbolics import Add, Zero
 import numpy as np
 from itertools import chain
-from optimization import IrreversibleLinearSystem, Solution, linear_constraints_from_matrix
+from optimization import IrreversibleLinearSystem, Solution
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
