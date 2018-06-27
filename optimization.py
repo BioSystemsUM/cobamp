@@ -1,35 +1,25 @@
-from optlang import Model, Variable, Constraint, Objective
-from optlang.symbolics import Zero
+import cplex, string, random, shutil
 import numpy as np
 from itertools import chain
-from multiprocessing import Pool, cpu_count
 
+def random_string_generator(N):
+	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
-def get_linear_coefficients_from_vector(a, vars):
-	return {vars[i]:a[i] for i in np.nonzero(a)[0]}
+def copy_cplex_model(model):
+	from os import mkdir, path
+	folder = "tmp_"+random_string_generator(12)
+	m_name, p_name = path.join(folder,random_string_generator(9)+".lp"), path.join(folder,random_string_generator(9)+".lp")
+	mkdir(folder)
 
-def set_constraint_from_vector(c, a, vars, verbose):
-	coefx = get_linear_coefficients_from_vector(a, vars)
-	c.set_linear_coefficients(coefx)
-	if verbose:
-		print(c)
-	return c
+	model.write(m_name)
+	model.parameters.write_file(p_name)
 
-def set_constraint_from_vector_fx(t):
-	return set_constraint_from_vector(*t)
+	new_model = cplex.Cplex()
+	new_model.parameters.read_file(p_name)
+	new_model.read(m_name)
 
-def linear_constraints_from_matrix(model, S, v, lb=None, ub=None, name="", verbose=False):
-	M,N = S.shape
-	constraint_list = [Constraint(Zero, lb=lb, ub=ub, name=name+str(i)) for i in range(M)]
-	model.add(constraint_list)
-	model.update()
-
-	pool = Pool(cpu_count())
-	pool_args = zip(constraint_list, S, [v]*M, [verbose]*M)
-	pool.map(set_constraint_from_vector_fx, pool_args)
-
-	return constraint_list
-
+	shutil.rmtree(folder)
+	return new_model
 
 class IrreversibleLinearSystem(object):
 	def __init__(self, S, irrev):
@@ -49,6 +39,7 @@ class IrreversibleLinearSystem(object):
 
 	def get_c_variable(self):
 		return self.__c
+
 
 	def build_problem(self):
 		# Defining useful length constants
@@ -125,28 +116,3 @@ class Solution(object):
 
 	def attribute_names(self):
 		return self.__attribute_dict.keys()
-
-
-class LinearSystemOptimizer(object):
-
-	def __init__(self, lsystem):
-		self.lsystem = lsystem
-		self.__model = lsystem.get_model()
-
-	def optimize(self, objective, minimize=False):
-		self.__model.objective = Objective(
-			sum([objective[i] * self.lsystem.v[i] for i in range(objective.shape[0])]))
-		sol = status = None
-		try:
-			status = self.model.optimize()
-			if status == 'optimal':
-				value_map = {v.name: v.primal for v in self.model.variables}
-				sol = Solution(value_map, status)
-		except:
-			pass
-		return sol, status
-
-	def var_range(self,i):
-		minimum = self.optimize(np.array([i]), True)[0][vars[i].name]
-		maximum = self.optimize(np.array([i]), False)[0][vars[i].name]
-		return minimum, maximum
