@@ -60,7 +60,7 @@ class IrreversibleLinearSystem(object):
 		np_names = np.array(names)
 		nnz = list(map(lambda y: np.nonzero(y)[1], zip(S_full)))
 
-		lin_expr = [(np_names[x], row[x]) for row, x in zip(S_full, nnz)]
+		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(S_full, nnz)]
 
 		rhs = [0] * S_full.shape[0]
 		senses = 'E'* S_full.shape[0]
@@ -74,7 +74,7 @@ class IrreversibleLinearSystem(object):
 		vrf_names = list(zip(*vrf))[0]
 		vrb_names = list(zip(*vrb))[0]
 
-		self.__dvars = vi_names + list(zip(vrf_names,vrb_names))
+		self.__dvars = list(vi_names) + list(zip(vrf_names,vrb_names))
 
 		return S_full
 
