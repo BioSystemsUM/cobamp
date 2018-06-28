@@ -3,7 +3,6 @@ if __name__ == '__main__':
 	from pathway_analysis import IrreversibleLinearSystem, DualLinearSystem, KShortestEnumerator
 	import numpy as np
 	import pandas as pd
-	import pprofile
 
 	S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
 				  [0, 1, -1, 0, 0, 0, 0, 0, 0],
@@ -20,9 +19,7 @@ if __name__ == '__main__':
 	dsystem = DualLinearSystem(S, irrev, T, b)
 	lsystem = IrreversibleLinearSystem(S, irrev)
 
-	profiler = pprofile.Profile()
-	with profiler:
-		ksh = KShortestEnumerator(dsystem)
+	ksh = KShortestEnumerator(lsystem)
 
 	solution_iterator = ksh.population_iterator(3)
 	isum_data = []
@@ -36,7 +33,7 @@ if __name__ == '__main__':
 		data.extend(vals)
 		sol_list.extend(sols)
 
-	pd.DataFrame(data).to_csv('sols.csv')
+	#pd.DataFrame(data).to_csv('sols.csv')
 	df = pd.DataFrame(isum_data).apply(lambda x: np.where(x)[0].tolist(), 1)
 	print(df)
-	ksh.model.write("/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/problem.lp")
+	#ksh.model.write("/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/problem.lp")

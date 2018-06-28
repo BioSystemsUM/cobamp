@@ -2,6 +2,8 @@ import cplex, string, random, shutil
 import numpy as np
 from itertools import chain
 
+CPLEX_INFINITY = cplex.infinity
+
 def random_string_generator(N):
 	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
@@ -23,10 +25,10 @@ def copy_cplex_model(model):
 
 class IrreversibleLinearSystem(object):
 	def __init__(self, S, irrev):
-		self.__model = None
+		self.__model = cplex.Cplex()
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
-		self.__c = None
+		self.__c = "C"
 
 	def get_model(self):
 		return self.__model
@@ -40,7 +42,6 @@ class IrreversibleLinearSystem(object):
 	def get_c_variable(self):
 		return self.__c
 
-
 	def build_problem(self):
 		# Defining useful length constants
 		nM, nR = self.S.shape
@@ -48,45 +49,34 @@ class IrreversibleLinearSystem(object):
 		nRev = nR - nIrrev
 		veclens = [("irr", nIrrev), ("revfw", nRev), ("revbw", nRev)]
 		Sxi, Sxr = self.S[:, self.irrev], np.delete(self.S, self.irrev, axis=1)
-
-		vi, vrf, vrb = [[Variable(pref + str(i), lb=0) for i in range(n)] for pref, n in veclens]
-		c = Variable(name="C", lb=1)
-		self.__c = c
-
 		S_full = np.concatenate([Sxi, Sxr, -Sxr], axis=1)
 
-		vd = list(chain(vi, vrf, vrb))
+		vi, vrf, vrb = [[(pref + str(i), 0, CPLEX_INFINITY) for i in range(n)] for pref, n in veclens]
 
-		model = Model(name="linear_problem")
-		Ci = linear_constraints_from_matrix(model, S_full, vd, lb=0, ub=0, name="Ci")
+		vd = chain(vi, vrf, vrb)
+		names, lb, ub = list(zip(*vd))
+		self.__model.variables.add(names=names, lb=lb, ub=ub)
 
-		model.add(Ci)
+		np_names = np.array(names)
+		nnz = list(map(lambda y: np.nonzero(y)[1], zip(S_full)))
 
+		lin_expr = [(np_names[x], row[x]) for row, x in zip(S_full, nnz)]
+
+		rhs = [0] * S_full.shape[0]
+		senses = 'E'* S_full.shape[0]
+		cnames = ['C_' + str(i) for i in range(S_full.shape[0])]
+
+		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
+		self.__model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
 		self.__dvars = vi + list(map(list, zip(vrf, vrb)))
-		self.__model = model
+
+		vi_names = list(zip(*vi))[0]
+		vrf_names = list(zip(*vrf))[0]
+		vrb_names = list(zip(*vrb))[0]
+
+		self.__dvars = vi_names + list(zip(vrf_names,vrb_names))
 
 		return S_full
-
-
-class LinearSystem(object):
-	def __init__(self, S, lb, ub):
-		self.__model = Model('LinearModel')
-		self.S, self.lb, self.ub = S, lb, ub
-		self.build_problem()
-
-	def get_model(self):
-		return self.__model
-
-	def get_stoich_matrix_shape(self):
-		return self.S.shape
-
-	def build_problem(self):
-		# Defining useful length constants
-		nM, nR = self.S.shape
-		self.v = [Variable('v' + i) for i in range(nR)]
-		c = linear_constraints_from_matrix(self.S, self.v, self.lb, self.ub, "C")
-		self.model.add(c)
-
 
 class Solution(object):
 	def __init__(self, value_map, status, **kwargs):

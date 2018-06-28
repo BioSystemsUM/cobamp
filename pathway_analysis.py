@@ -1,7 +1,7 @@
 import cplex
 import numpy as np
 from itertools import chain
-from optimization import IrreversibleLinearSystem, Solution
+from optimization import IrreversibleLinearSystem, Solution, copy_cplex_model
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
@@ -17,7 +17,7 @@ class KShortestEnumerator(object):
 		# Get linear system constraints and variables
 		linear_system.build_problem()
 		self.__ls_shape = linear_system.get_stoich_matrix_shape()
-		self.model = linear_system.get_model()
+		self.model = copy_cplex_model(linear_system.get_model())
 		self.__dvars = linear_system.get_dvars()
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model.variables.get_names(), x)
