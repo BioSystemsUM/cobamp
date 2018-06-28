@@ -37,7 +37,7 @@ class KShortestEnumerator(object):
 		self.__objective_expression = list(
 			zip(list(self.__indicator_map.values()), [1] * len(self.__indicator_map.keys())))
 		print(self.__objective_expression)
-		#self.__set_objective()
+		self.__set_objective()
 		self.__integer_cuts = []
 		self.__exclusion_cuts = []
 		self.set_size_constraint(1)
@@ -79,7 +79,13 @@ class KShortestEnumerator(object):
 		ivars = [[(subvar + "_ind", 0, 1, btype) for subvar in var] if isinstance(var, tuple) else (
 		var + "_ind", 0, 1, btype) for var in self.__dvars]
 
-		dvnames = list(chain(*list(decompose_list(self.__dvars))))
+		dvnames = []
+		for elem in self.__dvars:
+			if type(elem) is not str:
+				dvnames = dvnames + list(elem)
+			else:
+				dvnames.append(elem)
+
 		ivchain = list(decompose_list(ivars))
 
 		ivnames, ivlb, ivub, ivtype = list(zip(*ivchain))
@@ -299,7 +305,7 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		np_names = np.array(names)
 		nnz = list(map(lambda y: np.nonzero(y)[1], zip(Sd)))
 
-		lin_expr = [(np_names[x], row[x]) for row, x in zip(Sd, nnz)]
+		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(Sd, nnz)]
 		rhs = [0] * (Sdi.shape[0] + Sdr.shape[0])
 		senses = 'G' * Sdi.shape[0] + 'E' * Sdr.shape[0]
 		cnames = ['Ci' + str(i) for i in range(Sdi.shape[0])] + ['Cr' + str(i) for i in range(Sdr.shape[0])]
