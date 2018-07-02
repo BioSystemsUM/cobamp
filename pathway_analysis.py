@@ -254,10 +254,18 @@ class KShortestSolution(Solution):
 	def __init__(self, value_map, status, dvars, indicator_map, **kwargs):
 		super().__init__(value_map,status,**kwargs)
 		self.set_attribute('indicator_sum',self.indicators_from_value_map(value_map, dvars, indicator_map))
+		self.set_attribute('signed_indicator_sum',self.signed_indicators_from_value_map(value_map, dvars, indicator_map))
+
 
 	def indicators_from_value_map(self,value_map, dvars, indicator_map):
 		isum = {
 		i: sum(abs(value_map[indicator_map[var]]) for var in varlist) if isinstance(varlist, tuple) else abs(
+			value_map[indicator_map[varlist]]) for i, varlist in enumerate(dvars)}
+		return isum
+
+	def signed_indicators_from_value_map(self,value_map, dvars, indicator_map):
+		isum = {
+		i: value_map[indicator_map[varlist[0]]] - value_map[indicator_map[varlist[1]]] if isinstance(varlist, tuple) else abs(
 			value_map[indicator_map[varlist]]) for i, varlist in enumerate(dvars)}
 		return isum
 
