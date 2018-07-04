@@ -21,19 +21,21 @@ if __name__ == '__main__':
 
 	ksh = KShortestEnumerator(lsystem)
 
-	solution_iterator = ksh.population_iterator(3)
+	solution_iterator = ksh.population_iterator(8)
 	isum_data = []
 	data = []
 	sol_list = []
 
 	for sols in solution_iterator:
 		vals = [sol.var_values() for sol in sols]
-		isum = [sol.attribute_value('indicator_sum') for sol in sols]
+		isum = [sol.attribute_value('signed_indicator_sum') for sol in sols]
 		isum_data.extend(isum)
 		data.extend(vals)
 		sol_list.extend(sols)
 
 	#pd.DataFrame(data).to_csv('sols.csv')
-	df = pd.DataFrame(isum_data).apply(lambda x: np.where(x)[0].tolist(), 1)
-	print(df)
-	#ksh.model.write("/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/problem.lp")
+	#df = pd.DataFrame(isum_data).apply(lambda x: np.where(x)[0].tolist(), 1)
+	df = pd.DataFrame(isum_data)
+	df.columns = [0, 1, 2, 4, 5, 6, 7, 8] + [3]
+	print(df[sorted(df)])
+	ksh.model.write("/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/problem.lp")

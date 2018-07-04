@@ -2,6 +2,7 @@ import cplex
 import numpy as np
 from itertools import chain
 from optimization import IrreversibleLinearSystem, Solution, copy_cplex_model
+from file_utils import pickle_object
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
@@ -251,23 +252,29 @@ class KShortestEnumerator(object):
 
 
 class KShortestSolution(Solution):
+	INDICATOR_SUM = 'indicator_sum'
+	SIGNED_INDICATOR_SUM = 'signed_indicator_sum'
+
 	def __init__(self, value_map, status, dvars, indicator_map, **kwargs):
 		super().__init__(value_map,status,**kwargs)
-		self.set_attribute('indicator_sum',self.indicators_from_value_map(value_map, dvars, indicator_map))
-		self.set_attribute('signed_indicator_sum',self.signed_indicators_from_value_map(value_map, dvars, indicator_map))
+		self.set_attribute(self.INDICATOR_SUM, self.__indicators_from_value_map(value_map, dvars, indicator_map))
+		self.set_attribute(self.SIGNED_INDICATOR_SUM, self.__signed_indicators_from_value_map(value_map, dvars, indicator_map))
 
 
-	def indicators_from_value_map(self,value_map, dvars, indicator_map):
+	def __indicators_from_value_map(self,value_map, dvars, indicator_map):
 		isum = {
 		i: sum(abs(value_map[indicator_map[var]]) for var in varlist) if isinstance(varlist, tuple) else abs(
 			value_map[indicator_map[varlist]]) for i, varlist in enumerate(dvars)}
 		return isum
 
-	def signed_indicators_from_value_map(self,value_map, dvars, indicator_map):
+	def __signed_indicators_from_value_map(self, value_map, dvars, indicator_map):
 		isum = {
 		i: value_map[indicator_map[varlist[0]]] - value_map[indicator_map[varlist[1]]] if isinstance(varlist, tuple) else abs(
 			value_map[indicator_map[varlist]]) for i, varlist in enumerate(dvars)}
 		return isum
+
+	def get_active_indicator_varids(self):
+		return [k for k,v in self.attribute_value(self.INDICATOR_SUM).items() if v > 0]
 
 
 class DualLinearSystem(IrreversibleLinearSystem):
