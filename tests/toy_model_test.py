@@ -1,7 +1,7 @@
 if __name__ == '__main__':
 
-	from metaconvexpy.efm_enumeration.algorithms.kshortest_efms import IrreversibleLinearSystem, KShortestEnumerator
-	from metaconvexpy.linear_systems.optimization import DualLinearSystem
+	from metaconvexpy.convex_analysis.efm_enumeration import IrreversibleLinearSystem, KShortestEnumerator
+	from metaconvexpy.linear_systems.linear_systems import DualLinearSystem
 	import numpy as np
 	import pandas as pd
 
