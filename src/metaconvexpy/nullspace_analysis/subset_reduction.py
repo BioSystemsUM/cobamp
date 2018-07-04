@@ -2,10 +2,10 @@
 Inspired by Metatool's code
 '''
 
-from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, diag_indices_from, argmin, isin, sign, append, delete, unique, where, array, dot
+from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, array, dot
 from numpy.linalg import norm
 
-from nullspace import compute_nullspace, nullspace_blocked_reactions
+from metaconvexpy.utilities.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
 PRECISION = 1e-10
