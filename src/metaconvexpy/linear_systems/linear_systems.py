@@ -13,6 +13,9 @@ class IrreversibleLinearSystem(object):
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
 
+	def get_dvar_mapping(self):
+			return self.__dvar_mapping
+
 	def get_model(self):
 		return self.__model
 
@@ -58,7 +61,9 @@ class IrreversibleLinearSystem(object):
 		vrb_names = list(zip(*vrb))[0]
 
 		self.__dvars = list(vi_names) + list(zip(vrf_names,vrb_names))
+		var_index_sequence = self.irrev + [x for x in list(range(nR)) if x not in self.irrev]
 
+		self.__dvar_mapping = dict(zip(var_index_sequence,self.__dvars))
 		return S_full
 
 
@@ -80,6 +85,9 @@ class DualLinearSystem(IrreversibleLinearSystem):
 
 	def get_c_variable(self):
 		return self.__c
+
+	def get_dvar_mapping(self):
+			return self.__dvar_mapping
 
 	def build_problem(self):
 		# Defining useful length constants
@@ -121,4 +129,10 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		vp_names = list(zip(*vp))[0]
 		vn_names = list(zip(*vn))[0]
 
+		#var_index_sequence = self.irrev + [x for x in list(range(nR)) if x not in self.irrev]
 		self.__dvars = list(zip(vp_names, vn_names))
+		self.__dvar_mapping = dict(zip(range(len(self.__dvars)),self.__dvars))
+
+
+		return Sd
+
