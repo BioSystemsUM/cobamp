@@ -37,7 +37,8 @@ class AbstractConstraint(object):
 	@abc.abstractmethod
 	def materialize(self, n):
 		'''
-
+		Generates a matrix T 1-by-n or 2-by-n and a list b of length 1 or 2 to be used for target flux vector
+		definition within the intervention problem framework
 		Args:
 			n: Number of columns to include in the target matrix
 
