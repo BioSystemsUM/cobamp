@@ -1,42 +1,53 @@
+from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEnumerator
+from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem
+import numpy as np
+from itertools import chain
+import unittest
+
+class ToyMetabolicNetworkTests(unittest.TestCase):
+	def setUp(self):
+		self.S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
+					  [0, 1, -1, 0, 0, 0, 0, 0, 0],
+					  [0, 1, 0, 1, -1, 0, 0, 0, 0],
+					  [0, 0, 0, 0, 0, 1, -1, 0, 0],
+					  [0, 0, 0, 0, 0, 0, 1, -1, 0],
+					  [0, 0, 0, 0, 1, 0, 0, 1, -1]])
+		self.rx_names = ["R" + str(i) for i in range(1, 10)]
+		self.irrev = [0, 1, 2, 4, 5, 6, 7, 8]
+
+		self.T = np.array([0] * self.S.shape[1]).reshape(1, self.S.shape[1])
+		self.T[0, 8] = -1
+		self.b = np.array([-1]).reshape(1, )
+
+	def enumerate_elementary_flux_modes(self):
+		lsystem = IrreversibleLinearSystem(self.S, self.irrev)
+
+		ksh = KShortestEnumerator(lsystem)
+		solution_iterator = ksh.population_iterator(9)
+		efms = list(chain(*solution_iterator))
+		return efms
+
+	def enumerate_minimal_cut_sets(self):
+		dsystem = DualLinearSystem(self.S, self.irrev, self.T, self.b)
+
+		ksh = KShortestEnumerator(dsystem)
+		solution_iterator = ksh.population_iterator(4)
+		mcss = list(chain(*solution_iterator))
+		return mcss
+
+	def test_elementary_flux_modes(self):
+		answer = {"R1, R2, R3, R4","R1, R4, R5, R9","R1, R2, R3, R5, R9","R1, R6, R7, R8, R9"}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_elementary_flux_modes()}
+		self.assertEqual(answer, test)
+
+	def test_minimal_cut_sets(self):
+		answer ={'R1','R2, R4, R6','R2, R4, R7','R2, R4, R8','R3, R4, R6','R3, R4, R7','R3, R4, R8','R5, R6','R5, R7','R5, R8','R9'}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_minimal_cut_sets()}
+		self.assertEqual(answer, test)
+
+	def convert_solution_to_string(self, sol):
+		return ', '.join([self.rx_names[i] for i in sol.get_active_indicator_varids()])
+
 if __name__ == '__main__':
-
-	from metaconvexpy.convex_analysis.efm_enumeration import IrreversibleLinearSystem, KShortestEnumerator
-	from metaconvexpy.linear_systems.linear_systems import DualLinearSystem
-	import numpy as np
-	import pandas as pd
-
-	S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
-				  [0, 1, -1, 0, 0, 0, 0, 0, 0],
-				  [0, 1, 0, 1, -1, 0, 0, 0, 0],
-				  [0, 0, 0, 0, 0, 1, -1, 0, 0],
-				  [0, 0, 0, 0, 0, 0, 1, -1, 0],
-				  [0, 0, 0, 0, 1, 0, 0, 1, -1]])
-
-	irrev = [0, 1, 2, 4, 5, 6, 7, 8]
-	T = np.array([0] * S.shape[1]).reshape(1, S.shape[1])
-	T[0, 8] = -1
-	b = np.array([-1]).reshape(1, )
-
-	dsystem = DualLinearSystem(S, irrev, T, b)
-	lsystem = IrreversibleLinearSystem(S, irrev)
-
-	ksh = KShortestEnumerator(lsystem)
-
-	solution_iterator = ksh.population_iterator(8)
-	isum_data = []
-	data = []
-	sol_list = []
-
-	for sols in solution_iterator:
-		vals = [sol.var_values() for sol in sols]
-		isum = [sol.attribute_value('signed_indicator_sum') for sol in sols]
-		isum_data.extend(isum)
-		data.extend(vals)
-		sol_list.extend(sols)
-
-	#pd.DataFrame(data).to_csv('sols.csv')
-	#df = pd.DataFrame(isum_data).apply(lambda x: np.where(x)[0].tolist(), 1)
-	df = pd.DataFrame(isum_data)
-	df.columns = [0, 1, 2, 4, 5, 6, 7, 8] + [3]
-	print(df[sorted(df)])
-	ksh.model.write("/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/problem.lp")
+	suite = unittest.TestLoader().loadTestsFromTestCase(ToyMetabolicNetworkTests)
+	unittest.TextTestRunner(verbosity=2).run(suite)

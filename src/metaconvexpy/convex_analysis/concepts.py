@@ -1,4 +1,4 @@
-class ElementaryFluxMode(FluxDistribution):
+class ElementaryFluxMode(object):
 	def __init__(self):
 		pass
 
