@@ -19,6 +19,8 @@ class PropertyDictionary():
 	def __getitem__(self, item):
 		if item not in self.__mandatory_properties.keys() and item not in self.__optional_properties.keys():
 			raise Exception(str(item)+" has not been registered as a mandatory or optional property.")
+		elif item not in self.__properties.keys():
+			return None
 		else:
 			return self.__properties[item]
 
@@ -29,7 +31,7 @@ class PropertyDictionary():
 				self.__properties[key] = value
 
 	def has_required_properties(self):
-		return set(self.__properties) & set(self.__mandatory_properties.keys()) == set(self.__mandatory_properties.keys())
+		return set(self.__properties.keys()) & set(self.__mandatory_properties.keys()) == set(self.__mandatory_properties.keys())
 
 	def __check_key_value_pair(self, expected_type, value):
 		if type(expected_type) is type:
