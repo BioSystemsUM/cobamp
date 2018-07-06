@@ -2,15 +2,14 @@ import unittest
 from metaconvexpy.utilities.property_management import PropertyDictionary
 class PropertyDictionaryTest(unittest.TestCase):
 	def setUp(self):
-		mandatory = {'name':str, 'age':int, 'height':lambda x: x > 0, 'gender':['M','F','U']}
-		optional = {'car_brand':str, 'region':['rural','urban'], 'tyre_sizes':lambda x: len(x) == 2}
+		base_mandatory = {'name':str, 'age':int, 'height':lambda x: x > 0, 'gender':['M','F','U']}
+		base_optional = {'car_brand':str, 'region':['rural','urban'], 'tyre_sizes':lambda x: len(x) == 2}
 
 		class CustomPropertyDictionary(PropertyDictionary):
 			def __init__(self):
-				super().__init__(mandatory, optional)
+				super().__init__(base_mandatory, base_optional)
 
 		self.dict_class = CustomPropertyDictionary
-
 	def test_add_all_mandatory_info(self):
 		propdict = self.dict_class()
 		propdict['name'] = 'John'
@@ -68,7 +67,6 @@ class PropertyDictionaryTest(unittest.TestCase):
 			propdict['gender'] = 'X'
 		propdict_is_valid = propdict.has_required_properties()
 		self.assertTrue(not propdict_is_valid)
-
 
 if __name__ == '__main__':
 	suite = unittest.TestLoader().loadTestsFromTestCase(PropertyDictionaryTest)

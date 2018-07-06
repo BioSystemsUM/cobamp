@@ -1,10 +1,20 @@
 import types
 
-class PropertyDictionary(object):
-	def __init__(self, mandatory_properties, optional_properties):
-		self.__properties = {}
+class PropertyDictionary():
+	def __init__(self, mandatory_properties={}, optional_properties={}):
 		self.__mandatory_properties = mandatory_properties
 		self.__optional_properties = optional_properties
+		self.__properties = {}
+
+	def __add_new_properties(self, mandatory_properties, optional_properties):
+		self.__mandatory_properties.update(mandatory_properties)
+		self.__optional_properties.update(optional_properties)
+
+	def get_mandatory_properties(self):
+		return self.__mandatory_properties
+
+	def get_optional_properties(self):
+		return self.__optional_properties
 
 	def __getitem__(self, item):
 		if item not in self.__mandatory_properties.keys() and item not in self.__optional_properties.keys():
