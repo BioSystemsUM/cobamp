@@ -2,6 +2,7 @@ import cplex
 from itertools import chain
 from metaconvexpy.linear_systems.optimization import Solution, copy_cplex_model
 from metaconvexpy.linear_systems.linear_systems import IrreversibleLinearSystem
+from metaconvexpy.utilities.property_management import PropertyDictionary
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
@@ -271,3 +272,9 @@ class KShortestEFMAlgorithm(object):
 		pass
 
 
+ksefm_mandatory_properties = {}
+ksefm_optional_properties = {}
+
+class KShortestEFMAlgorithmProperties(PropertyDictionary):
+	def __init__(self):
+		super().__init__(ksefm_mandatory_properties, ksefm_optional_properties)
