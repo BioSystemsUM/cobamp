@@ -1,0 +1,86 @@
+from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties import *
+from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem
+import numpy as np
+from itertools import chain
+import unittest
+
+
+efm_populate_enumeration_config = KShortestProperties()
+efm_populate_enumeration_config[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_POPULATE
+efm_populate_enumeration_config[K_SHORTEST_OPROPERTY_MAXSIZE] = 9
+
+mcs_populate_enumeration_config = KShortestProperties()
+mcs_populate_enumeration_config[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_POPULATE
+mcs_populate_enumeration_config[K_SHORTEST_OPROPERTY_MAXSIZE] = 3
+
+efm_populate_enumeration_config_wrong = KShortestProperties()
+efm_populate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_POPULATE
+efm_populate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSIZE] = 4
+
+mcs_populate_enumeration_config_wrong = KShortestProperties()
+mcs_populate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_POPULATE
+mcs_populate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSIZE] = 2
+class ToyMetabolicNetworkTests(unittest.TestCase):
+	def setUp(self):
+		self.S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
+		                   [0, 1, -1, 0, 0, 0, 0, 0, 0],
+		                   [0, 1, 0, 1, -1, 0, 0, 0, 0],
+		                   [0, 0, 0, 0, 0, 1, -1, 0, 0],
+		                   [0, 0, 0, 0, 0, 0, 1, -1, 0],
+		                   [0, 0, 0, 0, 1, 0, 0, 1, -1]])
+		self.rx_names = ["R" + str(i) for i in range(1, 10)]
+		self.irrev = [0, 1, 2, 4, 5, 6, 7, 8]
+
+		self.T = np.array([0] * self.S.shape[1]).reshape(1, self.S.shape[1])
+		self.T[0, 8] = -1
+		self.b = np.array([-1]).reshape(1, )
+		self.lsystem = IrreversibleLinearSystem(self.S, self.irrev)
+		self.dsystem = DualLinearSystem(self.S, self.irrev, self.T, self.b)
+
+
+	def enumerate_elementary_flux_modes(self):
+		ks = KShortestEFMAlgorithm(efm_populate_enumeration_config)
+		return ks.enumerate(self.lsystem)
+
+	def enumerate_some_elementary_flux_modes(self):
+		ks = KShortestEFMAlgorithm(efm_populate_enumeration_config_wrong)
+		return ks.enumerate(self.lsystem)
+
+	def enumerate_minimal_cut_sets(self):
+		ks = KShortestEFMAlgorithm(mcs_populate_enumeration_config)
+		return ks.enumerate(self.dsystem)
+
+	def enumerate_some_minimal_cut_sets(self):
+		ks = KShortestEFMAlgorithm(mcs_populate_enumeration_config_wrong)
+		return ks.enumerate(self.dsystem)
+
+	def test_elementary_flux_modes_support(self):
+		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_elementary_flux_modes()}
+		self.assertEqual(basic_answer, test)
+
+	def test_elementary_flux_modes_support_wrong(self):
+		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_some_elementary_flux_modes()}
+		self.assertNotEqual(basic_answer, test)
+
+	def test_minimal_cut_sets(self):
+		answer = {'R1', 'R2, R4, R6', 'R2, R4, R7', 'R2, R4, R8', 'R3, R4, R6', 'R3, R4, R7', 'R3, R4, R8', 'R5, R6',
+		          'R5, R7', 'R5, R8', 'R9'}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_minimal_cut_sets()}
+		self.assertEqual(answer, test)
+
+	def test_minimal_cut_sets_wrong(self):
+		answer = {'R1', 'R2, R4, R6', 'R2, R4, R7', 'R2, R4, R8', 'R3, R4, R6', 'R3, R4, R7', 'R3, R4, R8', 'R5, R6',
+		          'R5, R7', 'R5, R8', 'R9'}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_some_minimal_cut_sets()}
+		self.assertNotEqual(answer, test)
+
+	def convert_solution_to_string(self, sol):
+		return ', '.join([self.rx_names[i] for i in sol.get_active_indicator_varids()])
+
+
+if __name__ == '__main__':
+	suite = unittest.TestLoader().loadTestsFromTestCase(ToyMetabolicNetworkTests)
+	unittest.TextTestRunner(verbosity=2).run(suite)

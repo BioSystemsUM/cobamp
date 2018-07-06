@@ -2,6 +2,8 @@ import cplex
 from itertools import chain
 from metaconvexpy.linear_systems.optimization import Solution, copy_cplex_model
 from metaconvexpy.utilities.property_management import PropertyDictionary
+import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
+import warnings
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
@@ -30,8 +32,8 @@ class KShortestEnumerator(object):
 		self.__solzip = lambda x: zip(self.model.variables.get_names(), x)
 
 		# Open log files
-		self.resf = open('results', 'w')
-		self.logf = open('log', 'w')
+		# self.resf = open('results', 'w')
+		# self.logf = open('log', 'w')
 
 		# Setup CPLEX parameters
 		self.__set_model_parameters()
@@ -56,8 +58,8 @@ class KShortestEnumerator(object):
 		self.model.parameters.advance.set(0)
 		self.model.parameters.mip.strategy.fpheur.set(1)
 		self.model.parameters.emphasis.mip.set(2)
-		self.model.set_results_stream(self.resf)
-		self.model.set_log_stream(self.logf)
+		self.model.set_results_stream(None)
+		self.model.set_log_stream(None)
 		self.model.parameters.mip.limits.populate.set(1000000)
 		self.model.parameters.mip.pool.capacity.set(1000000)
 		self.model.parameters.mip.pool.intensity.set(4)
@@ -200,10 +202,6 @@ class KShortestEnumerator(object):
 			self.__add_integer_cut(sol.var_values())
 		return sols
 
-	def enumeration_methods(self):
-		return {self.ENUMERATION_METHOD_ITERATE: self.get_single_solution,
-				self.ENUMERATION_METHOD_POPULATE: self.populate_next_size}
-
 	def solution_iterator(self):
 		self.reset_enumerator_state()
 		self.set_size_constraint(1)
@@ -262,18 +260,34 @@ class KShortestSolution(Solution):
 
 class KShortestEFMAlgorithm(object):
 	def __init__(self, configuration):
-		pass
+		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
+		self.configuration = configuration
 
-	def __apply_configuration(self, configuration):
-		pass
+	def __prepare(self, linear_system):
+		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
+		ksh = KShortestEnumerator(linear_system)
+		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
+			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]
+			if limit is None:
+				limit = 1
+				warnings.warn(Warning('You have not defined a maximum solution size for the enumeration process. Defaulting to 1.'))
+			solution_list = []
+			for solution in ksh.solution_iterator():
+				if len(solution_list) <= limit:
+					solution_list.append(solution)
+				else:
+					break
+			return solution_list
+
+		elif self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_POPULATE:
+			if self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] is None:
+				warnings.warn(Warning('You have not defined a maximum size for the enumeration process. Defaulting to size 1.'))
+				return chain(*ksh.population_iterator(1))
+			else:
+				return chain(*ksh.population_iterator(self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]))
+		else:
+			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
 
 	def enumerate(self, linear_system):
-		pass
+		return self.__prepare(linear_system)
 
-
-ksefm_mandatory_properties = {}
-ksefm_optional_properties = {}
-
-class KShortestEFMAlgorithmProperties(PropertyDictionary):
-	def __init__(self):
-		super().__init__(ksefm_mandatory_properties, ksefm_optional_properties)
