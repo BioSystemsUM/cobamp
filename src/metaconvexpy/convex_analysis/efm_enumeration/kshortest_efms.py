@@ -1,7 +1,6 @@
 import cplex
 from itertools import chain
 from metaconvexpy.linear_systems.optimization import Solution, copy_cplex_model
-from metaconvexpy.linear_systems.linear_systems import IrreversibleLinearSystem
 from metaconvexpy.utilities.property_management import PropertyDictionary
 
 CPLEX_INFINITY = cplex.infinity
@@ -183,7 +182,7 @@ class KShortestEnumerator(object):
 			status = self.model.solution.get_status()
 			value_map = dict(zip(self.model.variables.get_names(), self.model.solution.get_values()))
 			if status > -1:
-				sol = KShortestSolution(value_map, status, self.__dvars, self.__indicator_map, self.__dvar_mapping)
+				sol = KShortestSolution(value_map, status, self.__indicator_map, self.__dvar_mapping)
 				return sol
 		except Exception as e:
 			print(e)
@@ -195,7 +194,7 @@ class KShortestEnumerator(object):
 		n_sols = self.model.solution.pool.get_num()
 		for i in range(n_sols):
 			value_map = dict(self.__solzip(self.model.solution.pool.get_values(i)))
-			sol = KShortestSolution(value_map, None, self.__dvars, self.__indicator_map, self.__dvar_mapping)
+			sol = KShortestSolution(value_map, None, self.__indicator_map, self.__dvar_mapping)
 			sols.append(sol)
 		for sol in sols:
 			self.__add_integer_cut(sol.var_values())
