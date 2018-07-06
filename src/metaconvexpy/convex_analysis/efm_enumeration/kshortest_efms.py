@@ -1,6 +1,7 @@
 import cplex
 from itertools import chain
 from metaconvexpy.linear_systems.optimization import Solution, copy_cplex_model
+from metaconvexpy.linear_systems.linear_systems import IrreversibleLinearSystem
 
 CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
@@ -246,7 +247,7 @@ class KShortestSolution(Solution):
 	SIGNED_INDICATOR_SUM = 'signed_indicator_map'
 	SIGNED_VALUE_MAP = 'signed_value_map'
 
-	def __init__(self, value_map, status, dvars, indicator_map, dvar_mapping, **kwargs):
+	def __init__(self, value_map, status, indicator_map, dvar_mapping, **kwargs):
 		signed_value_map = {i: value_map[varlist[0]] - value_map[varlist[1]] if isinstance(varlist, tuple) else value_map[varlist] for
 			i, varlist in dvar_mapping.items()}
 		signed_indicator_map = {i: value_map[indicator_map[varlist[0]]] - value_map[indicator_map[varlist[1]]] if isinstance(varlist, tuple) else value_map[indicator_map[varlist]] for
@@ -265,3 +266,8 @@ class KShortestEFMAlgorithm(object):
 
 	def __apply_configuration(self, configuration):
 		pass
+
+	def enumerate(self, linear_system):
+		pass
+
+
