@@ -263,9 +263,11 @@ class KShortestEFMAlgorithm(object):
 		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
 		self.configuration = configuration
 
-	def __prepare(self, linear_system):
+	def __prepare(self, linear_system, excluded_sets):
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
 		ksh = KShortestEnumerator(linear_system)
+		if excluded_sets is not None:
+			ksh.exclude_solutions(excluded_sets)
 		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
 			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]
 			if limit is None:
@@ -288,6 +290,6 @@ class KShortestEFMAlgorithm(object):
 		else:
 			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
 
-	def enumerate(self, linear_system):
-		return self.__prepare(linear_system)
+	def enumerate(self, linear_system, excluded_sets=None):
+		return self.__prepare(linear_system, excluded_sets)
 
