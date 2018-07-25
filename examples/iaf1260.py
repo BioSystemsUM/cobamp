@@ -1,13 +1,10 @@
 import numpy as np
 import os
-from itertools import chain
+from itertools import product
 from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
 from metaconvexpy.linear_systems.linear_systems import DualLinearSystem
 from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
 import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
-
-import timeit
-
 
 os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy/examples/iAF1260_resources')
 
@@ -36,7 +33,7 @@ glc_index = rx_names.index('R_EX_glc_e')
 
 configuration = kp.KShortestProperties()
 configuration[kp.K_SHORTEST_MPROPERTY_METHOD] = kp.K_SHORTEST_METHOD_POPULATE
-configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 5
+configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 1
 
 problem = InterventionProblem(S)
 T, b = problem.generate_target_matrix([
@@ -49,3 +46,10 @@ dual_system = DualLinearSystem(S, irrev, T, b)
 algorithm = KShortestEFMAlgorithm(configuration)
 
 lethals = list(algorithm.enumerate(dual_system, exclusions))
+
+def decode_solutions(solutions):
+	return list(chain(*[list(product(*[orx_map[rx_names[i]] for i in lethal.get_active_indicator_varids()])) for lethal in solutions]))
+
+decoded = decode_solutions(lethals)
+
+len(decoded)
