@@ -269,7 +269,7 @@ class KShortestEFMAlgorithm(object):
 		if excluded_sets is not None:
 			ksh.exclude_solutions(excluded_sets)
 		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
-			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]
+			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
 			if limit is None:
 				limit = 1
 				warnings.warn(Warning('You have not defined a maximum solution size for the enumeration process. Defaulting to 1.'))
