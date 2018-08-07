@@ -48,3 +48,6 @@ class PropertyDictionary():
 				raise AssertionError("\'value\' is not contained in "+str(expected_type))
 
 		return is_ok
+
+	def __repr__(self):
+		return '\n'.join([str(k)+" = "+str(v) for k,v in self.__properties.items()])
