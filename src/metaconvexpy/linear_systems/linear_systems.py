@@ -61,7 +61,7 @@ class IrreversibleLinearSystem(object):
 		vrb_names = list(zip(*vrb))[0]
 
 		self.__dvars = list(vi_names) + list(zip(vrf_names,vrb_names))
-		var_index_sequence = self.irrev + [x for x in list(range(nR)) if x not in self.irrev]
+		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in list(range(nR)) if x not in self.irrev]
 
 		self.__dvar_mapping = dict(zip(var_index_sequence,self.__dvars))
 		return S_full
