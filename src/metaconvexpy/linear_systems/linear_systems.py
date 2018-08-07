@@ -1,14 +1,30 @@
 from itertools import chain
-
+from metaconvexpy.utilities.set_utils import is_subset, has_no_overlap
 import cplex
 import numpy as np
 
 from metaconvexpy.linear_systems.optimization import CPLEX_INFINITY
 
-
 class IrreversibleLinearSystem(object):
-	def __init__(self, S, irrev):
+	def __init__(self, S, irrev, extracellular_metabs=None, medium_metabs=None, consumed_metabs=None, produced_metabs=None):
 		self.__model = cplex.Cplex()
+
+		self.__extracellular_metabs = set() if extracellular_metabs is None else set(extracellular_metabs)
+		self.__medium_metabs = set() if medium_metabs is None else set(medium_metabs)
+		self.__consumed_metabs = set() if consumed_metabs is None else set(consumed_metabs)
+		self.__produced_metabs = set() if produced_metabs is None else set(produced_metabs)
+
+
+		if extracellular_metabs is not None:
+			# assert is_subset(consumed_metabs, medium_metabs)
+			# assert is_subset(produced_metabs, medium_metabs)
+			# assert is_subset(medium_metabs, extracellular_metabs)
+			# assert has_no_overlap(consumed_metabs, produced_metabs)
+
+			self.__ec_to_remove = set(extracellular_metabs) - medium_metabs - consumed_metabs - produced_metabs
+
+
+
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
@@ -64,6 +80,25 @@ class IrreversibleLinearSystem(object):
 		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in list(range(nR)) if x not in self.irrev]
 
 		self.__dvar_mapping = dict(zip(var_index_sequence,self.__dvars))
+
+		lin_expr_c = []
+		rhs_c = []
+		senses_c = ""
+		names_c = []
+		for compounds, rhs, sense, prefix in zip([self.__ec_to_remove, list(self.__consumed_metabs), list(self.__produced_metabs)],[0, 1, -1],['E','G','L'],['MetabRemove','MetabConsumed','MetabProduced']):
+			for compound in compounds:
+				vars = self.__dvar_mapping[compound]
+				if isinstance(self.__dvar_mapping[compound], tuple):
+					lin_expr_c.append([cplex.SparsePair(val=1, ind=vars[0]), cplex.SparsePair(val=-1, ind=vars[1])])
+				else:
+					lin_expr_c.append([cplex.SparsePair(val=1, ind=vars)])
+				rhs_c.append(rhs)
+				senses_c += sense
+				names_c.append(prefix+"_"+str(compound))
+
+		self.__model.linear_constraints.add(lin_expr=lin_expr_c, senses=senses, rhs=rhs_c, names=names_c)
+
+
 		return S_full
 
 
