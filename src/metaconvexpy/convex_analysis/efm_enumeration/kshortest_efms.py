@@ -78,6 +78,19 @@ class KShortestEnumerator(object):
 				names = ['exclusion_cuts' + str(len(self.__exclusion_cuts))]
 				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
 
+	def force_solutions(self, sols):
+		for sol in sols:
+			if isinstance(sol, KShortestSolution):
+				self.__add_integer_cut(sol.var_values(), force_sol=True)
+			elif isinstance(sol, list) or isinstance(sol, tuple):
+				ivars = [self.__indicator_map[k] for k in list(chain(*[self.__dvars[i] for i in sol]))]
+				lin_expr = (ivars, [1] * len(ivars))
+				sense = ['E']
+				rhs = [len(sol)]
+				names = ['exclusion_cuts' + str(len(self.__exclusion_cuts))]
+				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
+
+
 	def __add_kshortest_indicators(self):
 		"""
 
@@ -144,7 +157,7 @@ class KShortestEnumerator(object):
 	def __integer_cut_count(self):
 		return len(self.__integer_cuts)
 
-	def __add_integer_cut(self, value_map):
+	def __add_integer_cut(self, value_map, force_sol=False):
 		lin_expr_vars = []
 		counter = 0
 		for varlist in self.__dvars:
@@ -158,8 +171,8 @@ class KShortestEnumerator(object):
 					counter += 1
 
 		self.model.linear_constraints.add(names=['cut' + str(len(self.__integer_cuts))],
-										  lin_expr=[[lin_expr_vars, [1] * len(lin_expr_vars)]], senses=['L'],
-										  rhs=[counter - 1])
+										  lin_expr=[[lin_expr_vars, [1] * len(lin_expr_vars)]], senses=['L'] if not force_sol else ['E'],
+										  rhs=[counter - 1] if not force_sol else [counter])
 
 	def set_size_constraint(self, start_at, equal=False):
 		# TODO: Find a way to add a single constraint with two bounds.
@@ -217,6 +230,7 @@ class KShortestEnumerator(object):
 	def population_iterator(self, max_size):
 		self.reset_enumerator_state()
 		for i in range(1, max_size + 1):
+			print('Starting size',str(i))
 			try:
 				self.set_size_constraint(i, True)
 				sols = self.populate_current_size()
@@ -259,9 +273,10 @@ class KShortestSolution(Solution):
 
 
 class KShortestEFMAlgorithm(object):
-	def __init__(self, configuration):
+	def __init__(self, configuration, verbose=True):
 		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
 		self.configuration = configuration
+		self.verbose = verbose
 
 	def __prepare(self, linear_system, excluded_sets):
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
