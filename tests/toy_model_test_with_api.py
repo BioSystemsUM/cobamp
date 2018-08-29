@@ -21,6 +21,23 @@ efm_populate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSIZE] = 4
 mcs_populate_enumeration_config_wrong = KShortestProperties()
 mcs_populate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_POPULATE
 mcs_populate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSIZE] = 2
+
+efm_iterate_enumeration_config = KShortestProperties()
+efm_iterate_enumeration_config[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_ITERATE
+efm_iterate_enumeration_config[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = 4
+
+mcs_iterate_enumeration_config = KShortestProperties()
+mcs_iterate_enumeration_config[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_ITERATE
+mcs_iterate_enumeration_config[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = 11
+
+efm_iterate_enumeration_config_wrong = KShortestProperties()
+efm_iterate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_ITERATE
+efm_iterate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = 2
+
+mcs_iterate_enumeration_config_wrong = KShortestProperties()
+mcs_iterate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_ITERATE
+mcs_iterate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = 9
+
 class ToyMetabolicNetworkTests(unittest.TestCase):
 	def setUp(self):
 		self.S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
@@ -55,6 +72,22 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		ks = KShortestEFMAlgorithm(mcs_populate_enumeration_config_wrong)
 		return ks.enumerate(self.dsystem)
 
+	def enumerate_elementary_flux_modes_iter(self):
+		ks = KShortestEFMAlgorithm(efm_iterate_enumeration_config)
+		return ks.enumerate(self.lsystem)
+
+	def enumerate_some_elementary_flux_modes_iter(self):
+		ks = KShortestEFMAlgorithm(efm_iterate_enumeration_config_wrong)
+		return ks.enumerate(self.lsystem)
+
+	def enumerate_minimal_cut_sets_iter(self):
+		ks = KShortestEFMAlgorithm(mcs_iterate_enumeration_config)
+		return ks.enumerate(self.dsystem)
+
+	def enumerate_some_minimal_cut_sets_iter(self):
+		ks = KShortestEFMAlgorithm(mcs_iterate_enumeration_config_wrong)
+		return ks.enumerate(self.dsystem)
+	
 	def test_elementary_flux_modes_support(self):
 		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
 		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_elementary_flux_modes()}
@@ -75,6 +108,28 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		answer = {'R1', 'R2, R4, R6', 'R2, R4, R7', 'R2, R4, R8', 'R3, R4, R6', 'R3, R4, R7', 'R3, R4, R8', 'R5, R6',
 		          'R5, R7', 'R5, R8', 'R9'}
 		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_some_minimal_cut_sets()}
+		self.assertNotEqual(answer, test)
+		
+	def test_elementary_flux_modes_support_iter(self):
+		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_elementary_flux_modes_iter()}
+		self.assertEqual(basic_answer, test)
+
+	def test_elementary_flux_modes_support_wrong_iter(self):
+		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_some_elementary_flux_modes_iter()}
+		self.assertNotEqual(basic_answer, test)
+
+	def test_minimal_cut_sets_iter(self):
+		answer = {'R1', 'R2, R4, R6', 'R2, R4, R7', 'R2, R4, R8', 'R3, R4, R6', 'R3, R4, R7', 'R3, R4, R8', 'R5, R6',
+		          'R5, R7', 'R5, R8', 'R9'}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_minimal_cut_sets_iter()}
+		self.assertEqual(answer, test)
+
+	def test_minimal_cut_sets_wrong_iter(self):
+		answer = {'R1', 'R2, R4, R6', 'R2, R4, R7', 'R2, R4, R8', 'R3, R4, R6', 'R3, R4, R7', 'R3, R4, R8', 'R5, R6',
+		          'R5, R7', 'R5, R8', 'R9'}
+		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_some_minimal_cut_sets_iter()}
 		self.assertNotEqual(answer, test)
 
 	def convert_solution_to_string(self, sol):
