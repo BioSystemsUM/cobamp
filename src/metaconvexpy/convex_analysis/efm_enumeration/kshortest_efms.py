@@ -87,7 +87,7 @@ class KShortestEnumerator(object):
 				lin_expr = (ivars, [1] * len(ivars))
 				sense = ['E']
 				rhs = [len(sol)]
-				names = ['exclusion_cuts' + str(len(self.__exclusion_cuts))]
+				names = ['forced_cuts' + str(len(self.__exclusion_cuts))]
 				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
 
 
@@ -203,7 +203,7 @@ class KShortestEnumerator(object):
 			print(e)
 
 	def __populate(self):
-
+		self.model.write('indicator_efmmodel.lp')
 		sols = []
 		self.model.populate_solution_pool()
 		n_sols = self.model.solution.pool.get_num()
@@ -273,16 +273,18 @@ class KShortestSolution(Solution):
 
 
 class KShortestEFMAlgorithm(object):
-	def __init__(self, configuration, verbose=True):
+	def  __init__(self, configuration, verbose=True):
 		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
 		self.configuration = configuration
 		self.verbose = verbose
 
-	def __prepare(self, linear_system, excluded_sets):
+	def __prepare(self, linear_system, excluded_sets, forced_sets):
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
 		ksh = KShortestEnumerator(linear_system)
 		if excluded_sets is not None:
 			ksh.exclude_solutions(excluded_sets)
+		if forced_sets is not None:
+			ksh.force_solutions(forced_sets)
 		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
 			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
 			if limit is None:
@@ -299,12 +301,12 @@ class KShortestEFMAlgorithm(object):
 		elif self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_POPULATE:
 			if self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] is None:
 				warnings.warn(Warning('You have not defined a maximum size for the enumeration process. Defaulting to size 1.'))
-				return chain(*ksh.population_iterator(1))
+				return list(chain(*ksh.population_iterator(1)))
 			else:
-				return chain(*ksh.population_iterator(self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]))
+				return list(chain(*ksh.population_iterator(self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE])))
 		else:
 			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
 
-	def enumerate(self, linear_system, excluded_sets=None):
-		return self.__prepare(linear_system, excluded_sets)
+	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
+		return self.__prepare(linear_system, excluded_sets, forced_sets)
 

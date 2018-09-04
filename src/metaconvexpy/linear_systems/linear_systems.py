@@ -1,36 +1,41 @@
 from itertools import chain
-from metaconvexpy.utilities.set_utils import is_subset, has_no_overlap
 import cplex
 import numpy as np
 
 from metaconvexpy.linear_systems.optimization import CPLEX_INFINITY
 
-class IrreversibleLinearSystem(object):
-	def __init__(self, S, irrev, extracellular_metabs=None, medium_metabs=None, consumed_metabs=None, produced_metabs=None):
+
+class SimpleLinearSystem(object):
+	def __init__(self, S, lb, ub, var_names=None):
 		self.__model = cplex.Cplex()
+		self.S, self.lb, self.ub = S, lb, ub
+		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
 
-		self.__extracellular_metabs = set() if extracellular_metabs is None else set(extracellular_metabs)
-		self.__medium_metabs = set() if medium_metabs is None else set(medium_metabs)
-		self.__consumed_metabs = set() if consumed_metabs is None else set(consumed_metabs)
-		self.__produced_metabs = set() if produced_metabs is None else set(produced_metabs)
+	def build_problem(self):
+		np_names = np.array(self.names)
+		nnz = list(map(lambda y: np.nonzero(y)[1], zip(self.S)))
+		self.__model.variables.add(names=self.names, lb=self.lb, ub=self.ub)
+		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(self.S, nnz)]
+		rhs = [0] * self.S.shape[0]
+		senses = ['E'] * self.S.shape[0]
+		cnames = ['C_' + str(i) for i in range(self.S.shape[0])]
+		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
+
+	def get_model(self):
+		return self.__model
 
 
-		if extracellular_metabs is not None:
-			# assert is_subset(consumed_metabs, medium_metabs)
-			# assert is_subset(produced_metabs, medium_metabs)
-			# assert is_subset(medium_metabs, extracellular_metabs)
-			# assert has_no_overlap(consumed_metabs, produced_metabs)
-
-			self.__ec_to_remove = set(extracellular_metabs) - medium_metabs - consumed_metabs - produced_metabs
-
-
-
+class IrreversibleLinearSystem(object):
+	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=()):
+		self.__model = cplex.Cplex()
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
+		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
+																										c in consumed]
 
 	def get_dvar_mapping(self):
-			return self.__dvar_mapping
+		return self.__dvar_mapping
 
 	def get_model(self):
 		return self.__model
@@ -65,8 +70,13 @@ class IrreversibleLinearSystem(object):
 		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(S_full, nnz)]
 
 		rhs = [0] * S_full.shape[0]
-		senses = 'E'* S_full.shape[0]
+		senses = ['E'] * S_full.shape[0]
 		cnames = ['C_' + str(i) for i in range(S_full.shape[0])]
+
+		if self.__ss_override != []:
+			for id_i, sense_i, rhs_i in self.__ss_override:
+				rhs[id_i] = rhs_i
+				senses[id_i] = sense_i
 
 		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 		self.__model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
@@ -76,33 +86,18 @@ class IrreversibleLinearSystem(object):
 		vrf_names = list(zip(*vrf))[0]
 		vrb_names = list(zip(*vrb))[0]
 
-		self.__dvars = list(vi_names) + list(zip(vrf_names,vrb_names))
-		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in list(range(nR)) if x not in self.irrev]
+		self.__dvars = list(vi_names) + list(zip(vrf_names, vrb_names))
+		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in
+																											list(range(
+																												nR)) if
+																											x not in self.irrev]
 
-		self.__dvar_mapping = dict(zip(var_index_sequence,self.__dvars))
-
-		lin_expr_c = []
-		rhs_c = []
-		senses_c = ""
-		names_c = []
-		for compounds, rhs, sense, prefix in zip([self.__ec_to_remove, list(self.__consumed_metabs), list(self.__produced_metabs)],[0, 1, -1],['E','G','L'],['MetabRemove','MetabConsumed','MetabProduced']):
-			for compound in compounds:
-				vars = self.__dvar_mapping[compound]
-				if isinstance(self.__dvar_mapping[compound], tuple):
-					lin_expr_c.append([cplex.SparsePair(val=1, ind=vars[0]), cplex.SparsePair(val=-1, ind=vars[1])])
-				else:
-					lin_expr_c.append([cplex.SparsePair(val=1, ind=vars)])
-				rhs_c.append(rhs)
-				senses_c += sense
-				names_c.append(prefix+"_"+str(compound))
-
-		self.__model.linear_constraints.add(lin_expr=lin_expr_c, senses=senses, rhs=rhs_c, names=names_c)
-
-
+		self.__dvar_mapping = dict(zip(var_index_sequence, self.__dvars))
+		self.__model.write('efmmodel.lp')
 		return S_full
 
 
-class DualLinearSystem(IrreversibleLinearSystem):
+class DualLinearSystem(object):
 	def __init__(self, S, irrev, T, b):
 		self.__model = cplex.Cplex()
 		self.__ivars = None
@@ -122,7 +117,7 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		return self.__c
 
 	def get_dvar_mapping(self):
-			return self.__dvar_mapping
+		return self.__dvar_mapping
 
 	def build_problem(self):
 		# Defining useful length constants
@@ -164,10 +159,8 @@ class DualLinearSystem(IrreversibleLinearSystem):
 		vp_names = list(zip(*vp))[0]
 		vn_names = list(zip(*vn))[0]
 
-		#var_index_sequence = self.irrev + [x for x in list(range(nR)) if x not in self.irrev]
+		# var_index_sequence = self.irrev + [x for x in list(range(nR)) if x not in self.irrev]
 		self.__dvars = list(zip(vp_names, vn_names))
-		self.__dvar_mapping = dict(zip(range(len(self.__dvars)),self.__dvars))
-
+		self.__dvar_mapping = dict(zip(range(len(self.__dvars)), self.__dvars))
 
 		return Sd
-

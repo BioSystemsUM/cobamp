@@ -50,3 +50,27 @@ class Solution(object):
 
 	def attribute_names(self):
 		return self.__attribute_dict.keys()
+
+class LinearSystemOptimizer(object):
+	def __init__(self, linear_system):
+		linear_system.build_problem()
+		self.model = copy_cplex_model(linear_system.get_model())
+		self.model.set_results_stream(None)
+		self.model.set_log_stream(None)
+
+	def __optimize(self, objective, minimize):
+		senses = self.model.objective.sense
+		self.model.objective.set_linear(objective)
+		self.model.objective.set_sense(senses.minimize if minimize else senses.maximize)
+
+		try:
+			self.model.solve()
+			value_map = dict(zip(self.model.variables.get_names(),self.model.solution.get_values()))
+			return Solution(value_map, self.model.solution.status)
+		except Exception as e:
+			print(e)
+
+	def optimize(self, objective, minimize=False):
+		return self.__optimize(objective, minimize)
+
+
