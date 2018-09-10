@@ -1,12 +1,16 @@
 import numpy as np
 import os
 import pickle
+
 from itertools import product
 from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
 from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem, SimpleLinearSystem
 from metaconvexpy.linear_systems.optimization import LinearSystemOptimizer
 from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
+from metaconvexpy.utilities.file_utils import pickle_object, read_pickle
 import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
+
+os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy')
 
 def decode_mcs(solutions):
 	return list(chain(
@@ -71,7 +75,7 @@ def enumerate_efms():
 
 	configuration = kp.KShortestProperties()
 	configuration[kp.K_SHORTEST_MPROPERTY_METHOD] = kp.K_SHORTEST_METHOD_POPULATE
-	configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 89
+	configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 10
 
 	drains = set([s for s in singles if "R_EX" in s])
 
@@ -79,7 +83,7 @@ def enumerate_efms():
 	produced = set([rx_names.index(k) for k in set(media.keys()) & set(rx_names) if media[k][1] > 0])
 	non_consumed = set([rx_names.index(k) for k in drains if k in rx_names]) - consumed - produced
 
-	consumed_meta = meta_id_from_drain(consumed)
+	consumed_meta = list(zip(meta_id_from_drain(consumed), [-media[rx_names[i]][0] for i in consumed]))
 	produced_meta = meta_id_from_drain(produced)
 	nc_meta = meta_id_from_drain(non_consumed)
 
@@ -99,14 +103,16 @@ def enumerate_efms():
 	S_int_final = np.vstack([S_int, S_int_biomass_meta])
 	met_names_int = met_names + ['biomass_c']
 
-	produced_meta = [met_names_int.index('biomass_c')]
+	produced_meta = [(met_names_int.index('biomass_c'), 1)]
 	#consumed_meta = [met_names_int.index('M_glc__D_e')]
-	irreversible_system = IrreversibleLinearSystem(S_int_final, irrev_int, nc_meta, consumed_meta, produced_meta)
+	irreversible_system = IrreversibleLinearSystem(S_int_final, irrev_int, nc_meta, [], produced_meta)
 	algorithm = KShortestEFMAlgorithm(configuration)
 
 	efms = algorithm.enumerate(irreversible_system)
-
+	decoded_efms = [{rx_names_int[i]:v for i,v in efm.attribute_value(efm.SIGNED_INDICATOR_SUM).items() if v != 0} for efm in efms]
 	decoded = [[rx_names_int[i] for i in efmi.get_active_indicator_varids()] for efmi in efms]
+#	pickle_object(decoded_efms, 'examples/GBconsensus_resources/EFMs/glc_uptake_kmax12.pkl')
+
 	return decoded
 
 

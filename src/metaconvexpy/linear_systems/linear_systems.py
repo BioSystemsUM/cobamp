@@ -31,8 +31,8 @@ class IrreversibleLinearSystem(object):
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
-		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
-																										c in consumed]
+		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', v) for p,v in produced] + [(c, 'L', -v) for
+																										c,v in consumed]
 
 	def get_dvar_mapping(self):
 		return self.__dvar_mapping
