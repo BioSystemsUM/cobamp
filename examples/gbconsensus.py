@@ -1,6 +1,8 @@
 import numpy as np
 import os
 import pickle
+import pandas as pd
+import math
 
 from itertools import product
 from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
@@ -10,7 +12,7 @@ from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
 from metaconvexpy.utilities.file_utils import pickle_object, read_pickle
 import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
 
-os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy')
+#os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy')
 
 def decode_mcs(solutions):
 	return list(chain(
@@ -70,12 +72,27 @@ def optimize_model():
 	sol = lso.optimize([('R_biomass_reaction',1)], False)
 	sol.var_values()['R_biomass_reaction']
 
+def find_net_conversion(S, efm, met_names, tol=1e-9):
+	digits = abs(round(math.log(tol, 10)))
+	metab_balance_dict = {}
+	for rx, v in efm.items():
+		metabs = np.nonzero(S[:, rx])[0]
+		for metab in metabs:
+			turnover = v * S[metab, rx]
+			if metab not in metab_balance_dict.keys():
+				metab_balance_dict[metab] = turnover
+			else:
+				metab_balance_dict[metab] += turnover
+
+	final_balance_dict = {met_names[k]: round(v, digits) for k, v in metab_balance_dict.items() if abs(v) > tol}
+	return final_balance_dict
+
 def enumerate_efms():
 	meta_id_from_drain = lambda x: np.nonzero(S[:,list(x)])[0]
 
 	configuration = kp.KShortestProperties()
 	configuration[kp.K_SHORTEST_MPROPERTY_METHOD] = kp.K_SHORTEST_METHOD_POPULATE
-	configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 10
+	configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] = 15
 
 	drains = set([s for s in singles if "R_EX" in s])
 
@@ -105,14 +122,35 @@ def enumerate_efms():
 
 	produced_meta = [(met_names_int.index('biomass_c'), 1)]
 	#consumed_meta = [met_names_int.index('M_glc__D_e')]
-	irreversible_system = IrreversibleLinearSystem(S_int_final, irrev_int, nc_meta, [], produced_meta)
+	irreversible_system = IrreversibleLinearSystem(S_int_final, irrev_int, nc_meta, [consumed_meta[7]], [])
 	algorithm = KShortestEFMAlgorithm(configuration)
 
 	efms = algorithm.enumerate(irreversible_system)
-	decoded_efms = [{rx_names_int[i]:v for i,v in efm.attribute_value(efm.SIGNED_INDICATOR_SUM).items() if v != 0} for efm in efms]
-	decoded = [[rx_names_int[i] for i in efmi.get_active_indicator_varids()] for efmi in efms]
+	decoded_efms = [{rx_names_int[i]:v for i,v in efm.attribute_value(efm.SIGNED_VALUE_MAP).items() if v != 0} for efm in efms]
+	decoded_efms_index = [{i:v for i,v in efm.attribute_value(efm.SIGNED_VALUE_MAP).items() if v != 0} for efm in efms]
+	decoded = [' | '.join([rx_names_int[i] for i in efmi.get_active_indicator_varids()]) for efmi in efms]
+	net_conversions = [find_net_conversion(S_int_final, efm, met_names_int) for efm in decoded_efms_index]
+
+
+	efm_set_name = 'efms_glc_uptake_'
+	save_folder = 'examples/GBconsensus_resources/EFMs/'
+
+	pickle_object(decoded_efms, save_folder+efm_set_name+"decoded.pkl")
+	pickle_object(decoded_efms_index, save_folder+efm_set_name+"decoded_index.pkl")
+	pickle_object(net_conversions, save_folder+efm_set_name+"net_conversions.pkl")
+
+	#with open('examples/GBconsensus_resources/EFMs/efms_no_media.pkl','w') as f:
+	#	f.write('\n'.join([','.join(d) for d in decoded]))
+	#pickle_object(decoded_efms_index, 'examples/GBconsensus_resources/EFMs/efms_no_media_index.pkl')
 #	pickle_object(decoded_efms, 'examples/GBconsensus_resources/EFMs/glc_uptake_kmax12.pkl')
 
+	with open('examples/GBconsensus_resources/EFMs/efms_glc_uptake.pkl', 'r') as f:
+		decoded_efms = f.read().replace(',',';').split('\n')
+
+	df_dict = {'EFM':[' | '.join(efm) for efm in decoded_efms], 'Conversion':[' | '.join(sorted([str(v)+" "+r for r,v in find_net_conversion(S_int_final, efm, met_names_int).items()])) for efm in decoded_efms_index]}
+
+	df = pd.DataFrame.from_dict(df_dict)
+	df.to_csv(save_folder+efm_set_name+"dataframe.csv")
 	return decoded
 
 

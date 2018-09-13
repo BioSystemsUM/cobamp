@@ -17,6 +17,5 @@ fva_blocked = variability.blocked_reactions(model, constraints=media)
 cmodel = generate_reduced_model(model, to_exclude=fva_blocked, to_keep_single=drains)
 
 
-
 wt_orig = simulation.FBA(model, objective={biomass_rx:1}, constraints=media)
 wt_comp = simulation.FBA(cmodel, objective={biomass_rx:1}, constraints=media)
