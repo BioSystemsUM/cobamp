@@ -6,13 +6,13 @@ import json
 
 
 efms = read_pickle('/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/examples/GBconsensus_resources/EFMs/efms_glc_uptake_decoded.pkl')
-efms_orig = [dict(list(chain(*[[(k_token[2:],v) for k_token in k.split('_and_')] for k,v in efm.items()]))) for efm in efms]
+#efms_orig = [dict(list(chain(*[[(k_token[2:],v) for k_token in k.split('_and_')] for k,v in efm.items()]))) for efm in efms]
+efms_orig = efms[:100]
 
-
-b = Builder(map_name="RECON1.Carbohydrate metabolism", reaction_data=efms_orig[20125])
-b.save_html('/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/examples/GBconsensus_resources/EFMs/sample_efm.html')
-b.display_in_browser()
-b.reaction_data
+#b = Builder(map_name="RECON1.Carbohydrate metabolism", reaction_data=efms_orig[20125])
+#b.save_html('/home/skapur/MEOCloud/Projectos/MCSEnumeratorPython/examples/GBconsensus_resources/EFMs/sample_efm.html')
+#b.display_in_browser()
+#b.reaction_data
 
 
 class EFMTree(object):
@@ -28,7 +28,7 @@ class EFMTree(object):
 		self.children.append(node)
 
 	def is_leaf(self):
-		return self.children == set()
+		return self.children == []
 
 	def __eq__(self, other):
 		return self.value == other
@@ -58,9 +58,21 @@ def fill_tree(tree, sets):
 			if len(remaining_sets) > 0:
 				fill_tree(tree, remaining_sets)
 
+def compress_linear_paths(tree):
+	if tree.is_leaf():
+		pass
+	else:
+		if len(tree.children) == 1:
+			if type(tree.value) != list:
+				tree.value = [tree.value]
+			tree.value.append(tree.children[0].value)
+			tree.children = tree.children[0].children
+			compress_linear_paths(tree)
+		for child in tree.children:
+			compress_linear_paths(child)
 
 fill_tree(root, efm_sets)
-
+compress_linear_paths(root)
 
 buffer = []
 def pretty_print_tree(tree, buffer, overhead, final_node = True):
@@ -75,3 +87,37 @@ pretty_print_tree(root, buffer, "", True)
 
 with open('test_tree.txt', 'w') as f:
 	f.write('\n'.join(buffer))
+
+import networkx as nx
+
+node_dict = {}
+G = nx.Graph()
+
+
+def populate_nx_graph(tree, G, previous=None):
+	node_value_key = ' and '.join(tree.value) if type(tree.value) == list else str(tree.value)
+	node_value = node_value_key
+	if node_value_key not in node_dict.keys():
+		node_dict[node_value_key] = 1
+		node_value = node_value + "_" + '0'
+	else:
+		node_value = node_value + "_" + str(node_dict[node_value])
+		node_dict[node_value_key] += 1
+
+	if previous != None:
+		previous_node, previous_key = previous
+		G.add_edge(previous_node, node_value)
+	if not tree.is_leaf():
+		for child in tree.children:
+			populate_nx_graph(child, G, previous=(node_value,node_value_key))
+
+
+populate_nx_graph(root, G)
+drawing = nx.draw(G)
+
+tree_as_list = []
+
+def populate_list_from_tree(tree):
+	pass
+
+import matplotlib.pyplot as plt
