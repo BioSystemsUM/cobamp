@@ -11,6 +11,29 @@ EPSILON = 2 ** -52
 PRECISION = 1e-10
 
 def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
+	'''
+	Reduces a stoichiometric matrix using nullspace analysis by identifying linearly dependent (enzyme) subsets.
+	These reactions are then compressed.
+	Parameters
+	----------
+	S: Stoichiometric matrix as an ndarray.
+	irrev: A boolean array with size equal to the number of columns in the S matrix.
+	to_remove: A list of indices specifying columns of the S matrix to remove before the compression (usually blocked
+	reactions)
+	to_keep_single: A list of indices specifying columns of the S matrix not to compress.
+
+	Returns	rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
+	rd : compressed stoichiometric matrix -> numpy.array
+	sub : subset matrix, n-subsets by n-reactions -> numpy.array
+	irrev_reduced : subset reversibilities -> numpy.array of type bool
+	rdind : metabolite indices -> numpy.array of type int
+	irrv_subsets : same as sub, but list if empty
+	kept_reactions : indexes for reactions used in the network compression
+	kernel : numpy.array with the right nullspace of S
+	correlation_matrix : numpy.array with reaction correlation matrix
+	-------
+
+	'''
 	m, n = S.shape
 
 	keep_single = array([False] * n)
@@ -50,6 +73,17 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 
 
 def subset_candidates(kernel, tol=None):
+	'''
+	Computes a matrix of subset candidates from the nullspace of the S matrix
+	Parameters
+	----------
+	kernel: Nullspace of the S matrix
+	tol: Tolerance to 0.
+
+	Returns a 2D triangular ndarray
+	-------
+
+	'''
 	tol = kernel.shape[0] * EPSILON if tol is None else tol
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
@@ -62,6 +96,23 @@ def subset_candidates(kernel, tol=None):
 
 
 def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
+	'''
+
+	Parameters
+	----------
+	S: Stoichiometric matrix as ndarray
+	kernel: The nullspace of S
+	irrev: List of booleans representing irreversible reactions (when True)
+	cr: The subset candidate matrix, computed using <subset_candidates>
+	keepSingle: List of reaction indices that will not be compressed.
+
+	Returns sub, irrev_sub, irrev_violating_subsets
+	sub : subset matrix, n-subsets by n-reactions -> numpy.array
+	irrev_sub : subset reversibilities -> numpy.array of type bool
+	irrev_violating_subsets : same as sub, but list if empty. Contains subsets discarded due to irreversibility faults
+	-------
+
+	'''
 	m, n = S.shape
 	if keepSingle is None:
 		keepSingle = array([])
@@ -104,6 +155,20 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 
 
 def reduce(S, sub, irrev_reduced=None):
+	'''
+	Reduces a stoichiometric matrix according to the subset information present in the sub matrix and irrev_reduced.
+	Parameters
+	----------
+	S: Stoichiometric matrix
+	sub: Subset matrix as computed by <subset_correlation_matrix>
+	irrev_reduced: Irreversibility vector regarding the subsets.
+
+	Returns reduced, reduced_indexes, irrev_reduced
+
+	-------
+
+	'''
+
 	reduced = dot(S,sub.T)
 	reduced[abs(reduced) < PRECISION] = 0
 	reduced_indexes = unique(nonzero(reduced)[0])
@@ -113,14 +178,6 @@ def reduce(S, sub, irrev_reduced=None):
 	if rdn == 0 or rdm == 0:
 		reduced = zeros(1, rdn)
 
-	# rd - compressed stoichiometric matrix -> numpy.array
-	# sub - subset matrix, n-subsets by n-reactions -> numpy.array
-	# irrev_reduced - subset reversibilities -> numpy.array of type bool
-	# rdind - metabolite indices -> numpy.array of type int
-	# irrev_violating_subsets -> same as sub, but list if empty
-	# kept_reactions -> indexes for reactions used in the network compression
-	# kernel -> numpy.array with the right nullspace of S
-	# correlation_matrix -> numpy.array with reaction correlation matrix
 
 	# if irrev_reduced is not None:
 	# 	ind = unique(nonzero(reduced)[1])
