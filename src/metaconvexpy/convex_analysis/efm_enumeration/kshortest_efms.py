@@ -16,11 +16,22 @@ def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 
 
 class KShortestEnumerator(object):
+	'''
+	Class implementing the k-shortest elementary flux mode algorithm. This is a lower level class implemented using the
+	Cplex solver as base. Maybe in the future, this will be readapted for the optlang wrapper, if performance issues
+	do not arise.
+	'''
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 	SIZE_CONSTRAINT_NAME = 'KShortestSizeConstraint'
 
 	def __init__(self, linear_system):
+		'''
+
+		Parameters
+		----------
+		linear_system: A <KShortestCompatibleLinearSystem>/<LinearSystem> subclass
+		'''
 
 		# Get linear system constraints and variables
 		linear_system.build_problem()
@@ -52,6 +63,11 @@ class KShortestEnumerator(object):
 		self.__current_size = 1
 
 	def __set_model_parameters(self):
+		'''
+		Internal method to set model parameters. This is based on the original MATLAB code by Von Kamp et al.
+		##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
+		-------
+		'''
 		self.model.parameters.mip.tolerances.integrality.set(1e-9)
 		self.model.parameters.workmem.set(4096)
 		self.model.parameters.clocktype.set(1)
@@ -67,6 +83,17 @@ class KShortestEnumerator(object):
 		self.model.parameters.mip.pool.replace.set(2)
 
 	def exclude_solutions(self, sols):
+		'''
+		Excludes the supplied solutions from the search by adding them as integer cuts.
+		Use at your own discretion as this will yield different EFMs than would be intended.
+		This can also be used to exclude certain reactions from the search by supplying solutions with one reaction.
+
+		Parameters
+		----------
+		sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+		-------
+
+		'''
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
 				self.__add_integer_cut(sol.var_values())
@@ -79,6 +106,14 @@ class KShortestEnumerator(object):
 				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
 
 	def force_solutions(self, sols):
+		'''
+		Forces a set of reactions encoded as solutions to appear in the subsequent elementary modes to be calculated.
+		Parameters
+		----------
+		sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+		-------
+
+		'''
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
 				self.__add_integer_cut(sol.var_values(), force_sol=True)
@@ -92,10 +127,12 @@ class KShortestEnumerator(object):
 
 
 	def __add_kshortest_indicators(self):
-		"""
+		'''
+		Adds indicator variable to a copy of the supplied linear problem.
+		This uses the __dvars map to obtain a list of all variables and assigns an indicator to them.
+		-------
 
-		:return:
-		"""
+		'''
 		btype = self.model.variables.type.binary
 		ivars = [[(subvar + "_ind", 0, 1, btype) for subvar in var] if isinstance(var, tuple) else (
 			var + "_ind", 0, 1, btype) for var in self.__dvars]
@@ -139,6 +176,12 @@ class KShortestEnumerator(object):
 												 name=ind_names[1])
 
 	def __add_exclusivity_constraints(self):
+		'''
+		Adds constraints so that fluxes with two assigned dvars will only have one of the indicators active (flux must
+		not be carried through both senses at once to avoid cancellation)
+		-------
+
+		'''
 		lin_exprs = [([self.__indicator_map[var] for var in vlist], [1] * len(vlist)) for vlist in self.__dvars if
 					 isinstance(vlist, tuple)]
 		nc = len(lin_exprs)
@@ -146,18 +189,40 @@ class KShortestEnumerator(object):
 										  names=['E' + str(i) for i in range(nc)])
 
 	def __set_objective(self):
+		'''
+		Defines the objective for the optimization problem (Minimize the sum of all indicator variables)
+		-------
+
+		'''
 		self.model.objective.set_sense(self.model.objective.sense.minimize)
 		self.model.objective.set_linear(self.__objective_expression)
 
-	def __get_ivar_sum_vector(self, value_map):
-		return dict([[(svar.name for svar in var),
-					  sum(value_map[svar.name] for svar in var) if isinstance(var, list) else var.name,
-					  value_map[var.name]] for var in self.__ivars])
+	# def __get_ivar_sum_vector(self, value_map):
+	# 	return dict([[(svar.name for svar in var),
+	# 				  sum(value_map[svar.name] for svar in var) if isinstance(var, list) else var.name,
+	# 				  value_map[var.name]] for var in self.__ivars])
 
 	def __integer_cut_count(self):
+		'''
+
+		Returns the amount of integer cuts added to the model
+		-------
+
+		'''
+
 		return len(self.__integer_cuts)
 
 	def __add_integer_cut(self, value_map, force_sol=False):
+		'''
+		Adds an integer cut based on a map of flux values (from a solution).
+
+		Parameters
+		----------
+		value_map: A dictionary mapping solver variables with values
+		force_sol: Boolean value indicating whether the solution is to be excluded or forced.
+		-------
+
+		'''
 		lin_expr_vars = []
 		counter = 0
 		for varlist in self.__dvars:
@@ -175,6 +240,16 @@ class KShortestEnumerator(object):
 										  rhs=[counter - 1] if not force_sol else [counter])
 
 	def set_size_constraint(self, start_at, equal=False):
+		'''
+		Defines the size constraint for the K-shortest algorithm.
+
+		Parameters
+		----------
+		start_at: Size from which the solutions will be obtained.
+		equal: Boolean indicating whether the solutions will match the size or can be higher than it.
+		-------
+
+		'''
 		# TODO: Find a way to add a single constraint with two bounds.
 		if self.SIZE_CONSTRAINT_NAME in self.model.linear_constraints.get_names():
 			self.model.linear_constraints.set_rhs(self.SIZE_CONSTRAINT_NAME, start_at)
@@ -186,11 +261,21 @@ class KShortestEnumerator(object):
 			self.model.linear_constraints.add(lin_expr=lin_expr, names=names, senses=senses, rhs=[start_at])
 
 	def get_model(self):
+		'''
+
+		Returns the solver instance.
+		-------
+
+		'''
 		return self.model
 
 	def __optimize(self):
 		'''
-		:return: tuple (KShortestSolution sol)
+
+		Optimizes the model and returns a single KShortestSolution instance for the model, adding an exclusion integer
+		cut for it.
+		-------
+
 		'''
 		try:
 			self.model.solve()
@@ -203,7 +288,13 @@ class KShortestEnumerator(object):
 			print(e)
 
 	def __populate(self):
-		self.model.write('indicator_efmmodel.lp')
+		'''
+		Finds all feasible MIP solutions for the problem and returns them as a list of KShortestSolution instances.
+		Returns
+		-------
+
+		'''
+		#self.model.write('indicator_efmmodel.lp') ## For debug purposes
 		sols = []
 		self.model.populate_solution_pool()
 		n_sols = self.model.solution.pool.get_num()
@@ -216,6 +307,13 @@ class KShortestEnumerator(object):
 		return sols
 
 	def solution_iterator(self):
+		'''
+		Generates a solution iterator. Each next call will yield a single solution. This method should be used to allow
+		flexibility when enumerating EFMs for large problems. Since it uses the optimize routine, this may be slower in
+		the longer term.
+		-------
+
+		'''
 		self.reset_enumerator_state()
 		self.set_size_constraint(1)
 		failed = False
@@ -228,6 +326,17 @@ class KShortestEnumerator(object):
 				failed = True
 
 	def population_iterator(self, max_size):
+		'''
+		Generates a solution iterator that yields a list of solutions. Each next call returns all EFMs for a single size
+		starting from 1 up to max_size.
+		Parameters
+		----------
+		max_size: The maximum solution size.
+
+		Returns a list of KShortestSolution instances.
+		-------
+
+		'''
 		self.reset_enumerator_state()
 		for i in range(1, max_size + 1):
 			print('Starting size',str(i))
@@ -240,10 +349,21 @@ class KShortestEnumerator(object):
 				raise e
 
 	def populate_current_size(self):
+		'''
+		Returns the solutions for the current size. Use the population_iterator method instead.
+		-------
+
+		'''
 		sols = self.__populate()
 		return sols
 
 	def get_single_solution(self):
+		'''
+
+		Returns a single solution. Use the solution_iterator method instead.
+		-------
+
+		'''
 		sol = self.__optimize()
 		if sol is None:
 			raise Exception('Solution is empty')
@@ -251,15 +371,34 @@ class KShortestEnumerator(object):
 		return sol
 
 	def reset_enumerator_state(self):
+		'''
+		Resets all integer cuts and size constraints.
+		-------
+
+		'''
 		self.model.linear_constraints.delete(self.__integer_cuts)
 		self.set_size_constraint(1)
 
 
 class KShortestSolution(Solution):
+	'''
+	A Solution subclass that also contains attributes suitable for elementary flux modes such as non-cancellation sums
+	of split reactions and reaction activity.
+	'''
 	SIGNED_INDICATOR_SUM = 'signed_indicator_map'
 	SIGNED_VALUE_MAP = 'signed_value_map'
 
 	def __init__(self, value_map, status, indicator_map, dvar_mapping, **kwargs):
+		'''
+
+		Parameters
+		----------
+		value_map: A dictionary mapping variable names with values
+		status: See <Solution>
+		indicator_map: A dictionary mapping indicators with
+		dvar_mapping: A mapping between reaction indices and solver variables (Tuple[str] or str)
+		kwargs: See <Solution>
+		'''
 		signed_value_map = {i: value_map[varlist[0]] - value_map[varlist[1]] if isinstance(varlist, tuple) else value_map[varlist] for
 			i, varlist in dvar_mapping.items()}
 		signed_indicator_map = {i: value_map[indicator_map[varlist[0]]] - value_map[indicator_map[varlist[1]]] if isinstance(varlist, tuple) else value_map[indicator_map[varlist]] for
@@ -269,16 +408,46 @@ class KShortestSolution(Solution):
 		self.set_attribute(self.SIGNED_INDICATOR_SUM, signed_indicator_map)
 
 	def get_active_indicator_varids(self):
+		'''
+
+		Returns the indices of active indicator variables (maps with variables on the original stoichiometric matrix)
+		-------
+
+		'''
 		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if v != 0]
 
 
 class KShortestEFMAlgorithm(object):
+	'''
+	A higher level class to use the K-Shortest algorithm. This encompasses the standard routine for enumeration of EFMs.
+	Requires a configuration defining an algorithm type. See <KShortestProperties>
+	'''
 	def  __init__(self, configuration, verbose=True):
+		'''
+
+		Parameters
+		----------
+		configuration: A KShortestProperties instance
+		verbose: Boolean indicating whether to print useful messages while enumerating.
+		'''
 		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
 		self.configuration = configuration
 		self.verbose = verbose
 
 	def __prepare(self, linear_system, excluded_sets, forced_sets):
+		## TODO: Change this method's name
+		'''
+		Enumerates the elementary modes for a linear system
+		Parameters
+		----------
+		linear_system: A KShortestCompatibleLinearSystem instance
+		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+		Returns a list with solutions encoding elementary flux modes.
+		-------
+
+		'''
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
 		ksh = KShortestEnumerator(linear_system)
 		if excluded_sets is not None:
@@ -308,5 +477,17 @@ class KShortestEFMAlgorithm(object):
 			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
 
 	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
+		'''
+		Enumerates the elementary modes for a linear system
+		Parameters
+		----------
+		linear_system: A KShortestCompatibleLinearSystem instance
+		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+		Returns a list with solutions encoding elementary flux modes.
+		-------
+
+		'''
 		return self.__prepare(linear_system, excluded_sets, forced_sets)
 

@@ -16,5 +16,12 @@ kshortest_optional_properties = {
 }
 
 class KShortestProperties(PropertyDictionary):
+	'''
+	Class defining a configuration for the K-shortest algorithm.
+	The following fields are mandatory:
+	K_SHORTEST_MPROPERTY_METHOD:
+		- K_SHORTEST_METHOD_ITERATE : Iterative enumeration (one EFM at a time)
+		- K_SHORTEST_METHOD_POPULATE : Enumeration by size (EFMs of a certain size at a time)
+	'''
 	def __init__(self):
 		super().__init__(kshortest_mandatory_properties, kshortest_optional_properties)
