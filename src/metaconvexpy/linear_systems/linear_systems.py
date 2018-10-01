@@ -6,6 +6,14 @@ import numpy as np
 from metaconvexpy.linear_systems.optimization import CPLEX_INFINITY
 
 class LinearSystem():
+	'''
+	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers
+	such as CPLEX and passed onto other algorithms supplied with the package.
+
+	Must instantiate the following variables:
+	S: System of linear equations represented as a n-by-m ndarray, preferrably with dtype as float or int
+	__model: Linear model as an instance of the solver.
+	'''
 	__metaclass__ = abc.ABCMeta
 	__model = None
 	S = None
@@ -186,7 +194,7 @@ class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 																											x not in self.irrev]
 
 		self.__dvar_mapping = dict(zip(var_index_sequence, self.__dvars))
-		self.__model.write('efmmodel.lp')
+		#self.__model.write('efmmodel.lp') ## For debugging purposes
 		return S_full
 
 
@@ -218,7 +226,6 @@ class DualLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 	def build_problem(self):
 		# Defining useful length constants
 		nM, nR = self.S.shape
-		# nRi, nRr = len(irrev), nR - len(irrev)
 		veclens = [("u", nM), ("vp", nR), ("vn", nR), ("w", self.T.shape[0])]
 		I = np.identity(nR)
 		Sxi, Sxr = self.S[:, self.irrev].T, np.delete(self.S, self.irrev, axis=1).T
