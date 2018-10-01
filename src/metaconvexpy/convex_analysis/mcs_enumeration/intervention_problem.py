@@ -7,10 +7,16 @@ from itertools import chain
 import abc
 
 class InterventionProblem(object):
+	'''
+	Class containing functions useful when defining an problem using the intervention problem framework.
+	References:
+		[1] Hädicke, O., & Klamt, S. (2011). Computing complex metabolic intervention strategies using constrained
+		minimal cut sets. Metabolic engineering, 13(2), 204-213.
+	'''
 	def __init__(self, S):
 		'''
 		Object that generates target matrices for a given set of constraints admissible for an intervention problem
-		Args:
+		Parameters:
 			S: The stoichiometric matrix used to generate the enumeration problem
 		'''
 		self.__num_rx = S.shape[1]
@@ -18,7 +24,7 @@ class InterventionProblem(object):
 	def generate_target_matrix(self, constraints):
 		'''
 
-		Args:
+		Parameters:
 			constraints: An iterable containing valid constraints of
 
 		Returns:
@@ -32,6 +38,9 @@ class InterventionProblem(object):
 		return T,b
 
 class AbstractConstraint(object):
+	'''
+	Object representing a constraint to be used within the intervention problem structures provided in this package.
+	'''
 	__metaclass__ = abc.ABCMeta
 
 	@abc.abstractmethod
@@ -39,7 +48,7 @@ class AbstractConstraint(object):
 		'''
 		Generates a matrix T 1-by-n or 2-by-n and a list b of length 1 or 2 to be used for target flux vector
 		definition within the intervention problem framework
-		Args:
+		Parameters:
 			n: Number of columns to include in the target matrix
 
 		Returns: Tuple with Iterable[ndarray] and list of float/int
@@ -48,7 +57,18 @@ class AbstractConstraint(object):
 		return
 
 class DefaultFluxbound(AbstractConstraint):
+	'''
+	Class representing bounds for a single flux with a lower and an upper bound.
+	'''
 	def __init__(self, lb, ub, r_index):
+		'''
+		Parameters
+		----------
+		lb: Numerical lower bound
+		ub: Numerical upper bound
+		r_index: Reaction index on the stoichiometric matrix to which this bound belongs
+		'''
+
 		self.__r_index = r_index
 		self.__lb = lb
 		self.__ub = ub
@@ -70,7 +90,22 @@ class DefaultFluxbound(AbstractConstraint):
 		return concatenate(Tx, axis=0), b
 
 class DefaultYieldbound(AbstractConstraint):
+	'''
+	Class representing a constraint on a yield between two fluxes. Formally, this constraint can be represented as
+	n - yd < b, assuming n and d as the numerator and denominator fluxes (yield(N,D) = N/D), y as the maximum yield and
+	b as a deviation value.
+	'''
 	def __init__(self, lb, ub, numerator_index, denominator_index, deviation=0):
+		'''
+
+		Parameters
+		----------
+		lb: numerical lower bound
+		ub: numerical upper bound
+		numerator_index: reaction index for the flux in the numerator
+		denominator_index: reaction index for the flux in the denominator
+		deviation: numerical deviation for the target space
+		'''
 		self.__lb = lb
 		self.__ub = ub
 		self.__numerator_index = numerator_index
