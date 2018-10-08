@@ -1,6 +1,5 @@
 from itertools import chain
 from collections import Counter
-#import networkx as nx
 
 class Tree(object):
 	'''
@@ -296,24 +295,24 @@ def merge_duplicate_nodes(tree):
 	__merge_duplicate_nodes(tree)
 
 
-# def populate_nx_graph(tree, G, previous=None, name_separator='\n', unique_nodes=True, node_dict=None):
-# 	if node_dict is None:
-# 		node_dict = {}
-# 	if unique_nodes:
-# 		node_value_key = name_separator.join(tree.value) if type(tree.value) == list else str(tree.value)
-# 		node_value = node_value_key
-# 		if node_value_key not in node_dict.keys():
-# 			node_dict[node_value_key] = 1
-# 			node_value = node_value + "_" + '0'
-# 		else:
-# 			node_value = node_value + "_" + str(node_dict[node_value])
-# 			node_dict[node_value_key] += 1
-# 	else:
-# 		node_value = tree.value
-# 		node_value_key = tree.value
-# 	if previous != None:
-# 		previous_node, previous_key = previous
-# 		G.add_edge(previous_node, node_value)
-# 	if not tree.is_leaf():
-# 		for child in tree.children:
-# 			populate_nx_graph(child, G, previous=(node_value,node_value_key), name_separator=name_separator, unique_nodes=unique_nodes, node_dict=node_dict)
+def populate_nx_graph(tree, G, previous=None, name_separator='\n', unique_nodes=True, node_dict=None):
+	if node_dict is None:
+		node_dict = {}
+	if unique_nodes:
+		node_value_key = name_separator.join(tree.value) if type(tree.value) == list else str(tree.value)
+		node_value = node_value_key
+		if node_value_key not in node_dict.keys():
+			node_dict[node_value_key] = 1
+			node_value = node_value + "_" + '0'
+		else:
+			node_value = node_value + "_" + str(node_dict[node_value])
+			node_dict[node_value_key] += 1
+	else:
+		node_value = tree.value
+		node_value_key = tree.value
+	if previous != None:
+		previous_node, previous_key = previous
+		G.add_edge(previous_node, node_value)
+	if not tree.is_leaf():
+		for child in tree.children:
+			populate_nx_graph(child, G, previous=(node_value,node_value_key), name_separator=name_separator, unique_nodes=unique_nodes, node_dict=node_dict)
