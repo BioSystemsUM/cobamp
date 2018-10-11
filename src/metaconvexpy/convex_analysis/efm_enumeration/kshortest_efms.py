@@ -315,7 +315,7 @@ class KShortestEnumerator(object):
 			self.__add_integer_cut(sol.var_values())
 		return sols
 
-	def solution_iterator(self):
+	def solution_iterator(self, maximum_amount=2**31-1):
 		'''
 		Generates a solution iterator. Each next call will yield a single solution. This method should be used to allow
 		flexibility when enumerating EFMs for large problems. Since it uses the optimize routine, this may be slower in
@@ -323,12 +323,14 @@ class KShortestEnumerator(object):
 		-------
 
 		'''
+		i = 0
 		self.reset_enumerator_state()
 		self.set_size_constraint(1)
 		failed = False
-		while not failed:
+		while not failed and i < maximum_amount:
 			try:
 				result = self.get_single_solution()
+				i += 1
 				yield result
 			except Exception as e:
 				print('Enumeration ended:', e)
@@ -458,32 +460,11 @@ class KShortestEFMAlgorithm(object):
 
 		'''
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
-		ksh = KShortestEnumerator(linear_system)
+		self.ksh = KShortestEnumerator(linear_system)
 		if excluded_sets is not None:
-			ksh.exclude_solutions(excluded_sets)
+			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:
-			ksh.force_solutions(forced_sets)
-		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
-			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
-			if limit is None:
-				limit = 1
-				warnings.warn(Warning('You have not defined a maximum solution size for the enumeration process. Defaulting to 1.'))
-			solution_list = []
-			for solution in ksh.solution_iterator():
-				if len(solution_list) <= limit:
-					solution_list.append(solution)
-				else:
-					break
-			return solution_list
-
-		elif self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_POPULATE:
-			if self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE] is None:
-				warnings.warn(Warning('You have not defined a maximum size for the enumeration process. Defaulting to size 1.'))
-				return list(chain(*ksh.population_iterator(1)))
-			else:
-				return list(chain(*ksh.population_iterator(self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE])))
-		else:
-			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
+			self.ksh.force_solutions(forced_sets)
 
 	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
 		'''
@@ -498,5 +479,35 @@ class KShortestEFMAlgorithm(object):
 		-------
 
 		'''
-		return self.__prepare(linear_system, excluded_sets, forced_sets)
+		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets)
+		return list(enumerator)
 
+
+	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
+		"""
+		Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.
+		Args:
+		linear_system: A KShortestCompatibleLinearSystem instance
+		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+		Returns a generator.
+
+		"""
+		self.__prepare(linear_system, excluded_sets, forced_sets)
+
+		if self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_ITERATE:
+			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
+			if limit is None:
+				limit = 1
+				warnings.warn(Warning('You have not defined a maximum solution size for the enumeration process. Defaulting to 1.'))
+			return ksh.solution_iterator(limit)
+
+		elif self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_POPULATE:
+			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]
+			if limit is None:
+				warnings.warn(Warning('You have not defined a maximum size for the enumeration process. Defaulting to size 1.'))
+				limit = 1
+			return ksh.population_iterator(limit)
+		else:
+			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
