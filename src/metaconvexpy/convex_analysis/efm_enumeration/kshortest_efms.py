@@ -175,6 +175,15 @@ class KShortestEnumerator(object):
 			self.model.indicator_constraints.add(lin_expr=ind_lin[1], sense='G', rhs=0, indvar=d, complemented=0,
 												 name=ind_names[1])
 
+	def __add_efp_auxiliary_indicators(self):
+		'''
+
+		Returns:
+
+		'''
+		pass
+
+
 	def __add_exclusivity_constraints(self):
 		'''
 		Adds constraints so that fluxes with two assigned dvars will only have one of the indicators active (flux must
