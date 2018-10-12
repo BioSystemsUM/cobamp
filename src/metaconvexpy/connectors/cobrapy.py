@@ -81,10 +81,14 @@ class KShortestEnumeratorWrapper(object):
 		return
 
 	def get_enumerator(self):
-		return self.__algo.get_enumerator(
+		enumerator = self.__algo.get_enumerator(
 			linear_system=self.get_linear_system(),
 			forced_sets=self.__get_forced_solutions(),
 			excluded_sets=self.__get_excluded_solutions())
+
+		for solarg in enumerator:
+			yield self.model_reader.decode_k_shortest_solution(solarg)
+
 
 
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
@@ -162,6 +166,16 @@ class COBRAModelObjectReader(object):
 		else:
 			constraint = tuple([self.reaction_id_to_index(tup[0])] + list(tup[1:]))
 		return constraint
+
+	def decode_k_shortest_solution(self, solarg):
+		if isinstance(solarg, list):
+			return [self.__decode_k_shortest_solution(sol) for sol in solarg]
+		else:
+			return self.__decode_k_shortest_solution(solarg)
+
+	def __decode_k_shortest_solution(self, sol):
+		return {self.__r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if v != 0}
+
 
 model_readers = {
 	'cobra.core.model': COBRAModelObjectReader

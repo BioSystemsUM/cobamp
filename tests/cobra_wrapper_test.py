@@ -18,9 +18,8 @@ class COBRAWrapperTest(unittest.TestCase):
 
 		algorithm = connector.KShortestMCSEnumeratorWrapper(model, flux_space, yield_space)
 		enumerator = algorithm.get_enumerator()
-		solutions = next(enumerator)
-		sol = solutions[0]
-		sol.attribute_dict('signed_indicator_map')
+		size1 = next(enumerator)
+
 
 if __name__ == '__main__':
 	COBRAWrapperTest().setUp()
