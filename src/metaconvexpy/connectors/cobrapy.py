@@ -4,6 +4,7 @@ from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
 
 import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
 
+import abc
 import numpy as np
 
 
@@ -116,12 +117,13 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		T, b = self.__materialize_intv_problem()
 		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b)
 
+class AbstractObjectReader(object):
+	__metaclass__ = abc.ABCMeta
 
-class COBRAModelObjectReader(object):
 	def __init__(self, model):
-		self.__model = model
-		self.__r_ids, self.__m_ids = self.get_metabolite_and_reactions_ids()
-		self.__rx_instances = [model.reactions.get_by_id(rx) for rx in self.__r_ids]
+		self.model = model
+		self.r_ids, self.m_ids = self.get_metabolite_and_reactions_ids()
+		self.rx_instances = [model.reactions.get_by_id(rx) for rx in self.r_ids]
 
 		self.S = self.get_stoichiometric_matrix()
 		self.irrev_bool = self.get_irreversibilities(False)
@@ -129,36 +131,23 @@ class COBRAModelObjectReader(object):
 		self.lb, self.ub = tuple(zip(*self.get_model_bounds(False)))
 		self.bounds_dict = self.get_model_bounds(True)
 
-
+	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
-		S = np.zeros((len(self.__m_ids), len(self.__r_ids)))
-		for i,r_id in enumerate(self.__r_ids):
-			for metab, coef in self.__model.reactions.get_by_id(r_id).metabolites.items():
-				S[self.__m_ids.index(metab.id), i] = coef
+		return
 
-		return S
-
+	@abc.abstractmethod
 	def get_model_bounds(self, as_dict):
-		bounds = [r.bounds for r in self.__rx_instances]
-		if as_dict:
-			return dict(zip(self.__r_ids, bounds))
-		else:
-			return tuple(bounds)
+		return
 
+	@abc.abstractmethod
 	def get_irreversibilities(self, as_index):
-		irrev = [not r.reversibility for r in self.__rx_instances]
-		if as_index:
-			irrev = list(np.where(irrev)[0])
-		return irrev
-
-	def get_metabolite_and_reactions_ids(self):
-		return tuple([[x.id for x in lst] for lst in (self.__model.reactions, self.__model.metabolites)])
+		return
 
 	def reaction_id_to_index(self, id):
-		return self.__r_ids.index(id)
+		return self.r_ids.index(id)
 
 	def metabolite_id_to_index(self, id):
-		return self.__m_ids.index(id)
+		return self.m_ids.index(id)
 
 	def convert_constraint_ids(self, tup, yield_constraint):
 		if yield_constraint:
@@ -174,7 +163,36 @@ class COBRAModelObjectReader(object):
 			return self.__decode_k_shortest_solution(solarg)
 
 	def __decode_k_shortest_solution(self, sol):
-		return {self.__r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if v != 0}
+		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if v != 0}
+
+
+class COBRAModelObjectReader(AbstractObjectReader):
+
+	def get_stoichiometric_matrix(self):
+		S = np.zeros((len(self.m_ids), len(self.r_ids)))
+		for i,r_id in enumerate(self.r_ids):
+			for metab, coef in self.model.reactions.get_by_id(r_id).metabolites.items():
+				S[self.m_ids.index(metab.id), i] = coef
+
+		return S
+
+	def get_model_bounds(self, as_dict):
+		bounds = [r.bounds for r in self.rx_instances]
+		if as_dict:
+			return dict(zip(self.r_ids, bounds))
+		else:
+			return tuple(bounds)
+
+	def get_irreversibilities(self, as_index):
+		irrev = [not r.reversibility for r in self.rx_instances]
+		if as_index:
+			irrev = list(np.where(irrev)[0])
+		return irrev
+
+	def get_metabolite_and_reactions_ids(self):
+		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
+
+
 
 
 model_readers = {
