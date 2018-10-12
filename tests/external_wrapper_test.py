@@ -3,7 +3,7 @@ import unittest
 class COBRAWrapperTest(unittest.TestCase):
 	def setUp(self):
 		from cobra.io.sbml3 import read_sbml_model
-		import metaconvexpy.connectors.cobrapy as connector
+		import metaconvexpy.utilities.external_wrappers as connector
 
 		model = read_sbml_model("/home/skapur/MEOCloud/Projectos/DeYeast/Models/iMM904/iMM904_peroxisome.xml")
 
@@ -24,7 +24,7 @@ class COBRAWrapperTest(unittest.TestCase):
 class FRAMEDWrapperTest(unittest.TestCase):
 	def setUp(self):
 		from framed.io.sbml import load_cbmodel
-		import metaconvexpy.connectors.cobrapy as connector
+		import metaconvexpy.utilities.external_wrappers as connector
 
 		model = load_cbmodel("/home/skapur/MEOCloud/Projectos/DeYeast/Models/iMM904/iMM904_peroxisome.xml")
 
