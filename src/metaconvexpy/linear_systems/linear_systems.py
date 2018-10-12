@@ -15,7 +15,7 @@ class LinearSystem():
 	__model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
-	__model = None
+	model = None
 	S = None
 
 	@abc.abstractmethod
@@ -37,7 +37,7 @@ class LinearSystem():
 		-------
 
 		"""
-		return self.__model
+		return self.model
 
 
 	def get_stoich_matrix_shape(self):
@@ -59,9 +59,9 @@ class KShortestCompatibleLinearSystem(object):
 	Should be kept as type `list` to maintain order.
 	__c: str representing the variable to be used as constant for indicator constraints
 	"""
-	__dvar_mapping = None
-	__dvars = None
-	__c = None
+	dvar_mapping = None
+	dvars = None
+	c = None
 
 	def get_dvar_mapping(self):
 		"""
@@ -70,7 +70,7 @@ class KShortestCompatibleLinearSystem(object):
 		-------
 
 		"""
-		return self.__dvar_mapping
+		return self.dvar_mapping
 
 	def get_dvars(self):
 		"""
@@ -79,7 +79,7 @@ class KShortestCompatibleLinearSystem(object):
 		-------
 
 		"""
-		return self.__dvars
+		return self.dvars
 
 	def get_c_variable(self):
 		"""
@@ -88,7 +88,7 @@ class KShortestCompatibleLinearSystem(object):
 		-------
 
 		"""
-		return self.__c
+		return self.c
 
 
 class SimpleLinearSystem(LinearSystem):
@@ -108,19 +108,19 @@ class SimpleLinearSystem(LinearSystem):
 		ub: ndarray or list containing the lower bounds for all n fluxes
 		var_names: - optional - ndarray or list containing the names for each flux
 		"""
-		self.__model = cplex.Cplex()
+		self.model = cplex.Cplex()
 		self.S, self.lb, self.ub = S, lb, ub
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
 
 	def build_problem(self):
 		np_names = np.array(self.names)
 		nnz = list(map(lambda y: np.nonzero(y)[1], zip(self.S)))
-		self.__model.variables.add(names=self.names, lb=self.lb, ub=self.ub)
+		self.model.variables.add(names=self.names, lb=self.lb, ub=self.ub)
 		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(self.S, nnz)]
 		rhs = [0] * self.S.shape[0]
 		senses = ['E'] * self.S.shape[0]
 		cnames = ['C_' + str(i) for i in range(self.S.shape[0])]
-		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
+		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 
 class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 	"""
@@ -140,7 +140,7 @@ class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 		consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
 		produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
 		"""
-		self.__model = cplex.Cplex()
+		self.model = cplex.Cplex()
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
@@ -148,8 +148,8 @@ class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 
 	def subset_dvars(self, subset):
 
-		dvars = [self.__dvar_mapping[i] for i in subset]
-		dvar_mapping = {k:v for k,v in self.__dvar_mapping.items() if v in dvars}
+		dvars = [self.dvar_mapping[i] for i in subset]
+		dvar_mapping = {k:v for k,v in self.dvar_mapping.items() if v in dvars}
 		return dvars, dvar_mapping
 
 	def build_problem(self):
@@ -165,7 +165,7 @@ class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 
 		vd = chain(vi, vrf, vrb)
 		names, lb, ub = list(zip(*vd))
-		self.__model.variables.add(names=names, lb=lb, ub=ub)
+		self.model.variables.add(names=names, lb=lb, ub=ub)
 
 		np_names = np.array(names)
 		nnz = list(map(lambda y: np.nonzero(y)[1], zip(S_full)))
@@ -181,21 +181,21 @@ class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 				rhs[id_i] = rhs_i
 				senses[id_i] = sense_i
 
-		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
-		self.__model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
-		self.__dvars = vi + list(map(list, zip(vrf, vrb)))
+		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
+		self.model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
+		self.dvars = vi + list(map(list, zip(vrf, vrb)))
 
 		vi_names = list(zip(*vi))[0]
 		vrf_names = list(zip(*vrf))[0]
 		vrb_names = list(zip(*vrb))[0]
 
-		self.__dvars = list(vi_names) + list(zip(vrf_names, vrb_names))
+		self.dvars = list(vi_names) + list(zip(vrf_names, vrb_names))
 		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in
 																											list(range(
 																												nR)) if
 																											x not in self.irrev]
 
-		self.__dvar_mapping = dict(zip(var_index_sequence, self.__dvars))
+		self.dvar_mapping = dict(zip(var_index_sequence, self.dvars))
 		#self.__model.write('efmmodel.lp') ## For debugging purposes
 		return S_full
 
@@ -207,8 +207,7 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 
 	def build_problem(self):
 		super().build_problem()
-		self.__dvars, self.__dvar_mapping = self.subset_dvars(self.subset)
-		model = self.get_model()
+		self.dvars, self.dvar_mapping = self.subset_dvars(self.subset)
 		#model.
 
 
@@ -232,7 +231,7 @@ class DualLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 		T: Target matrix as an ndarray. Should have c-by-n dimensions (c - #constraints; n - #fluxes)
 		b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
 		"""
-		self.__model = cplex.Cplex()
+		self.model = cplex.Cplex()
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
 		self.__c = "C"
@@ -255,7 +254,7 @@ class DualLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 		Sd = np.concatenate([Sdi, Sdr], axis=0)
 		vd = chain(u, vp, vn, w)
 		names, lb, ub = list(zip(*vd))
-		self.__model.variables.add(names=names, lb=lb, ub=ub)
+		self.model.variables.add(names=names, lb=lb, ub=ub)
 
 		np_names = np.array(names)
 		nnz = list(map(lambda y: np.nonzero(y)[1], zip(Sd)))
@@ -265,18 +264,18 @@ class DualLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
 		senses = 'G' * Sdi.shape[0] + 'E' * Sdr.shape[0]
 		cnames = ['Ci' + str(i) for i in range(Sdi.shape[0])] + ['Cr' + str(i) for i in range(Sdr.shape[0])]
 
-		self.__model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
+		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 
-		self.__model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
+		self.model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
 
 		b_coefs = self.b.tolist() + [1]
 		b_names = list(list(zip(*w))[0] + tuple(['C']))
-		self.__model.linear_constraints.add(lin_expr=[(b_names, b_coefs)], senses=['L'], rhs=[0], names=['Cb'])
+		self.model.linear_constraints.add(lin_expr=[(b_names, b_coefs)], senses=['L'], rhs=[0], names=['Cb'])
 
 		vp_names = list(zip(*vp))[0]
 		vn_names = list(zip(*vn))[0]
 
-		self.__dvars = list(zip(vp_names, vn_names))
-		self.__dvar_mapping = dict(zip(range(len(self.__dvars)), self.__dvars))
+		self.dvars = list(zip(vp_names, vn_names))
+		self.dvar_mapping = dict(zip(range(len(self.dvars)), self.dvars))
 
 		return Sd
