@@ -131,7 +131,7 @@ class DefaultYieldbound(AbstractConstraint):
 		self.__ub = ub
 		self.__numerator_index = numerator_index
 		self.__denominator_index = denominator_index
-		self.__deviation = deviation
+		self.__deviation = deviation if not deviation is None else 0
 
 	def materialize(self, n):
 		Tx = []
