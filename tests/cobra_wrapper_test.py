@@ -21,5 +21,6 @@ class COBRAWrapperTest(unittest.TestCase):
 		solutions = next(enumerator)
 		sol = solutions[0]
 		sol.attribute_dict('signed_indicator_map')
+
 if __name__ == '__main__':
 	COBRAWrapperTest().setUp()
