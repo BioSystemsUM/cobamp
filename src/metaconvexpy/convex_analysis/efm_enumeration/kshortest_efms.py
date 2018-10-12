@@ -501,13 +501,13 @@ class KShortestEFMAlgorithm(object):
 			if limit is None:
 				limit = 1
 				warnings.warn(Warning('You have not defined a maximum solution size for the enumeration process. Defaulting to 1.'))
-			return ksh.solution_iterator(limit)
+			return self.ksh.solution_iterator(limit)
 
 		elif self.configuration[kp.K_SHORTEST_MPROPERTY_METHOD] == kp.K_SHORTEST_METHOD_POPULATE:
 			limit = self.configuration[kp.K_SHORTEST_OPROPERTY_MAXSIZE]
 			if limit is None:
 				warnings.warn(Warning('You have not defined a maximum size for the enumeration process. Defaulting to size 1.'))
 				limit = 1
-			return ksh.population_iterator(limit)
+			return self.ksh.population_iterator(limit)
 		else:
 			raise Exception('Algorithm type is invalid! If you see this message, something went wrong!')
