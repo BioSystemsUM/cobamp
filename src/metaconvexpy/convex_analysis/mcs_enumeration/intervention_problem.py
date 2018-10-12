@@ -56,6 +56,17 @@ class AbstractConstraint(object):
 		'''
 		return
 
+	@abc.abstractmethod
+	def from_tuple(tup):
+		"""
+		Generates a constraint from a tuple. Refer to subclasses for each specific format.
+
+		Returns
+		-------
+
+		"""
+		return
+
 class DefaultFluxbound(AbstractConstraint):
 	'''
 	Class representing bounds for a single flux with a lower and an upper bound.
@@ -85,9 +96,19 @@ class DefaultFluxbound(AbstractConstraint):
 			Tub = zeros((1,n))
 			Tub[0, self.__r_index] = 1
 			b.append(self.__ub)
-			Tx.append(Tlb)
+			Tx.append(Tub)
 
 		return concatenate(Tx, axis=0), b
+
+	def from_tuple(tup):
+		"""
+
+		Returns a DefaultFluxbound instance from a tuple containing a reaction index as well as lower and upper bounds.
+		-------
+
+		"""
+		index, lb, ub = tup
+		return DefaultFluxbound(lb, ub, index)
 
 class DefaultYieldbound(AbstractConstraint):
 	'''
@@ -129,6 +150,20 @@ class DefaultYieldbound(AbstractConstraint):
 			Tx.append(Tub)
 
 		return concatenate(Tx,axis=0), b
+
+	def from_tuple(tup):
+		"""
+
+		Returns a DefaultYieldbound instance from a tuple containing numerator and denominator indices, yield lower and
+		upper bounds, a flag indicating whether it's an upper bound and a deviation (optional)
+		-------
+
+		"""
+		n, d, ylb, yub = tup[:4]
+		if len(tup) > 4:
+			dev = tup[4]
+
+		return DefaultYieldbound(ylb, yub, n, d, dev)
 
 
 if __name__ == '__main__':
