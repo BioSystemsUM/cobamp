@@ -123,8 +123,7 @@ class AbstractObjectReader(object):
 	def __init__(self, model):
 		self.model = model
 		self.r_ids, self.m_ids = self.get_metabolite_and_reactions_ids()
-		self.rx_instances = [model.reactions.get_by_id(rx) for rx in self.r_ids]
-
+		self.rx_instances = self.get_rx_instances()
 		self.S = self.get_stoichiometric_matrix()
 		self.irrev_bool = self.get_irreversibilities(False)
 		self.irrev_index = self.get_irreversibilities(True)
@@ -143,11 +142,22 @@ class AbstractObjectReader(object):
 	def get_irreversibilities(self, as_index):
 		return
 
+	@abc.abstractmethod
+	def get_rx_instances(self):
+		return
+
+	@abc.abstractmethod
+	def get_metabolite_and_reactions_ids(self):
+		return
+
 	def reaction_id_to_index(self, id):
 		return self.r_ids.index(id)
 
 	def metabolite_id_to_index(self, id):
 		return self.m_ids.index(id)
+
+
+
 
 	def convert_constraint_ids(self, tup, yield_constraint):
 		if yield_constraint:
@@ -189,12 +199,39 @@ class COBRAModelObjectReader(AbstractObjectReader):
 			irrev = list(np.where(irrev)[0])
 		return irrev
 
+	def get_rx_instances(self):
+		return [self.model.reactions.get_by_id(rx) for rx in self.r_ids]
+
 	def get_metabolite_and_reactions_ids(self):
 		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
 
 
+class FramedModelObjectReader(AbstractObjectReader):
+
+	def get_stoichiometric_matrix(self):
+		return np.array(self.model.stoichiometric_matrix())
+
+	def get_model_bounds(self, as_dict):
+		bounds = [(r.lb, r.ub) for r in self.rx_instances]
+		if as_dict:
+			return dict(zip(self.r_ids, bounds))
+		else:
+			return tuple(bounds)
+
+	def get_irreversibilities(self, as_index):
+		irrev = [not r.reversible for r in self.rx_instances]
+		if as_index:
+			irrev = list(np.where(irrev)[0])
+		return irrev
+
+	def get_metabolite_and_reactions_ids(self):
+		return tuple(self.model.reactions.keys()), tuple(self.model.metabolites.keys())
+
+	def get_rx_instances(self):
+		return [self.model.reactions[rx] for rx in self.r_ids]
 
 
 model_readers = {
-	'cobra.core.model': COBRAModelObjectReader
+	'cobra.core.model': COBRAModelObjectReader,
+	'framed.model.cbmodel': FramedModelObjectReader
 }
