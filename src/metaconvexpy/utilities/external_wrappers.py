@@ -1,8 +1,8 @@
-from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
-from metaconvexpy.linear_systems.linear_systems import IrreversibleLinearSystem, DualLinearSystem
-from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
+from ..convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from ..linear_systems.linear_systems import IrreversibleLinearSystem, DualLinearSystem
+from ..convex_analysis.mcs_enumeration.intervention_problem import *
 
-import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
+from ..convex_analysis.efm_enumeration import kshortest_efm_properties as kp
 
 import abc
 import numpy as np

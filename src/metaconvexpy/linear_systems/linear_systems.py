@@ -3,7 +3,7 @@ import abc
 import cplex
 import numpy as np
 
-from metaconvexpy.linear_systems.optimization import CPLEX_INFINITY
+from ..linear_systems.optimization import CPLEX_INFINITY
 
 class LinearSystem():
 	"""

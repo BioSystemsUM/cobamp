@@ -5,7 +5,7 @@ Inspired by Metatool's code
 from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, array, dot
 from numpy.linalg import norm
 
-from metaconvexpy.convex_analysis.nullspace_analysis.nullspace import compute_nullspace, nullspace_blocked_reactions
+from ..nullspace_analysis.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
 PRECISION = 1e-10

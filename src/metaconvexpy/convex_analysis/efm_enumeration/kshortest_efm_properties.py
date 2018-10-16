@@ -1,4 +1,4 @@
-from metaconvexpy.utilities.property_management import PropertyDictionary
+from ...utilities.property_management import PropertyDictionary
 
 K_SHORTEST_MPROPERTY_METHOD = 'METHOD'
 K_SHORTEST_METHOD_ITERATE = "ITERATE"
