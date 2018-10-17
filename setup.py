@@ -1,15 +1,26 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
-setup(name='metaconvexpy',
-      version='0.1',
-      description='A convex analysis tool for metabolic networks',
-      url='http://github.com/skapur/metaconvexpy',
-      author='Vítor Vieira',
-      author_email='vvieira@ceb.uminho.pt',
-      license='MIT',
-      packages=['funniest'],
-      install_requires=[
-          'numpy',
-		  ''
-      ],
-      zip_safe=False)
+setup(
+    name = 'metaconvexpy',
+    version = '0.0.1',
+    package_dir = {'':'src'},
+    packages = find_packages('src'),
+    install_requires = ["numpy",
+                        "scipy",
+                        "pandas"],
+    author = 'Vítor Vieira',
+    author_email = 'vvieira@ceb.uminho.pt',
+    description = 'metaconvexpy - pathway analysis methods for genome-scale metabolic models',
+    license = 'GNU General Public License v3.0',
+    keywords = 'pathway analysis metabolic model',
+    url = 'https://github.com/skapur/metaconvexpy',
+    long_description = open('README.rst').read(),
+    classifiers = [
+        'Development Status :: 4 - Beta',
+        'Topic :: Scientific/Engineering :: Bio-Informatics',
+        'Intended Audience :: Science/Research',
+        'Programming Language :: Python :: 3.6',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Topic :: Software Development :: Libraries :: Python Modules'
+    ],
+)
