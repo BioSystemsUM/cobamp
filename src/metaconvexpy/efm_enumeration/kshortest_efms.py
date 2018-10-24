@@ -1,7 +1,7 @@
 import cplex
 from itertools import chain
-from metaconvexpy.linear_systems.optimization import Solution, copy_cplex_model
-from ..efm_enumeration import kshortest_efm_properties as kp
+from ..linear_systems.optimization import Solution, copy_cplex_model
+from . import kshortest_efm_properties as kp
 import warnings
 
 CPLEX_INFINITY = cplex.infinity
