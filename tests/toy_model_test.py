@@ -1,4 +1,4 @@
-from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEnumerator
+from metaconvexpy.efm_enumeration.kshortest_efms import KShortestEnumerator
 from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem
 import numpy as np
 from itertools import chain

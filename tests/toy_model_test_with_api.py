@@ -1,8 +1,7 @@
-from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
-from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties import *
+from metaconvexpy.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from metaconvexpy.efm_enumeration.kshortest_efm_properties import *
 from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem
 import numpy as np
-from itertools import chain
 import unittest
 
 
