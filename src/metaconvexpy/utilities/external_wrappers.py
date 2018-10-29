@@ -93,11 +93,19 @@ class KShortestEnumeratorWrapper(object):
 
 
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
+	def __init__(self, model, non_consumed, consumed, produced, **kwargs):
+		super().__init__(model, **kwargs)
+		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
 
-	def __get_linear_system(self, non_consumed, consumed, produced):
-		to_convert = [consumed, non_consumed, produced]
+	def get_linear_system(self):
+		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
-		return IrreversibleLinearSystem(S, irrev, conv_cn, conv_nc, conv_pr)
+		return IrreversibleLinearSystem(
+			S=self.model_reader.S,
+			irrev=self.model_reader.irrev_index,
+			consumed=conv_cn,
+			non_consumed=conv_nc,
+			produced=conv_pr)
 
 
 class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
