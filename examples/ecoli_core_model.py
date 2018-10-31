@@ -10,11 +10,11 @@ model = cobra.io.sbml3.read_sbml_model(model_path)
 def display_efms_escher(efm):
 	escher_builder = escher.Builder(
 		map_name='e_coli_core.Core metabolism',
-		hide_secondary_metabolites = True
-		reaction_data = efm,
-
+		hide_secondary_metabolites = True,
+		reaction_data = efm
 	)
 	escher_builder.display_in_notebook(js_source='local')
+
 
 if __name__ == '__main__':
 	ksefm = KShortestEFMEnumeratorWrapper(
