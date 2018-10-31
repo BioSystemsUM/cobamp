@@ -1,10 +1,10 @@
 import numpy as np
 import os
 from itertools import product
-from metaconvexpy.convex_analysis.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from metaconvexpy.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
 from metaconvexpy.linear_systems.linear_systems import DualLinearSystem
-from metaconvexpy.convex_analysis.mcs_enumeration.intervention_problem import *
-import metaconvexpy.convex_analysis.efm_enumeration.kshortest_efm_properties as kp
+from metaconvexpy.mcs_enumeration.intervention_problem import *
+import metaconvexpy.efm_enumeration.kshortest_efm_properties as kp
 
 os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy/examples/iAF1260_resources')
 
