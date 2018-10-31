@@ -1,0 +1,345 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>metaconvexpy.nullspace_analysis package &mdash; metaconvexpy 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="metaconvexpy.utilities package" href="metaconvexpy.utilities.html" />
+    <link rel="prev" title="metaconvexpy.mcs_enumeration package" href="metaconvexpy.mcs_enumeration.html" /> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> metaconvexpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick start</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="metaconvexpy.html">metaconvexpy package</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="metaconvexpy.html#subpackages">Subpackages</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="metaconvexpy.efm_enumeration.html">metaconvexpy.efm_enumeration package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metaconvexpy.linear_systems.html">metaconvexpy.linear_systems package</a></li>
+<li class="toctree-l3"><a class="reference internal" href="metaconvexpy.mcs_enumeration.html">metaconvexpy.mcs_enumeration package</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">metaconvexpy.nullspace_analysis package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-metaconvexpy.nullspace_analysis.nullspace">metaconvexpy.nullspace_analysis.nullspace module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-metaconvexpy.nullspace_analysis.subset_reduction">metaconvexpy.nullspace_analysis.subset_reduction module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#module-metaconvexpy.nullspace_analysis">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="metaconvexpy.utilities.html">metaconvexpy.utilities package</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="metaconvexpy.html#module-metaconvexpy">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">metaconvexpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="modules.html">&lt;no title&gt;</a> &raquo;</li>
+        
+          <li><a href="metaconvexpy.html">metaconvexpy package</a> &raquo;</li>
+        
+      <li>metaconvexpy.nullspace_analysis package</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+            
+            <a href="_sources/metaconvexpy.nullspace_analysis.rst.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  
+<style>
+/* CSS overrides for sphinx_rtd_theme */
+
+/* 24px margin */
+.nbinput.nblast,
+.nboutput.nblast {
+    margin-bottom: 19px;  /* padding has already 5px */
+}
+
+/* ... except between code cells! */
+.nblast + .nbinput {
+    margin-top: -19px;
+}
+
+.admonition > p:before {
+    margin-right: 4px;  /* make room for the exclamation icon */
+}
+</style>
+<div class="section" id="metaconvexpy-nullspace-analysis-package">
+<h1>metaconvexpy.nullspace_analysis package<a class="headerlink" href="#metaconvexpy-nullspace-analysis-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-metaconvexpy.nullspace_analysis.nullspace">
+<span id="metaconvexpy-nullspace-analysis-nullspace-module"></span><h2>metaconvexpy.nullspace_analysis.nullspace module<a class="headerlink" href="#module-metaconvexpy.nullspace_analysis.nullspace" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.nullspace.compute_nullspace">
+<code class="descclassname">metaconvexpy.nullspace_analysis.nullspace.</code><code class="descname">compute_nullspace</code><span class="sig-paren">(</span><em>A</em>, <em>eps=1e-09</em>, <em>left=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/nullspace.html#compute_nullspace"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.nullspace.compute_nullspace" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the nullspace of the matrix A
+Parameters
+———-
+A: A 2D-ndarray
+eps: Tolerance value for 0
+left: A boolean value indicating whether the result is the left nullspace (right if False)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.nullspace.nullspace_blocked_reactions">
+<code class="descclassname">metaconvexpy.nullspace_analysis.nullspace.</code><code class="descname">nullspace_blocked_reactions</code><span class="sig-paren">(</span><em>K</em>, <em>tolerance</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/nullspace.html#nullspace_blocked_reactions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.nullspace.nullspace_blocked_reactions" title="Permalink to this definition">¶</a></dt>
+<dd><p>K: A nullspace matrix as a 2D ndarray
+tolerance: Tolerance value for 0</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-metaconvexpy.nullspace_analysis.subset_reduction">
+<span id="metaconvexpy-nullspace-analysis-subset-reduction-module"></span><h2>metaconvexpy.nullspace_analysis.subset_reduction module<a class="headerlink" href="#module-metaconvexpy.nullspace_analysis.subset_reduction" title="Permalink to this headline">¶</a></h2>
+<p>Inspired by Metatool’s code</p>
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.subset_reduction.reduce">
+<code class="descclassname">metaconvexpy.nullspace_analysis.subset_reduction.</code><code class="descname">reduce</code><span class="sig-paren">(</span><em>S</em>, <em>sub</em>, <em>irrev_reduced=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/subset_reduction.html#reduce"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.subset_reduction.reduce" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduces a stoichiometric matrix according to the subset information present in the sub matrix and irrev_reduced.
+Parameters
+———-
+S: Stoichiometric matrix
+sub: Subset matrix as computed by &lt;subset_correlation_matrix&gt;
+irrev_reduced: Irreversibility vector regarding the subsets.</p>
+<p>Returns reduced, reduced_indexes, irrev_reduced</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.subset_reduction.subset_candidates">
+<code class="descclassname">metaconvexpy.nullspace_analysis.subset_reduction.</code><code class="descname">subset_candidates</code><span class="sig-paren">(</span><em>kernel</em>, <em>tol=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/subset_reduction.html#subset_candidates"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.subset_reduction.subset_candidates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes a matrix of subset candidates from the nullspace of the S matrix
+Parameters
+———-
+kernel: Nullspace of the S matrix
+tol: Tolerance to 0.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.subset_reduction.subset_correlation_matrix">
+<code class="descclassname">metaconvexpy.nullspace_analysis.subset_reduction.</code><code class="descname">subset_correlation_matrix</code><span class="sig-paren">(</span><em>S</em>, <em>kernel</em>, <em>irrev</em>, <em>cr</em>, <em>keepSingle=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/subset_reduction.html#subset_correlation_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.subset_reduction.subset_correlation_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>S: Stoichiometric matrix as ndarray
+kernel: The nullspace of S
+irrev: List of booleans representing irreversible reactions (when True)
+cr: The subset candidate matrix, computed using &lt;subset_candidates&gt;
+keepSingle: List of reaction indices that will not be compressed.</p>
+<p>Returns sub, irrev_sub, irrev_violating_subsets
+sub : subset matrix, n-subsets by n-reactions -&gt; numpy.array
+irrev_sub : subset reversibilities -&gt; numpy.array of type bool
+irrev_violating_subsets : same as sub, but list if empty. Contains subsets discarded due to irreversibility faults
+——-</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="metaconvexpy.nullspace_analysis.subset_reduction.subset_reduction">
+<code class="descclassname">metaconvexpy.nullspace_analysis.subset_reduction.</code><code class="descname">subset_reduction</code><span class="sig-paren">(</span><em>S</em>, <em>irrev</em>, <em>to_remove=[]</em>, <em>to_keep_single=[]</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/metaconvexpy/nullspace_analysis/subset_reduction.html#subset_reduction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#metaconvexpy.nullspace_analysis.subset_reduction.subset_reduction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reduces a stoichiometric matrix using nullspace analysis by identifying linearly dependent (enzyme) subsets.
+These reactions are then compressed.
+Parameters
+———-
+S: Stoichiometric matrix as an ndarray.
+irrev: A boolean array with size equal to the number of columns in the S matrix.
+to_remove: A list of indices specifying columns of the S matrix to remove before the compression (usually blocked
+reactions)
+to_keep_single: A list of indices specifying columns of the S matrix not to compress.</p>
+<p>Returns rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
+rd : compressed stoichiometric matrix -&gt; numpy.array
+sub : subset matrix, n-subsets by n-reactions -&gt; numpy.array
+irrev_reduced : subset reversibilities -&gt; numpy.array of type bool
+rdind : metabolite indices -&gt; numpy.array of type int
+irrv_subsets : same as sub, but list if empty
+kept_reactions : indexes for reactions used in the network compression
+kernel : numpy.array with the right nullspace of S
+correlation_matrix : numpy.array with reaction correlation matrix
+——-</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-metaconvexpy.nullspace_analysis">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-metaconvexpy.nullspace_analysis" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+           </div>
+           
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="metaconvexpy.utilities.html" class="btn btn-neutral float-right" title="metaconvexpy.utilities package" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="metaconvexpy.mcs_enumeration.html" class="btn btn-neutral" title="metaconvexpy.mcs_enumeration package" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Vítor Vieira
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
