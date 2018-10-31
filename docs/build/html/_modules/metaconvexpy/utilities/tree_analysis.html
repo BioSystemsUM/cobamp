@@ -1,0 +1,516 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>metaconvexpy.utilities.tree_analysis &mdash; metaconvexpy 0.0.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+
+  
+  <script src="../../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">metaconvexpy</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../../index.html">Module code</a> &raquo;</li>
+        
+      <li>metaconvexpy.utilities.tree_analysis</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for metaconvexpy.utilities.tree_analysis</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+
+<div class="viewcode-block" id="Tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree">[docs]</a><span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	A simple class representing an n-ary tree as a node with one or more children nodes.</span>
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">extra_info</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Initializes the tree with no children.</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		value: A value associated with this node</span>
+<span class="sd">		extra_info: Additional hidden information present in the node (OPTIONAL)</span>
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">value</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">extra_info</span> <span class="o">=</span> <span class="n">extra_info</span>
+
+<div class="viewcode-block" id="Tree.get_children"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.get_children">[docs]</a>	<span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">		Returns a list with all the children of this node.</span>
+<span class="sd">		-------</span>
+
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">]</span></div>
+
+<div class="viewcode-block" id="Tree.add_child"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.add_child">[docs]</a>	<span class="k">def</span> <span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Adds a node to the list of children in this node.</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		node: A &lt;Tree&gt; instance</span>
+<span class="sd">		-------</span>
+
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="Tree.is_leaf"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.is_leaf">[docs]</a>	<span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Checks whether this node has no children (is a leaf)</span>
+<span class="sd">		Returns a boolean.</span>
+<span class="sd">		-------</span>
+
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">==</span> <span class="p">[]</span></div>
+
+	<span class="k">def</span> <span class="nf">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">		Overloaded equality comparison operator. Compares the value of both nodes.</span>
+<span class="sd">		Parameters</span>
+<span class="sd">		----------</span>
+<span class="sd">		other</span>
+
+<span class="sd">		Returns a boolean</span>
+<span class="sd">		-------</span>
+
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">other</span>
+
+	<span class="k">def</span> <span class="nf">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&#39;&#39;&#39;</span>
+
+<span class="sd">		Returns a representation of this node as a string containing the value and extra information.</span>
+<span class="sd">		-------</span>
+
+<span class="sd">		&#39;&#39;&#39;</span>
+		<span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;(&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra_info</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;)&#39;</span></div>
+
+
+
+<div class="viewcode-block" id="fill_tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.fill_tree">[docs]</a><span class="k">def</span> <span class="nf">fill_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">sets</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Fills a Tree instance with data from the Iterable[set/frozenset] supplied as the argument `sets`.</span>
+<span class="sd">	The resulting tree will be filled in a way that each set can be retrieved by traversing from the root node `tree`</span>
+<span class="sd">	towards a leaf. The nodes required to travel down this path contain the values of a single set.</span>
+<span class="sd">	The resulting tree will not contain circular references so this should not be treated as a graph. The filling method</span>
+<span class="sd">	is recursive, so each child will be filled with sets contained in the parent node. Sets that have already been added</span>
+<span class="sd">	are removed from the original pool.</span>
+<span class="sd">	Elements to be added as nodes are chosen by the frequency at which they occur in the sets.</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A tree instance</span>
+<span class="sd">	sets: A list of set/frozenset instances.</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+		<span class="n">counts</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">sets</span><span class="p">)))</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">counts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+			<span class="n">most_common</span><span class="p">,</span> <span class="n">max_value</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">most_common</span><span class="p">(</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+			<span class="c1">#print(tab_level*&quot;\t&quot;+&#39;Most common element is&#39;,most_common,&#39;with&#39;,max_value,&#39;hits.&#39;)</span>
+			<span class="n">new_node</span> <span class="o">=</span> <span class="n">Tree</span><span class="p">(</span><span class="n">most_common</span><span class="p">,</span> <span class="n">extra_info</span><span class="o">=</span><span class="n">max_value</span><span class="p">)</span>
+			<span class="n">sets_containing_most_common</span> <span class="o">=</span> <span class="p">[</span><span class="n">setf</span> <span class="k">for</span> <span class="n">setf</span> <span class="ow">in</span> <span class="n">sets</span> <span class="k">if</span> <span class="n">most_common</span> <span class="ow">in</span> <span class="n">setf</span><span class="p">]</span>
+			<span class="c1">#print(tab_level*&quot;\t&quot;+str(len(sets_containing_most_common)),&#39;contain&#39;,most_common)</span>
+			<span class="n">remaining_sets</span> <span class="o">=</span> <span class="p">[</span><span class="n">setf</span> <span class="k">for</span> <span class="n">setf</span> <span class="ow">in</span> <span class="n">sets</span> <span class="k">if</span> <span class="n">most_common</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">setf</span><span class="p">]</span>
+			<span class="c1">#print(tab_level*&quot;\t&quot;+str(len(remaining_sets)),&quot;sets remaining.&quot;)</span>
+			<span class="n">tree</span><span class="o">.</span><span class="n">add_child</span><span class="p">(</span><span class="n">new_node</span><span class="p">)</span>
+
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sets_containing_most_common</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">fill_tree</span><span class="p">(</span><span class="n">new_node</span><span class="p">,</span> <span class="p">[[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">setf</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">most_common</span><span class="p">]</span> <span class="k">for</span> <span class="n">setf</span> <span class="ow">in</span> <span class="n">sets_containing_most_common</span><span class="p">])</span>
+			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_sets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+				<span class="n">fill_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">remaining_sets</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="compress_linear_paths"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.compress_linear_paths">[docs]</a><span class="k">def</span> <span class="nf">compress_linear_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Collapses sequences of nodes contained in a Tree with only one children as a single node containing all values of</span>
+<span class="sd">	those nodes.</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance.</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">if</span> <span class="n">tree</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">():</span>
+		<span class="k">pass</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span><span class="p">:</span>
+				<span class="n">tree</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="p">[</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">]</span>
+			<span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+			<span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">children</span>
+			<span class="n">compress_linear_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">compress_linear_paths</span><span class="p">(</span><span class="n">child</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="ignore_compressed_nodes_by_size"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.ignore_compressed_nodes_by_size">[docs]</a><span class="k">def</span> <span class="nf">ignore_compressed_nodes_by_size</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Modifies the values of a tree&#39;s children that have been previously compressed with the &lt;compress_linear_paths&gt;</span>
+<span class="sd">	function if they contain more than a certain number of elements. The node&#39;s value is changed to &quot;REMAINING&quot;.</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	size: An integer with the size threshold</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">size</span><span class="p">:</span>
+			<span class="n">child</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s1">&#39;REMAINING&#39;</span>
+			<span class="n">child</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">ignore_compressed_nodes_by_size</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="probabilistic_tree_prune"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.probabilistic_tree_prune">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_prune</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">target_level</span><span class="p">,</span> <span class="n">current_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut_leaves</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Cuts a tree&#39;s nodes under a certain height (`target_level`) and converts ensuing nodes into a single one whose value</span>
+<span class="sd">	represents the relative frequency of an element in the nodes below. Requires values on the extra_info field.</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	target_level: An int representing the level at which the tree will be cut</span>
+<span class="sd">	current_level: The current level of the tree (int). Default is 0 for root nodes.</span>
+<span class="sd">	cut_leaves: A boolean indicating whether the node at the target level is excluded or displays probabilities.</span>
+<span class="sd">	name_separator: Separator to use when representing multiple elements</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">if</span> <span class="n">current_level</span> <span class="o">&lt;</span> <span class="n">target_level</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">target_level</span> <span class="o">==</span> <span class="n">current_level</span> <span class="ow">and</span> <span class="n">cut_leaves</span><span class="p">:</span>
+			<span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+				<span class="n">probabilistic_tree_prune</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">target_level</span><span class="p">,</span> <span class="n">current_level</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="n">cut_leaves</span><span class="p">,</span> <span class="n">name_separator</span><span class="p">)</span>
+
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">probabilistic_tree_compression</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="n">name_separator</span><span class="p">)</span>
+		<span class="n">tree</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;REMAINING&quot;</span> <span class="k">if</span> <span class="n">cut_leaves</span> <span class="k">else</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">)]</span>
+	<span class="k">return</span> <span class="n">target_level</span> <span class="o">==</span> <span class="n">current_level</span></div>
+
+<div class="viewcode-block" id="probabilistic_tree_compression"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.probabilistic_tree_compression">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_compression</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">total_count</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Compresses a node and subsequent children by removing them and modifying the value to a dictionary with the relative</span>
+<span class="sd">	frequency of each element in the subsequent nodes. Requires values on the extra_info field.</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	data: Local count if not available in extra_info</span>
+<span class="sd">	total_count: Total amount of sets if not available in extra_info</span>
+<span class="sd">	name_separator: Separator to use when representing multiple elements</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">total_count</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">total_count</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">extra_info</span><span class="p">)</span>
+		<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="n">name_separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">probabilistic_tree_compression</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">total_count</span><span class="p">,</span> <span class="n">name_separator</span><span class="p">)</span>
+		<span class="n">tree</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">data</span>
+		<span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">local_proportion</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">extra_info</span><span class="p">)</span><span class="o">/</span><span class="n">total_count</span>
+		<span class="n">key</span> <span class="o">=</span> <span class="n">name_separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">tree</span><span class="o">.</span><span class="n">value</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">local_proportion</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">local_proportion</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">probabilistic_tree_compression</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">total_count</span><span class="p">,</span> <span class="n">name_separator</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="pretty_print_tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.pretty_print_tree">[docs]</a><span class="k">def</span> <span class="nf">pretty_print_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">write_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	write_path: Path to store a text file. Use None if the string is not to be stored in a file.</span>
+
+<span class="sd">	Returns a text representation of a Tree instance along with its children.</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">buffer</span> <span class="o">=</span> <span class="p">[]</span>
+
+	<span class="k">def</span> <span class="nf">__pretty_print_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">overhead</span><span class="p">,</span> <span class="n">final_node</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+		<span class="n">current_line</span> <span class="o">=</span> <span class="n">overhead</span> <span class="o">+</span> <span class="s2">&quot;|-- &quot;</span> <span class="o">+</span> <span class="nb">repr</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+		<span class="n">buffer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_line</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">__pretty_print_tree</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="n">overhead</span> <span class="o">+</span> <span class="s2">&quot;|</span><span class="se">\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">final_node</span><span class="p">:</span>
+			<span class="k">return</span> <span class="n">buffer</span>
+
+	<span class="n">__pretty_print_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">buffer</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+
+	<span class="n">res</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">buffer</span><span class="p">)</span>
+
+	<span class="k">if</span> <span class="n">write_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s1">&#39;test_tree.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+			<span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">res</span><span class="p">)</span>
+
+	<span class="k">return</span> <span class="n">res</span></div>
+
+<div class="viewcode-block" id="apply_fx_to_all_node_values"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.apply_fx_to_all_node_values">[docs]</a><span class="k">def</span> <span class="nf">apply_fx_to_all_node_values</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">fx</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Applies a function to all nodes below the tree, modifying their value to its result.</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	fx: A function to apply</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">tree</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">fx</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+		<span class="n">apply_fx_to_all_node_values</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">fx</span><span class="p">)</span></div>
+
+<div class="viewcode-block" id="find_all_tree_nodes"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.find_all_tree_nodes">[docs]</a><span class="k">def</span> <span class="nf">find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance.</span>
+
+<span class="sd">	Returns a list of all nodes below a node</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="k">def</span> <span class="nf">__find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">it</span><span class="p">):</span>
+		<span class="n">it</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">__find_all_tree_nodes</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span>
+
+	<span class="n">it</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="n">__find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">it</span><span class="p">)</span>
+	<span class="k">return</span> <span class="n">it</span></div>
+
+
+<div class="viewcode-block" id="merge_duplicate_nodes"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.merge_duplicate_nodes">[docs]</a><span class="k">def</span> <span class="nf">merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+	<span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">	Merges all nodes with similar values, replacing every instance reference of all nodes with the same object if its</span>
+<span class="sd">	value is identical</span>
+
+<span class="sd">	Parameters</span>
+<span class="sd">	----------</span>
+<span class="sd">	tree: A Tree instance</span>
+<span class="sd">	-------</span>
+
+<span class="sd">	&#39;&#39;&#39;</span>
+	<span class="n">all_nodes</span> <span class="o">=</span> <span class="n">find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span>
+	<span class="n">conv_key</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="p">)</span>
+	<span class="n">unique_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">conv_key</span><span class="p">(</span><span class="n">k</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">all_nodes</span><span class="p">]</span>
+	<span class="n">unique_node_map</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">Tree</span><span class="p">(</span><span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">unique_keys</span><span class="p">}</span>
+
+	<span class="k">def</span> <span class="nf">__merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+		<span class="n">new_children</span> <span class="o">=</span> <span class="p">[]</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">grandchildren</span> <span class="o">=</span> <span class="n">child</span><span class="o">.</span><span class="n">children</span>
+			<span class="n">new_child</span> <span class="o">=</span> <span class="n">unique_node_map</span><span class="p">[</span><span class="n">conv_key</span><span class="p">(</span><span class="n">child</span><span class="o">.</span><span class="n">value</span><span class="p">)]</span>
+			<span class="n">new_child</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">grandchildren</span>
+			<span class="n">new_children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_child</span><span class="p">)</span>
+		<span class="n">tree</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="n">new_children</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">__merge_duplicate_nodes</span><span class="p">(</span><span class="n">child</span><span class="p">)</span>
+	<span class="n">__merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="populate_nx_graph"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.populate_nx_graph">[docs]</a><span class="k">def</span> <span class="nf">populate_nx_graph</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">unique_nodes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">node_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+	<span class="k">if</span> <span class="n">node_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">node_dict</span> <span class="o">=</span> <span class="p">{}</span>
+	<span class="k">if</span> <span class="n">unique_nodes</span><span class="p">:</span>
+		<span class="n">node_value_key</span> <span class="o">=</span> <span class="n">name_separator</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="nb">list</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+		<span class="n">node_value</span> <span class="o">=</span> <span class="n">node_value_key</span>
+		<span class="k">if</span> <span class="n">node_value_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">node_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="n">node_dict</span><span class="p">[</span><span class="n">node_value_key</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+			<span class="n">node_value</span> <span class="o">=</span> <span class="n">node_value</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="s1">&#39;0&#39;</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">node_value</span> <span class="o">=</span> <span class="n">node_value</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">node_dict</span><span class="p">[</span><span class="n">node_value</span><span class="p">])</span>
+			<span class="n">node_dict</span><span class="p">[</span><span class="n">node_value_key</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+	<span class="k">else</span><span class="p">:</span>
+		<span class="n">node_value</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">value</span>
+		<span class="n">node_value_key</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">value</span>
+	<span class="k">if</span> <span class="n">previous</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
+		<span class="n">previous_node</span><span class="p">,</span> <span class="n">previous_key</span> <span class="o">=</span> <span class="n">previous</span>
+		<span class="n">G</span><span class="o">.</span><span class="n">add_edge</span><span class="p">(</span><span class="n">previous_node</span><span class="p">,</span> <span class="n">node_value</span><span class="p">)</span>
+	<span class="k">if</span> <span class="ow">not</span> <span class="n">tree</span><span class="o">.</span><span class="n">is_leaf</span><span class="p">():</span>
+		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
+			<span class="n">populate_nx_graph</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="p">(</span><span class="n">node_value</span><span class="p">,</span><span class="n">node_value_key</span><span class="p">),</span> <span class="n">name_separator</span><span class="o">=</span><span class="n">name_separator</span><span class="p">,</span> <span class="n">unique_nodes</span><span class="o">=</span><span class="n">unique_nodes</span><span class="p">,</span> <span class="n">node_dict</span><span class="o">=</span><span class="n">node_dict</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2018, Vítor Vieira
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
+        <script type="text/javascript" src="../../../_static/jquery.js"></script>
+        <script type="text/javascript" src="../../../_static/underscore.js"></script>
+        <script type="text/javascript" src="../../../_static/doctools.js"></script>
+        <script async="async" type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    
+
+  
+
+  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
