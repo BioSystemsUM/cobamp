@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="BookmarkManager">
+    <bookmark url="file://$PROJECT_DIR$/pathway_analysis.py" line="134" mnemonic="7" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="a5a70f1c-d61f-4a45-ab3f-7a9559a14140" name="Default" comment="">
+      <change beforePath="$PROJECT_DIR$/nullspace.py" beforeDir="false" afterPath="$PROJECT_DIR$/nullspace.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/optimization.py" beforeDir="false" afterPath="$PROJECT_DIR$/optimization.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/optlang_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/optlang_test.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pathway_analysis.py" beforeDir="false" afterPath="$PROJECT_DIR$/pathway_analysis.py" afterDir="false" />
+    </list>
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="TRACKING_ENABLED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="CoverageDataManager">
+    <SUITE FILE_PATH="coverage/MCSEnumeratorPython$optlang_test.coverage" NAME="optlang_test Coverage Results" MODIFIED="1521049192832" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/MCSEnumeratorPython$pathway_analysis.coverage" NAME="pathway_analysis Coverage Results" MODIFIED="1520957962700" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="true" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+  </component>
+  <component name="FavoritesManager">
+    <favorites_list name="MCSEnumeratorPython" />
+  </component>
+  <component name="FileEditorManager">
+    <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
+      <file leaf-file-name="nullspace.py" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/nullspace.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="390">
+              <caret line="26" column="55" lean-forward="true" selection-start-line="26" selection-start-column="55" selection-end-line="26" selection-end-column="55" />
+              <folding>
+                <element signature="e#260#284#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="optimization.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/optimization.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1575">
+              <caret line="107" column="36" selection-start-line="107" selection-start-column="36" selection-end-line="107" selection-end-column="36" />
+              <folding>
+                <element signature="e#0#58#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="pathway_analysis.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/pathway_analysis.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1740">
+              <caret line="119" column="24" selection-start-line="119" selection-start-column="24" selection-end-line="119" selection-end-column="24" />
+              <folding>
+                <element signature="e#0#58#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="optlang_test.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/optlang_test.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="120">
+              <caret line="8" column="27" selection-start-line="8" selection-start-column="27" selection-end-line="8" selection-end-column="27" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>get_var_values</find>
+      <find>vp0</find>
+      <find>RgCi0#0</find>
+      <find>get_var_va</find>
+      <find>infeasible</find>
+      <find>Row</find>
+      <find>R</find>
+      <find>Row '</find>
+      <find>CPXPARAM_Advance</find>
+      <find>complement</find>
+      <find>_indicator = 1 -&gt;</find>
+      <find>_ExclusivityConstraint</find>
+      <find>feasopt</find>
+      <find>self.__c</find>
+      <find>vp0_ind</find>
+      <find>Iterable</find>
+      <find>__dvars</find>
+      <find>integer_cut</find>
+      <find>__add_integer_cut</find>
+      <find>size</find>
+      <find>add_integer_cut</find>
+      <find>print</find>
+    </findStrings>
+    <replaceStrings>
+      <replace>_indicator = 1 &lt;-&gt;</replace>
+      <replace>EC</replace>
+      <replace>list</replace>
+    </replaceStrings>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/human_test.py" />
+        <option value="$PROJECT_DIR$/problem_mat.csv" />
+        <option value="$PROJECT_DIR$/results" />
+        <option value="$PROJECT_DIR$/foodmanu.py" />
+        <option value="$PROJECT_DIR$/test_model_diff.lp" />
+        <option value="$PROJECT_DIR$/test_model.txt" />
+        <option value="$PROJECT_DIR$/test.py" />
+        <option value="/opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/optlang/cplex_interface.py" />
+        <option value="$PROJECT_DIR$/test_model.lp" />
+        <option value="$PROJECT_DIR$/optlang_test.py" />
+        <option value="$PROJECT_DIR$/framed_connector.py" />
+        <option value="$PROJECT_DIR$/nullspace.py" />
+        <option value="$PROJECT_DIR$/pathway_analysis.py" />
+        <option value="$PROJECT_DIR$/optimization.py" />
+      </list>
+    </option>
+  </component>
+  <component name="JsBuildToolGruntFileManager" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsBuildToolPackageJson" detection-done="true" sorting="DEFINITION_ORDER" />
+  <component name="JsGulpfileManager">
+    <detection-done>true</detection-done>
+    <sorting>DEFINITION_ORDER</sorting>
+  </component>
+  <component name="NodePackageJsonFileManager">
+    <packageJsonPaths />
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-75" />
+    <option name="y" value="289" />
+    <option name="width" value="1853" />
+    <option name="height" value="791" />
+  </component>
+  <component name="ProjectInspectionProfilesVisibleTreeState">
+    <entry key="Project Default">
+      <profile-state>
+        <expanded-state>
+          <State>
+            <id />
+          </State>
+          <State>
+            <id>CSS</id>
+          </State>
+          <State>
+            <id>Code style issuesCSS</id>
+          </State>
+          <State>
+            <id>Control flow issuesJavaScript</id>
+          </State>
+          <State>
+            <id>DOM issuesJavaScript</id>
+          </State>
+          <State>
+            <id>General</id>
+          </State>
+          <State>
+            <id>GeneralJavaScript</id>
+          </State>
+          <State>
+            <id>Invalid elementsCSS</id>
+          </State>
+          <State>
+            <id>JavaScript</id>
+          </State>
+          <State>
+            <id>Probable bugsCSS</id>
+          </State>
+          <State>
+            <id>Python</id>
+          </State>
+          <State>
+            <id>ReST</id>
+          </State>
+          <State>
+            <id>SQL</id>
+          </State>
+        </expanded-state>
+      </profile-state>
+    </entry>
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="MCSEnumeratorPython" type="b2602c69:ProjectViewProjectNode" />
+              <item name="MCSEnumeratorPython" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Python.optlang_test">
+    <configuration default="true" type="PythonConfigurationType" factoryName="Python">
+      <module name="MCSEnumeratorPython" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
+    <configuration name="optlang_test" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="MCSEnumeratorPython" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/optlang_test.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="true" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
+    <configuration name="pathway_analysis" type="PythonConfigurationType" factoryName="Python" temporary="true">
+      <module name="MCSEnumeratorPython" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs>
+        <env name="PYTHONUNBUFFERED" value="1" />
+      </envs>
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="IS_MODULE_SDK" value="true" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="SCRIPT_NAME" value="$PROJECT_DIR$/pathway_analysis.py" />
+      <option name="PARAMETERS" value="" />
+      <option name="SHOW_COMMAND_LINE" value="false" />
+      <option name="EMULATE_TERMINAL" value="false" />
+      <option name="MODULE_MODE" value="false" />
+    </configuration>
+    <configuration default="true" type="Tox" factoryName="Tox">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="MCSEnumeratorPython" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Doctests">
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <envs />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="MCSEnumeratorPython" />
+      <option name="SCRIPT_NAME" value="" />
+      <option name="CLASS_NAME" value="" />
+      <option name="METHOD_NAME" value="" />
+      <option name="FOLDER_NAME" value="" />
+      <option name="TEST_TYPE" value="TEST_SCRIPT" />
+      <option name="PATTERN" value="" />
+      <option name="USE_PATTERN" value="false" />
+      <method />
+    </configuration>
+    <configuration default="true" type="tests" factoryName="Unittests">
+      <module name="MCSEnumeratorPython" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="PARENT_ENVS" value="true" />
+      <option name="SDK_HOME" value="" />
+      <option name="WORKING_DIRECTORY" value="" />
+      <option name="IS_MODULE_SDK" value="false" />
+      <option name="ADD_CONTENT_ROOTS" value="true" />
+      <option name="ADD_SOURCE_ROOTS" value="true" />
+      <EXTENSION ID="PythonCoverageRunConfigurationExtension" runner="coverage.py" />
+      <option name="_new_additionalArguments" value="&quot;&quot;" />
+      <option name="_new_target" value="&quot;.&quot;" />
+      <option name="_new_targetType" value="&quot;PATH&quot;" />
+    </configuration>
+    <list>
+      <item itemvalue="Python.pathway_analysis" />
+      <item itemvalue="Python.optlang_test" />
+    </list>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Python.optlang_test" />
+        <item itemvalue="Python.pathway_analysis" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a5a70f1c-d61f-4a45-ab3f-7a9559a14140" name="Default" comment="" />
+      <created>1505922648364</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1505922648364</updated>
+    </task>
+    <task id="LOCAL-00001" summary="[REMOVE] Print statements from previous debugging">
+      <created>1523202420148</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1523202420149</updated>
+    </task>
+    <task id="LOCAL-00002" summary="[ADD] Nullspace analysis module">
+      <created>1523985921930</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1523985921930</updated>
+    </task>
+    <task id="LOCAL-00003" summary="[REFACTOR] Renamed some classes to reflect changes&#10;[ADD] Optimization classes">
+      <created>1523988557519</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1523988557519</updated>
+    </task>
+    <option name="localTasksCounter" value="4" />
+    <servers />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-1" y="25" width="1922" height="1056" extended-state="6" />
+    <layout>
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50409615" side_tool="true" weight="0.3088553" />
+      <window_info anchor="bottom" id="Database Changes" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Version Control" order="11" />
+      <window_info anchor="bottom" x="43" y="729" width="1841" height="298" id="Python Console" order="8" sideWeight="0.49590388" weight="0.3029001" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32934782" />
+      <window_info anchor="bottom" id="Terminal" order="10" weight="0.32829374" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.4944" visible="true" weight="0.128125" />
+      <window_info anchor="bottom" id="Docker" order="9" show_stripe_button="false" />
+      <window_info anchor="right" id="Database" order="6" />
+      <window_info anchor="right" x="1920" y="28" width="1920" height="1052" id="SciView" order="4" type="WINDOWED" weight="0.3298744" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.24959038" />
+      <window_info id="Favorites" order="2" sideWeight="0.5056" side_tool="true" weight="0.125" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39891306" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" id="Commander" order="0" weight="0.4" />
+      <window_info anchor="right" x="1041" y="206" width="567" height="560" id="Data View" order="5" type="WINDOWED" weight="0.26865673" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32984293" />
+      <window_info anchor="right" x="0" y="0" width="419" height="855" id="Documentation" order="3" visible="true" weight="0.34182826" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Message" order="0" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="[REMOVE] Print statements from previous debugging" />
+    <MESSAGE value="[ADD] Nullspace analysis module" />
+    <MESSAGE value="[REFACTOR] Renamed some classes to reflect changes&#10;[ADD] Optimization classes" />
+    <option name="LAST_COMMIT_MESSAGE" value="[REFACTOR] Renamed some classes to reflect changes&#10;[ADD] Optimization classes" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <option name="time" value="26" />
+    </breakpoint-manager>
+    <watches-manager>
+      <configuration name="Python Console Debugger">
+        <watch expression="self" />
+      </configuration>
+    </watches-manager>
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="file://$USER_HOME$/miniconda3/envs/cbmodels/lib/python3.5/json/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/0test_model.txt" />
+    <entry file="file://$PROJECT_DIR$/1test_model.txt" />
+    <entry file="file://$PROJECT_DIR$/3test_model.txt" />
+    <entry file="file://$PROJECT_DIR$/5test_model.txt" />
+    <entry file="file://$PROJECT_DIR$/4test_model.txt" />
+    <entry file="file://$USER_HOME$/miniconda3/envs/hmi_cobra/lib/python3.5/site-packages/cobra-0.8.2-py3.5-linux-x86_64.egg/cobra/solvers/__init__.py" />
+    <entry file="file://$USER_HOME$/miniconda3/envs/hmi_cobra/lib/python3.5/site-packages/optlang-1.2.4-py3.5.egg/optlang/__init__.py" />
+    <entry file="file://$PROJECT_DIR$/problem_mat.csv" />
+    <entry file="file://$USER_HOME$/miniconda3/envs/hmi_cobra/lib/python3.5/site-packages/numpy/lib/npyio.py" />
+    <entry file="file://$PROJECT_DIR$/sol4" />
+    <entry file="file://$PROJECT_DIR$/sol1" />
+    <entry file="file://$PROJECT_DIR$/sol11" />
+    <entry file="file://$USER_HOME$/miniconda3/envs/hmi_cobra/lib/python3.5/site-packages/cplex/__init__.py" />
+    <entry file="file://$USER_HOME$/.PyCharmCE2017.1/system/python_stubs/1194586264/builtins.py" />
+    <entry file="file://$PROJECT_DIR$/sol7" />
+    <entry file="file://$PROJECT_DIR$/sol5" />
+    <entry file="file://$PROJECT_DIR$/sol6" />
+    <entry file="file://$USER_HOME$/Miniconda3/envs/cobrapy_pip/Lib/site-packages/cobra/flux_analysis/double_deletion.py" />
+    <entry file="file://$PROJECT_DIR$/results" />
+    <entry file="file://$PROJECT_DIR$/cplex_model" />
+    <entry file="file://$PROJECT_DIR$/test_sols.csv" />
+    <entry file="file://$PROJECT_DIR$/test_model_mps.txt" />
+    <entry file="file://$PROJECT_DIR$/rew_test" />
+    <entry file="file://$PROJECT_DIR$/foodmanu.lp" />
+    <entry file="file://$PROJECT_DIR$/foodmanu.py" />
+    <entry file="file://$PROJECT_DIR$/test_model2.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model9.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model1.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model_diff" />
+    <entry file="file://$PROJECT_DIR$/test_model_diff.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model_diff_after.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model0.lp" />
+    <entry file="file://$PROJECT_DIR$/test_model.txt" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/cplex/_internal/_subinterfaces.py" />
+    <entry file="file://$PROJECT_DIR$/test_model3.lp" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/optlang/container.py" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/IPython/core/interactiveshell.py" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/optlang/cplex_interface.py" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/site-packages/optlang/__init__.py" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/abc.py" />
+    <entry file="file:///opt/miniconda3/envs/cobra_mcs/lib/python3.5/codecs.py" />
+    <entry file="file://$PROJECT_DIR$/test_model.lp" />
+    <entry file="file://$PROJECT_DIR$/test.py" />
+    <entry file="file://$PROJECT_DIR$/human_test.py" />
+    <entry file="file://$PROJECT_DIR$/framed_connector.py" />
+    <entry file="file://$PROJECT_DIR$/log">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/optlang_test.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="120">
+          <caret line="8" column="27" selection-start-line="8" selection-start-column="27" selection-end-line="8" selection-end-column="27" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/optimization.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1575">
+          <caret line="107" column="36" selection-start-line="107" selection-start-column="36" selection-end-line="107" selection-end-column="36" />
+          <folding>
+            <element signature="e#0#58#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pathway_analysis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1740">
+          <caret line="119" column="24" selection-start-line="119" selection-start-column="24" selection-end-line="119" selection-end-column="24" />
+          <folding>
+            <element signature="e#0#58#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/nullspace.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="390">
+          <caret line="26" column="55" lean-forward="true" selection-start-line="26" selection-start-column="55" selection-end-line="26" selection-end-column="55" />
+          <folding>
+            <element signature="e#260#284#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+  </component>
+</project>
