@@ -2,14 +2,6 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="a5a70f1c-d61f-4a45-ab3f-7a9559a14140" name="Default" comment="[ADD] Added file utilities module">
-      <change beforePath="$PROJECT_DIR$/.idea/MCSEnumeratorPython.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/MCSEnumeratorPython.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.pytest_cache/v/cache/lastfailed" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/.pytest_cache/v/cache/nodeids" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/MCS enumeration in the ecoli_core_model.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/problem.lp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/results" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../framed_hm/doc/conf.py" beforeDir="false" afterPath="$PROJECT_DIR$/../framed_hm/doc/conf.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../framed_hm/sbml_files/Recon1.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../framed_hm/sbml_files/Recon1.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../framed_hm/tests/consensus_model_test.py" beforeDir="false" afterPath="$PROJECT_DIR$/../framed_hm/tests/consensus_model_test.py" afterDir="false" />
@@ -49,6 +41,7 @@
         <counts>
           <entry key="Makefile" value="3" />
           <entry key="buildinfo" value="1" />
+          <entry key="gitignore" value="1" />
           <entry key="html" value="1" />
           <entry key="nojekyll" value="2" />
           <entry key="py" value="1" />
@@ -57,21 +50,22 @@
       <usages-collector id="statistics.file.types.open">
         <counts>
           <entry key="HTML" value="1" />
-          <entry key="PLAIN_TEXT" value="6" />
+          <entry key="PLAIN_TEXT" value="7" />
           <entry key="Python" value="1" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.extensions.edit">
         <counts>
           <entry key="Makefile" value="12" />
+          <entry key="gitignore" value="32" />
           <entry key="html" value="4" />
-          <entry key="txt" value="255" />
+          <entry key="txt" value="311" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.file.types.edit">
         <counts>
           <entry key="HTML" value="4" />
-          <entry key="PLAIN_TEXT" value="267" />
+          <entry key="PLAIN_TEXT" value="355" />
         </counts>
       </usages-collector>
       <usages-collector id="statistics.vcs.git.usages">
@@ -86,11 +80,20 @@
   </component>
   <component name="FileEditorManager">
     <leaf>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/docs_gen/Makefile">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="7" column="24" selection-start-line="7" selection-start-column="24" selection-end-line="7" selection-end-column="24" />
+            <state relative-caret-position="270">
+              <caret line="18" column="73" lean-forward="true" selection-start-line="18" selection-start-column="73" selection-end-line="18" selection-end-column="73" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/.gitignore">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="45">
+              <caret line="3" column="3" lean-forward="true" selection-start-line="3" selection-start-column="3" selection-end-line="3" selection-end-column="3" />
             </state>
           </provider>
         </entry>
@@ -205,6 +208,7 @@
         <option value="$PROJECT_DIR$/examples/iaf1260.py" />
         <option value="$PROJECT_DIR$/docs/index.html" />
         <option value="$PROJECT_DIR$/docs_gen/Makefile" />
+        <option value="$PROJECT_DIR$/.gitignore" />
       </list>
     </option>
   </component>
@@ -869,7 +873,14 @@
       <option name="project" value="LOCAL" />
       <updated>1541168345603</updated>
     </task>
-    <option name="localTasksCounter" value="42" />
+    <task id="LOCAL-00042" summary="[REMOVE] IDE specific files and old tests">
+      <created>1541168516451</created>
+      <option name="number" value="00042" />
+      <option name="presentableId" value="LOCAL-00042" />
+      <option name="project" value="LOCAL" />
+      <updated>1541168516451</updated>
+    </task>
+    <option name="localTasksCounter" value="43" />
     <servers />
   </component>
   <component name="TestHistory">
@@ -906,6 +917,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-1" y="28" width="1922" height="1053" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.20330843" />
       <window_info id="Structure" order="1" weight="0.25" />
@@ -940,7 +952,6 @@
     <option name="myLimit" value="2678400000" />
   </component>
   <component name="VcsManagerConfiguration">
-    <MESSAGE value="[ADD] Classes to generate intervention problems easily" />
     <MESSAGE value="[ADD] Consensus model test script" />
     <MESSAGE value="[ADD] Stuff" />
     <MESSAGE value="[ADD] Comparison between FBA and MCS lethals (wip)" />
@@ -965,7 +976,8 @@
     <MESSAGE value="[REFACTOR] Moved nojekyll" />
     <MESSAGE value="[REMOVE] Docs folder&#10;Going to change the makefile so it builds there" />
     <MESSAGE value="[FIX] Makefile paths" />
-    <option name="LAST_COMMIT_MESSAGE" value="[FIX] Makefile paths" />
+    <MESSAGE value="[REMOVE] IDE specific files and old tests" />
+    <option name="LAST_COMMIT_MESSAGE" value="[REMOVE] IDE specific files and old tests" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -984,13 +996,6 @@
     </watches-manager>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/old/problem.lp">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="119">
-          <caret line="7" selection-start-line="7" selection-end-line="7" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/old/mptest.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="102">
@@ -1316,8 +1321,15 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/docs_gen/Makefile">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="7" column="24" selection-start-line="7" selection-start-column="24" selection-end-line="7" selection-end-column="24" />
+        <state relative-caret-position="270">
+          <caret line="18" column="73" lean-forward="true" selection-start-line="18" selection-start-column="73" selection-end-line="18" selection-end-column="73" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/.gitignore">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="45">
+          <caret line="3" column="3" lean-forward="true" selection-start-line="3" selection-start-column="3" selection-end-line="3" selection-end-column="3" />
         </state>
       </provider>
     </entry>
