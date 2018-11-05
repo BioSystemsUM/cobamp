@@ -51,11 +51,11 @@ class KShortestEnumeratorWrapper(object):
 		self.__setup_algorithm()
 
 	def __setup_algorithm(self):
-		'''
+		"""
 		Creates the algorithm instance
 		Returns:
 
-		'''
+		"""
 		self.__algo = KShortestEFMAlgorithm(self.__algo_properties, False)
 
 	def __get_forced_solutions(self):

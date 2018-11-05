@@ -5,7 +5,7 @@ EPSILON = 1e-10
 PRECISION = 1e-10
 
 def compute_nullspace(A, eps=1e-9, left=True):
-    '''
+    """
     Computes the nullspace of the matrix A
     Parameters
     ----------
@@ -16,14 +16,14 @@ def compute_nullspace(A, eps=1e-9, left=True):
     Returns the nullspace of A as a 2D ndarray
     -------
 
-    '''
+    """
     u, s, v = svd(A)
     padding = max(0, A.shape[1] - s.shape[0])
     mask = concatenate(((s <= eps), ones((padding,), dtype=bool)), axis=0)
     return compress(mask, u.T, 0) if left else compress(mask, v.T, 1)
 
 def nullspace_blocked_reactions(K, tolerance):
-    '''
+    """
 
     Parameters
     ----------
@@ -33,7 +33,7 @@ def nullspace_blocked_reactions(K, tolerance):
     Returns indices of the rows of K where all values are 0
     -------
 
-    '''
+    """
     return where(sum(abs(K.T) > tolerance) == K.shape[0])[0]
 
 if __name__ == '__main__':

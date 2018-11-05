@@ -1,12 +1,12 @@
 import types
 
 class PropertyDictionary():
-	'''
+	"""
 	Implements a dict with additional control on which objects can be added to which keys and whether these are optional
 	or mandatory.
-	'''
+	"""
 	def __init__(self, mandatory_properties={}, optional_properties={}):
-		'''
+		"""
 		The values for each of the required dicts can either be:
 			- A type (such as str, int, etc...)
 			- A function returning a boolean and accepting a single value as argument
@@ -18,13 +18,13 @@ class PropertyDictionary():
 		for values, as described above
 		optional_properties: A dict[str,function] mapping the keys of optional properties with one of three options
 		for values, as described above
-		'''
+		"""
 		self.__mandatory_properties = mandatory_properties
 		self.__optional_properties = optional_properties
 		self.__properties = {}
 
 	def __add_new_properties(self, mandatory_properties, optional_properties):
-		'''
+		"""
 		Adds new properties to the dictionary and/or updates existing ones, if present.
 		Parameters
 		----------
@@ -32,30 +32,30 @@ class PropertyDictionary():
 		optional_properties: A dict[str, function]
 		-------
 
-		'''
+		"""
 		self.__mandatory_properties.update(mandatory_properties)
 		self.__optional_properties.update(optional_properties)
 
 	def get_mandatory_properties(self):
-		'''
+		"""
 
 		Returns a dictionary containing the mapping between mandatory keys and function/type/list controlling values.
 		-------
 
-		'''
+		"""
 		return self.__mandatory_properties
 
 	def get_optional_properties(self):
-		'''
+		"""
 
 		Returns a dictionary containing the mapping between optional keys and function/type/list controlling values.
 		-------
 
-		'''
+		"""
 		return self.__optional_properties
 
 	def __getitem__(self, item):
-		'''
+		"""
 		Overloaded indexing to allow the square brace syntax for accessing values through keys. If the key was not
 		registered, an exception will be raised. If the key was registered but no value exists, None will be returned.
 
@@ -66,7 +66,7 @@ class PropertyDictionary():
 		Returns an object.
 		-------
 
-		'''
+		"""
 		if item not in self.__mandatory_properties.keys() and item not in self.__optional_properties.keys():
 			raise Exception(str(item)+" has not been registered as a mandatory or optional property.")
 		elif item not in self.__properties.keys():
@@ -75,7 +75,7 @@ class PropertyDictionary():
 			return self.__properties[item]
 
 	def __setitem__(self, key, value):
-		'''
+		"""
 		Sets the value for the supplied key
 		Parameters
 		----------
@@ -83,7 +83,7 @@ class PropertyDictionary():
 		value - an object compliant with the functions set for the key.
 		-------
 
-		'''
+		"""
 		if key in self.__mandatory_properties.keys() or key in self.__optional_properties.keys():
 			expected_type = self.__mandatory_properties[key] if key in self.__mandatory_properties.keys() else self.__optional_properties[key]
 			if self.__check_key_value_pair(expected_type, value):
@@ -92,16 +92,16 @@ class PropertyDictionary():
 				raise Exception(str(key)+" does not accept the supplied `value` as a valid argument.")
 
 	def has_required_properties(self):
-		'''
+		"""
 
 		Returns a boolean value if the mandatory properties all have an associated value.
 		-------
 
-		'''
+		"""
 		return set(self.__properties.keys()) & set(self.__mandatory_properties.keys()) == set(self.__mandatory_properties.keys())
 
 	def __check_key_value_pair(self, expected_type, value):
-		'''
+		"""
 		Checks whether a value is compliant with a function/type or is contained in a list of admissible values.
 		Parameters
 		----------
@@ -112,7 +112,7 @@ class PropertyDictionary():
 		Returns a boolean indicating whether the value can be added, assuming the conditions set by `expected_type`
 		-------
 
-		'''
+		"""
 		if type(expected_type) is type:
 			is_ok = expected_type == type(value)
 			if not is_ok:
@@ -129,9 +129,9 @@ class PropertyDictionary():
 		return is_ok
 
 	def __repr__(self):
-		'''
+		"""
 		Returns a string representation of the internal dictionary where all keys/values are stored.
 		-------
 
-		'''
+		"""
 		return '\n'.join([str(k)+" = "+str(v) for k,v in self.__properties.items()])

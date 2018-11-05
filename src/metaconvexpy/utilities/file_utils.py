@@ -1,7 +1,7 @@
 import pickle
 
 def pickle_object(obj, path):
-	'''
+	"""
 	Stores an object as a file.
 	Parameters
 	----------
@@ -11,12 +11,12 @@ def pickle_object(obj, path):
 	Returns
 	-------
 
-	'''
+	"""
 	with open(path, "wb") as f:
 		pickle.dump(obj, f)
 
 def read_pickle(path):
-	'''
+	"""
 	Reads a file containing a pickled object and returns it
 	Parameters
 	----------
@@ -25,6 +25,6 @@ def read_pickle(path):
 	Returns an object.
 	-------
 
-	'''
+	"""
 	with open(path, "rb") as f:
 		return pickle.load(f)

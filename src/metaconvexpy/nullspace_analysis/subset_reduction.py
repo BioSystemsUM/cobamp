@@ -1,6 +1,6 @@
-'''
+"""
 Inspired by Metatool's code
-'''
+"""
 
 from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, array, dot
 from numpy.linalg import norm
@@ -11,7 +11,7 @@ EPSILON = 2 ** -52
 PRECISION = 1e-10
 
 def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
-	'''
+	"""
 	Reduces a stoichiometric matrix using nullspace analysis by identifying linearly dependent (enzyme) subsets.
 	These reactions are then compressed.
 	Parameters
@@ -33,7 +33,7 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	correlation_matrix : numpy.array with reaction correlation matrix
 	-------
 
-	'''
+	"""
 	m, n = S.shape
 
 	keep_single = array([False] * n)
@@ -73,7 +73,7 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 
 
 def subset_candidates(kernel, tol=None):
-	'''
+	"""
 	Computes a matrix of subset candidates from the nullspace of the S matrix
 	Parameters
 	----------
@@ -83,7 +83,7 @@ def subset_candidates(kernel, tol=None):
 	Returns a 2D triangular ndarray
 	-------
 
-	'''
+	"""
 	tol = kernel.shape[0] * EPSILON if tol is None else tol
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
@@ -96,7 +96,7 @@ def subset_candidates(kernel, tol=None):
 
 
 def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
-	'''
+	"""
 
 	Parameters
 	----------
@@ -112,7 +112,7 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	irrev_violating_subsets : same as sub, but list if empty. Contains subsets discarded due to irreversibility faults
 	-------
 
-	'''
+	"""
 	m, n = S.shape
 	if keepSingle is None:
 		keepSingle = array([])
@@ -155,7 +155,7 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 
 
 def reduce(S, sub, irrev_reduced=None):
-	'''
+	"""
 	Reduces a stoichiometric matrix according to the subset information present in the sub matrix and irrev_reduced.
 	Parameters
 	----------
@@ -167,7 +167,7 @@ def reduce(S, sub, irrev_reduced=None):
 
 	-------
 
-	'''
+	"""
 
 	reduced = dot(S,sub.T)
 	reduced[abs(reduced) < PRECISION] = 0
