@@ -43,11 +43,8 @@ Developed at the Centre of Biological Engineering, University of Minho
 
 Released under the GNU Public License (version 3.0).
 
-.. |DOI| image:: https://zenodo.org/badge/DOI/10.5281/zenodo.240430.svg
-   :target: https://doi.org/10.5281/zenodo.240430
+
 .. |License| image:: https://img.shields.io/badge/license-GPL%20v3.0-blue.svg
    :target: https://opensource.org/licenses/GPL-3.0
 .. |PyPI version| image:: https://badge.fury.io/py/pyCoBAMP.svg
    :target: https://badge.fury.io/py/pyCoBAMP
-.. |Documentation Status| image:: http://readthedocs.org/projects/framed/badge/?version=latest
-   :target: http://framed.readthedocs.io/en/latest/?badge=latest
