@@ -1,4 +1,4 @@
-|DOI| |License| |PyPI version| |Documentation Status|
+|License| |PyPI version|
 
 pyCoBAMP
 ============
