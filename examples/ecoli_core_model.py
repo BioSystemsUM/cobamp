@@ -1,7 +1,7 @@
 import urllib
 import cobra
 import escher
-from src.metaconvexpy.utilities.external_wrappers import KShortestEFMEnumeratorWrapper
+from src.cobamp.utilities.external_wrappers import KShortestEFMEnumeratorWrapper
 
 model_url = "http://bigg.ucsd.edu/static/models/e_coli_core.xml"
 model_path, model_content = urllib.request.urlretrieve(model_url)

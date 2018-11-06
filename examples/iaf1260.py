@@ -1,12 +1,12 @@
 import numpy as np
 import os
 from itertools import product
-from metaconvexpy.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
-from metaconvexpy.linear_systems.linear_systems import DualLinearSystem
-from metaconvexpy.mcs_enumeration.intervention_problem import *
-import metaconvexpy.efm_enumeration.kshortest_efm_properties as kp
+from cobamp.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from cobamp.linear_systems.linear_systems import DualLinearSystem
+from cobamp.mcs_enumeration.intervention_problem import *
+import cobamp.efm_enumeration.kshortest_efm_properties as kp
 
-os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy/examples/iAF1260_resources')
+os.chdir('/home/skapur/Workspaces/PyCharm/cobamp/examples/iAF1260_resources')
 
 S = np.genfromtxt('iAF1260_comp_stoich.csv', delimiter=',')
 

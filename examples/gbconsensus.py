@@ -4,14 +4,14 @@ import pandas as pd
 import math
 
 from itertools import product
-from metaconvexpy.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
-from metaconvexpy.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem, SimpleLinearSystem
-from metaconvexpy.linear_systems.optimization import LinearSystemOptimizer
-from metaconvexpy.mcs_enumeration.intervention_problem import *
-from metaconvexpy.utilities.file_utils import pickle_object
-import metaconvexpy.efm_enumeration.kshortest_efm_properties as kp
+from cobamp.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
+from cobamp.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem, SimpleLinearSystem
+from cobamp.linear_systems.optimization import LinearSystemOptimizer
+from cobamp.mcs_enumeration.intervention_problem import *
+from cobamp.utilities.file_utils import pickle_object
+import cobamp.efm_enumeration.kshortest_efm_properties as kp
 
-#os.chdir('/home/skapur/Workspaces/PyCharm/metaconvexpy')
+#os.chdir('/home/skapur/Workspaces/PyCharm/cobamp')
 
 def decode_mcs(solutions):
 	return list(chain(

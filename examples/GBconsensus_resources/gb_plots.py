@@ -1,5 +1,5 @@
-from metaconvexpy.utilities.file_utils import read_pickle
-from metaconvexpy.utilities.tree_analysis import *
+from cobamp.utilities.file_utils import read_pickle
+from cobamp.utilities.tree_analysis import *
 from itertools import chain
 import matplotlib.pyplot as plt
 import networkx as nx
