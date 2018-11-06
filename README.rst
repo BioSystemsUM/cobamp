@@ -3,7 +3,7 @@
 pyCoBAMP
 ============
 
-*pyCoBAMP* (Constraint-Based Analysis of Metabolic Pathways) is aPython package containing pathway analysis methods
+*pyCoBAMP* (Constraint-Based Analysis of Metabolic Pathways) is a Python package containing pathway analysis methods
 for use with constraint-based metabolic models. The main purpose is to provide a framework that is both modular and
 flexible enough to be integrated in other packages (such as cobrapy, framed or cameo) that already implement generic
 data structures for metabolic models.
