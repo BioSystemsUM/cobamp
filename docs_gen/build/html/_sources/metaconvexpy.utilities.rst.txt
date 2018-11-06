@@ -1,45 +1,45 @@
-metaconvexpy.utilities package
+cobamp.utilities package
 ==============================
 
 Submodules
 ----------
 
-metaconvexpy.utilities.external\_wrappers module
+cobamp.utilities.external\_wrappers module
 ------------------------------------------------
 
-.. automodule:: metaconvexpy.utilities.external_wrappers
+.. automodule:: cobamp.utilities.external_wrappers
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.utilities.file\_utils module
+cobamp.utilities.file\_utils module
 -----------------------------------------
 
-.. automodule:: metaconvexpy.utilities.file_utils
+.. automodule:: cobamp.utilities.file_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.utilities.property\_management module
+cobamp.utilities.property\_management module
 --------------------------------------------------
 
-.. automodule:: metaconvexpy.utilities.property_management
+.. automodule:: cobamp.utilities.property_management
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.utilities.set\_utils module
+cobamp.utilities.set\_utils module
 ----------------------------------------
 
-.. automodule:: metaconvexpy.utilities.set_utils
+.. automodule:: cobamp.utilities.set_utils
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.utilities.tree\_analysis module
+cobamp.utilities.tree\_analysis module
 --------------------------------------------
 
-.. automodule:: metaconvexpy.utilities.tree_analysis
+.. automodule:: cobamp.utilities.tree_analysis
     :members:
     :undoc-members:
     :show-inheritance:
@@ -48,7 +48,7 @@ metaconvexpy.utilities.tree\_analysis module
 Module contents
 ---------------
 
-.. automodule:: metaconvexpy.utilities
+.. automodule:: cobamp.utilities
     :members:
     :undoc-members:
     :show-inheritance:

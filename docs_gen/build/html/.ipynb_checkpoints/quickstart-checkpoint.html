@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>EFM and MCS enumeration in the ecoli_core_model &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>EFM and MCS enumeration in the ecoli_core_model &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,10 +80,10 @@
               <div class="local-toc"><ul>
 <li><a class="reference internal" href="#">EFM and MCS enumeration in the ecoli_core_model</a><ul>
 <li><a class="reference internal" href="#Model-reading-and-setup">Model reading and setup</a></li>
-<li><a class="reference internal" href="#Import-metaconvexpy-and-enumerate-minimal-cut-sets">Import <em>metaconvexpy</em> and enumerate minimal cut sets</a></li>
+<li><a class="reference internal" href="#Import-cobamp-and-enumerate-minimal-cut-sets">Import <em>cobamp</em> and enumerate minimal cut sets</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#Using-metaconvexpy-to-enumerate-elementary-flux-modes">Using <em>metaconvexpy</em> to enumerate elementary flux modes</a><ul>
+<li><a class="reference internal" href="#Using-cobamp-to-enumerate-elementary-flux-modes">Using <em>cobamp</em> to enumerate elementary flux modes</a><ul>
 <li><a class="reference internal" href="#Constraint-based-analysis-of-mutant-phenotypes">Constraint-based analysis of mutant phenotypes</a></li>
 </ul>
 </li>
@@ -101,7 +101,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../index.html">metaconvexpy</a>
+          <a href="../index.html">cobamp</a>
         
       </nav>
 
@@ -336,7 +336,7 @@ div.nboutput div.output_area.stderr {
 </style>
 <div class="section" id="EFM-and-MCS-enumeration-in-the-ecoli_core_model">
 <h1>EFM and MCS enumeration in the ecoli_core_model<a class="headerlink" href="#EFM-and-MCS-enumeration-in-the-ecoli_core_model" title="Permalink to this headline">¶</a></h1>
-<p>This notebook provides an example on how to use <em>metaconvexpy</em> to
+<p>This notebook provides an example on how to use <em>cobamp</em> to
 calculate elementary flux modes (EFMs) and minimal cut sets (MCSs)
 coupled with the model reading and flux analysis capabilities of the
 <em>COBRApy</em> package.</p>
@@ -453,8 +453,8 @@ the media is defined when a lower or upper bound is different than 0,
 </div>
 </div>
 </div>
-<div class="section" id="Import-metaconvexpy-and-enumerate-minimal-cut-sets">
-<h2>Import <em>metaconvexpy</em> and enumerate minimal cut sets<a class="headerlink" href="#Import-metaconvexpy-and-enumerate-minimal-cut-sets" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="Import-cobamp-and-enumerate-minimal-cut-sets">
+<h2>Import <em>cobamp</em> and enumerate minimal cut sets<a class="headerlink" href="#Import-cobamp-and-enumerate-minimal-cut-sets" title="Permalink to this headline">¶</a></h2>
 <p>Import the MCSEnumerator wrapper class (<em>KShortestMCSEnumeratorWrapper</em>)
 that works with COBRA models. <em>KShortestMCSEnumeratorWrapper</em> provides a
 simple interface to enumerate minimal cut sets (MCSs) using the
@@ -469,7 +469,7 @@ example, we will enumerate some MCSs.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">src.metaconvexpy.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestMCSEnumeratorWrapper</span>
+<span></span><span class="kn">from</span> <span class="nn">src.cobamp.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestMCSEnumeratorWrapper</span>
 </pre></div>
 </div>
 </div>
@@ -709,8 +709,8 @@ Starting size 5
 </div>
 </div>
 </div>
-<div class="section" id="Using-metaconvexpy-to-enumerate-elementary-flux-modes">
-<h1>Using <em>metaconvexpy</em> to enumerate elementary flux modes<a class="headerlink" href="#Using-metaconvexpy-to-enumerate-elementary-flux-modes" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="Using-cobamp-to-enumerate-elementary-flux-modes">
+<h1>Using <em>cobamp</em> to enumerate elementary flux modes<a class="headerlink" href="#Using-cobamp-to-enumerate-elementary-flux-modes" title="Permalink to this headline">¶</a></h1>
 <p>We can import the <em>KShortestEFMEnumeratorWrapper</em> to enumerate
 elementary flux modes (EFMs) using the K-shortest EFM algorithm.</p>
 <p>EFMs can be considered as the smallest functional units in a metabolic
@@ -722,7 +722,7 @@ novel metabolic functions.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">src.metaconvexpy.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestEFMEnumeratorWrapper</span>
+<span></span><span class="kn">from</span> <span class="nn">src.cobamp.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestEFMEnumeratorWrapper</span>
 </pre></div>
 </div>
 </div>
@@ -975,7 +975,7 @@ hand side of the inequation</p>
 <p>Alternatively, external packages can be used to provide a more
 interactive result. The <em>escher</em> package (<a class="reference external" href="https://escher.github.io/">https://escher.github.io/</a>),
 once installed in your Python distribution, can be used to display
-metabolic maps. The snippet below shows how the EFMs from <em>metaconvexpy</em>
+metabolic maps. The snippet below shows how the EFMs from <em>cobamp</em>
 can be used directly as inputs for <em>escher</em> maps.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
@@ -1111,7 +1111,7 @@ Please note that this functionality is still highly experimental</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">src.metaconvexpy.utilities.tree_analysis</span> <span class="k">import</span> <span class="o">*</span>
+<span></span><span class="kn">from</span> <span class="nn">src.cobamp.utilities.tree_analysis</span> <span class="k">import</span> <span class="o">*</span>
 </pre></div>
 </div>
 </div>

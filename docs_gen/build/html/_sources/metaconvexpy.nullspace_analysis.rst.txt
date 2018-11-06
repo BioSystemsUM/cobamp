@@ -1,21 +1,21 @@
-metaconvexpy.nullspace\_analysis package
+cobamp.nullspace\_analysis package
 ========================================
 
 Submodules
 ----------
 
-metaconvexpy.nullspace\_analysis.nullspace module
+cobamp.nullspace\_analysis.nullspace module
 -------------------------------------------------
 
-.. automodule:: metaconvexpy.nullspace_analysis.nullspace
+.. automodule:: cobamp.nullspace_analysis.nullspace
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.nullspace\_analysis.subset\_reduction module
+cobamp.nullspace\_analysis.subset\_reduction module
 ---------------------------------------------------------
 
-.. automodule:: metaconvexpy.nullspace_analysis.subset_reduction
+.. automodule:: cobamp.nullspace_analysis.subset_reduction
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ metaconvexpy.nullspace\_analysis.subset\_reduction module
 Module contents
 ---------------
 
-.. automodule:: metaconvexpy.nullspace_analysis
+.. automodule:: cobamp.nullspace_analysis
     :members:
     :undoc-members:
     :show-inheritance:

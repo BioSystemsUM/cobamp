@@ -1,21 +1,21 @@
-metaconvexpy.linear\_systems package
+cobamp.linear\_systems package
 ====================================
 
 Submodules
 ----------
 
-metaconvexpy.linear\_systems.linear\_systems module
+cobamp.linear\_systems.linear\_systems module
 ---------------------------------------------------
 
-.. automodule:: metaconvexpy.linear_systems.linear_systems
+.. automodule:: cobamp.linear_systems.linear_systems
     :members:
     :undoc-members:
     :show-inheritance:
 
-metaconvexpy.linear\_systems.optimization module
+cobamp.linear\_systems.optimization module
 ------------------------------------------------
 
-.. automodule:: metaconvexpy.linear_systems.optimization
+.. automodule:: cobamp.linear_systems.optimization
     :members:
     :undoc-members:
     :show-inheritance:
@@ -24,7 +24,7 @@ metaconvexpy.linear\_systems.optimization module
 Module contents
 ---------------
 
-.. automodule:: metaconvexpy.linear_systems
+.. automodule:: cobamp.linear_systems
     :members:
     :undoc-members:
     :show-inheritance:

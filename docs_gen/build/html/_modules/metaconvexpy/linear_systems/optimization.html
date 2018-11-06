@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.linear_systems.optimization &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.linear_systems.optimization &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.linear_systems.optimization</li>
+      <li>cobamp.linear_systems.optimization</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,12 +143,12 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.linear_systems.optimization</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.linear_systems.optimization</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">cplex</span><span class="o">,</span> <span class="nn">string</span><span class="o">,</span> <span class="nn">random</span><span class="o">,</span> <span class="nn">shutil</span>
 
 <span class="n">CPLEX_INFINITY</span> <span class="o">=</span> <span class="n">cplex</span><span class="o">.</span><span class="n">infinity</span>
 
-<div class="viewcode-block" id="random_string_generator"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.random_string_generator">[docs]</a><span class="k">def</span> <span class="nf">random_string_generator</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
+<div class="viewcode-block" id="random_string_generator"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.random_string_generator">[docs]</a><span class="k">def</span> <span class="nf">random_string_generator</span><span class="p">(</span><span class="n">N</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">	Parameters</span>
@@ -161,7 +161,7 @@
 <span class="sd">	&#39;&#39;&#39;</span>
 	<span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">string</span><span class="o">.</span><span class="n">ascii_uppercase</span> <span class="o">+</span> <span class="n">string</span><span class="o">.</span><span class="n">digits</span><span class="p">)</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">N</span><span class="p">))</span></div>
 
-<div class="viewcode-block" id="copy_cplex_model"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.copy_cplex_model">[docs]</a><span class="k">def</span> <span class="nf">copy_cplex_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
+<div class="viewcode-block" id="copy_cplex_model"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.copy_cplex_model">[docs]</a><span class="k">def</span> <span class="nf">copy_cplex_model</span><span class="p">(</span><span class="n">model</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Copies a Cplex model and returns a new object with the same contents in a separate object. Requires file creation</span>
 <span class="sd">	and reading permissions.</span>
@@ -190,7 +190,7 @@
 	<span class="k">return</span> <span class="n">new_model</span></div>
 
 
-<div class="viewcode-block" id="Solution"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution">[docs]</a><span class="k">class</span> <span class="nc">Solution</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution">[docs]</a><span class="k">class</span> <span class="nc">Solution</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Class representing a solution to a given linear optimization problem. Includes an internal dictionary for additional</span>
 <span class="sd">	information to be included.</span>
@@ -217,7 +217,7 @@
 		<span class="k">else</span><span class="p">:</span>
 			<span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">item</span><span class="se">\&#39;</span><span class="s1"> is not a sequence or string.&#39;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Solution.set_attribute"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution.set_attribute">[docs]</a>	<span class="k">def</span> <span class="nf">set_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution.set_attribute"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution.set_attribute">[docs]</a>	<span class="k">def</span> <span class="nf">set_attribute</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		Sets the value of a given &lt;key&gt; as &lt;value&gt;.</span>
 <span class="sd">		Parameters</span>
@@ -229,7 +229,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__attribute_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span></div>
 
-<div class="viewcode-block" id="Solution.var_values"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution.var_values">[docs]</a>	<span class="k">def</span> <span class="nf">var_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution.var_values"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution.var_values">[docs]</a>	<span class="k">def</span> <span class="nf">var_values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		Returns a dict mapping reaction indices with the variable values.</span>
 <span class="sd">		-------</span>
@@ -237,7 +237,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__value_map</span></div>
 
-<div class="viewcode-block" id="Solution.status"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution.status">[docs]</a>	<span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution.status"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution.status">[docs]</a>	<span class="k">def</span> <span class="nf">status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns the status of this solution, as supplied by the solver.</span>
@@ -246,7 +246,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__status</span></div>
 
-<div class="viewcode-block" id="Solution.attribute_value"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution.attribute_value">[docs]</a>	<span class="k">def</span> <span class="nf">attribute_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution.attribute_value"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution.attribute_value">[docs]</a>	<span class="k">def</span> <span class="nf">attribute_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attribute_name</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Parameters</span>
@@ -259,7 +259,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__attribute_dict</span><span class="p">[</span><span class="n">attribute_name</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Solution.attribute_names"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.Solution.attribute_names">[docs]</a>	<span class="k">def</span> <span class="nf">attribute_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Solution.attribute_names"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.Solution.attribute_names">[docs]</a>	<span class="k">def</span> <span class="nf">attribute_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns all keys present in the attribute dictionary.</span>
@@ -268,7 +268,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__attribute_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span></div></div>
 
-<div class="viewcode-block" id="LinearSystemOptimizer"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.LinearSystemOptimizer">[docs]</a><span class="k">class</span> <span class="nc">LinearSystemOptimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="LinearSystemOptimizer"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.LinearSystemOptimizer">[docs]</a><span class="k">class</span> <span class="nc">LinearSystemOptimizer</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Class with methods to solve a &lt;LinearSystem&gt; as a linear optimization problem.</span>
 <span class="sd">	&#39;&#39;&#39;</span>
@@ -308,7 +308,7 @@
 		<span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
 			<span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 
-<div class="viewcode-block" id="LinearSystemOptimizer.optimize"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.optimization.LinearSystemOptimizer.optimize">[docs]</a>	<span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">objective</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="LinearSystemOptimizer.optimize"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.optimization.LinearSystemOptimizer.optimize">[docs]</a>	<span class="k">def</span> <span class="nf">optimize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">objective</span><span class="p">,</span> <span class="n">minimize</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		See &lt;self.__optimize&gt;.</span>
 <span class="sd">		Parameters</span>

@@ -1,4 +1,4 @@
-metaconvexpy package
+cobamp package
 ====================
 
 Subpackages
@@ -6,16 +6,16 @@ Subpackages
 
 .. toctree::
 
-    metaconvexpy.efm_enumeration
-    metaconvexpy.linear_systems
-    metaconvexpy.mcs_enumeration
-    metaconvexpy.nullspace_analysis
-    metaconvexpy.utilities
+    cobamp.efm_enumeration
+    cobamp.linear_systems
+    cobamp.mcs_enumeration
+    cobamp.nullspace_analysis
+    cobamp.utilities
 
 Module contents
 ---------------
 
-.. automodule:: metaconvexpy
+.. automodule:: cobamp
     :members:
     :undoc-members:
     :show-inheritance:

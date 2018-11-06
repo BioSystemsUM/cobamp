@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.utilities.property_management &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.utilities.property_management &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.utilities.property_management</li>
+      <li>cobamp.utilities.property_management</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,10 +143,10 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.utilities.property_management</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.utilities.property_management</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">types</span>
 
-<div class="viewcode-block" id="PropertyDictionary"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.property_management.PropertyDictionary">[docs]</a><span class="k">class</span> <span class="nc">PropertyDictionary</span><span class="p">():</span>
+<div class="viewcode-block" id="PropertyDictionary"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.property_management.PropertyDictionary">[docs]</a><span class="k">class</span> <span class="nc">PropertyDictionary</span><span class="p">():</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Implements a dict with additional control on which objects can be added to which keys and whether these are optional</span>
 <span class="sd">	or mandatory.</span>
@@ -182,7 +182,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">__mandatory_properties</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">mandatory_properties</span><span class="p">)</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__optional_properties</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">optional_properties</span><span class="p">)</span>
 
-<div class="viewcode-block" id="PropertyDictionary.get_mandatory_properties"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.property_management.PropertyDictionary.get_mandatory_properties">[docs]</a>	<span class="k">def</span> <span class="nf">get_mandatory_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PropertyDictionary.get_mandatory_properties"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.property_management.PropertyDictionary.get_mandatory_properties">[docs]</a>	<span class="k">def</span> <span class="nf">get_mandatory_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns a dictionary containing the mapping between mandatory keys and function/type/list controlling values.</span>
@@ -191,7 +191,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__mandatory_properties</span></div>
 
-<div class="viewcode-block" id="PropertyDictionary.get_optional_properties"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.property_management.PropertyDictionary.get_optional_properties">[docs]</a>	<span class="k">def</span> <span class="nf">get_optional_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PropertyDictionary.get_optional_properties"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.property_management.PropertyDictionary.get_optional_properties">[docs]</a>	<span class="k">def</span> <span class="nf">get_optional_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns a dictionary containing the mapping between optional keys and function/type/list controlling values.</span>
@@ -237,7 +237,7 @@
 			<span class="k">else</span><span class="p">:</span>
 				<span class="k">raise</span> <span class="ne">Exception</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot; does not accept the supplied `value` as a valid argument.&quot;</span><span class="p">)</span>
 
-<div class="viewcode-block" id="PropertyDictionary.has_required_properties"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.property_management.PropertyDictionary.has_required_properties">[docs]</a>	<span class="k">def</span> <span class="nf">has_required_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="PropertyDictionary.has_required_properties"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.property_management.PropertyDictionary.has_required_properties">[docs]</a>	<span class="k">def</span> <span class="nf">has_required_properties</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns a boolean value if the mandatory properties all have an associated value.</span>

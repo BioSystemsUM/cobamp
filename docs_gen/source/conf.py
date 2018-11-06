@@ -109,7 +109,7 @@ html_static_path = ['_static']
 # -- Options for HTMLHelp output ---------------------------------------------
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'metaconvexpydoc'
+htmlhelp_basename = 'cobampdoc'
 
 
 # -- Options for LaTeX output ------------------------------------------------

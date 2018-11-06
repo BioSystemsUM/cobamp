@@ -1,9 +1,9 @@
-.. metaconvexpy documentation master file, created by
+.. cobamp documentation master file, created by
    sphinx-quickstart on Wed Oct 31 12:04:38 2018.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to metaconvexpy's documentation!
+Welcome to cobamp's documentation!
 ========================================
 
 .. toctree::
@@ -14,7 +14,7 @@ Welcome to metaconvexpy's documentation!
    quickstart
    modules
 
-.. automodule:: metaconvexpy
+.. automodule:: cobamp
    :members:
 
 

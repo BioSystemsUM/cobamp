@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Quick start &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>Quick start &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -48,7 +48,7 @@
           
 
           
-            <a href="index.html" class="icon icon-home"> metaconvexpy
+            <a href="index.html" class="icon icon-home"> cobamp
           
 
           
@@ -104,7 +104,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="index.html">metaconvexpy</a>
+          <a href="index.html">cobamp</a>
         
       </nav>
 
@@ -339,7 +339,7 @@ div.nboutput div.output_area.stderr {
 </style>
 <div class="section" id="Quick-start">
 <h1>Quick start<a class="headerlink" href="#Quick-start" title="Permalink to this headline">¶</a></h1>
-<p>This notebook provides an example on how to use <em>metaconvexpy</em> to easily
+<p>This notebook provides an example on how to use <em>cobamp</em> to easily
 calculate elementary flux modes (EFMs) and minimal cut sets (MCSs)
 coupled with the model reading and flux analysis capabilities of the
 <em>COBRApy</em> package.</p>
@@ -472,7 +472,7 @@ example, we will enumerate some MCSs.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">metaconvexpy.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestMCSEnumeratorWrapper</span>
+<span></span><span class="kn">from</span> <span class="nn">cobamp.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestMCSEnumeratorWrapper</span>
 </pre></div>
 </div>
 </div>
@@ -724,7 +724,7 @@ novel metabolic functions.</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">metaconvexpy.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestEFMEnumeratorWrapper</span>
+<span></span><span class="kn">from</span> <span class="nn">cobamp.utilities.external_wrappers</span> <span class="k">import</span> <span class="n">KShortestEFMEnumeratorWrapper</span>
 </pre></div>
 </div>
 </div>
@@ -980,7 +980,7 @@ hand side of the inequation</p>
 <p>Alternatively, external packages can be used to provide a more
 interactive result. The <em>escher</em> package (<a class="reference external" href="https://escher.github.io/">https://escher.github.io/</a>),
 once installed in your Python distribution, can be used to display
-metabolic maps. The snippet below shows how the EFMs from <em>metaconvexpy</em>
+metabolic maps. The snippet below shows how the EFMs from <em>cobamp</em>
 can be used directly as inputs for <em>escher</em> maps.</p>
 <div class="nbinput docutils container">
 <div class="prompt highlight-none notranslate"><div class="highlight"><pre>
@@ -1116,7 +1116,7 @@ Please note that this functionality is still highly experimental</p>
 </pre></div>
 </div>
 <div class="input_area highlight-ipython3 notranslate"><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">metaconvexpy.utilities.tree_analysis</span> <span class="k">import</span> <span class="o">*</span>
+<span></span><span class="kn">from</span> <span class="nn">cobamp.utilities.tree_analysis</span> <span class="k">import</span> <span class="o">*</span>
 </pre></div>
 </div>
 </div>

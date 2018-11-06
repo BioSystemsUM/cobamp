@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.mcs_enumeration.intervention_problem &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.mcs_enumeration.intervention_problem &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.mcs_enumeration.intervention_problem</li>
+      <li>cobamp.mcs_enumeration.intervention_problem</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,7 +143,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.mcs_enumeration.intervention_problem</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.mcs_enumeration.intervention_problem</h1><div class="highlight"><pre>
 <span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">A set of classes to represent constraints applicable to intervention problems</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -152,7 +152,7 @@
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 <span class="kn">import</span> <span class="nn">abc</span>
 
-<div class="viewcode-block" id="InterventionProblem"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.InterventionProblem">[docs]</a><span class="k">class</span> <span class="nc">InterventionProblem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="InterventionProblem"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.InterventionProblem">[docs]</a><span class="k">class</span> <span class="nc">InterventionProblem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Class containing functions useful when defining an problem using the intervention problem framework.</span>
 <span class="sd">	References:</span>
@@ -167,7 +167,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__num_rx</span> <span class="o">=</span> <span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-<div class="viewcode-block" id="InterventionProblem.generate_target_matrix"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.InterventionProblem.generate_target_matrix">[docs]</a>	<span class="k">def</span> <span class="nf">generate_target_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
+<div class="viewcode-block" id="InterventionProblem.generate_target_matrix"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.InterventionProblem.generate_target_matrix">[docs]</a>	<span class="k">def</span> <span class="nf">generate_target_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">constraints</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Parameters:</span>
@@ -183,13 +183,13 @@
 		<span class="n">b</span> <span class="o">=</span> <span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">blist</span><span class="p">)))</span>
 		<span class="k">return</span> <span class="n">T</span><span class="p">,</span><span class="n">b</span></div></div>
 
-<div class="viewcode-block" id="AbstractConstraint"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.AbstractConstraint">[docs]</a><span class="k">class</span> <span class="nc">AbstractConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="AbstractConstraint"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.AbstractConstraint">[docs]</a><span class="k">class</span> <span class="nc">AbstractConstraint</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Object representing a constraint to be used within the intervention problem structures provided in this package.</span>
 <span class="sd">	&#39;&#39;&#39;</span>
 	<span class="n">__metaclass__</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span>
 
-<div class="viewcode-block" id="AbstractConstraint.materialize"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.AbstractConstraint.materialize">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="AbstractConstraint.materialize"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.AbstractConstraint.materialize">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 	<span class="k">def</span> <span class="nf">materialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		Generates a matrix T 1-by-n or 2-by-n and a list b of length 1 or 2 to be used for target flux vector</span>
@@ -202,7 +202,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span></div>
 
-<div class="viewcode-block" id="AbstractConstraint.from_tuple"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.AbstractConstraint.from_tuple">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="AbstractConstraint.from_tuple"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.AbstractConstraint.from_tuple">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 	<span class="k">def</span> <span class="nf">from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">		Generates a constraint from a tuple. Refer to subclasses for each specific format.</span>
@@ -213,7 +213,7 @@
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">return</span></div></div>
 
-<div class="viewcode-block" id="DefaultFluxbound"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultFluxbound">[docs]</a><span class="k">class</span> <span class="nc">DefaultFluxbound</span><span class="p">(</span><span class="n">AbstractConstraint</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultFluxbound"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultFluxbound">[docs]</a><span class="k">class</span> <span class="nc">DefaultFluxbound</span><span class="p">(</span><span class="n">AbstractConstraint</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Class representing bounds for a single flux with a lower and an upper bound.</span>
 <span class="sd">	&#39;&#39;&#39;</span>
@@ -230,7 +230,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">__lb</span> <span class="o">=</span> <span class="n">lb</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__ub</span> <span class="o">=</span> <span class="n">ub</span>
 
-<div class="viewcode-block" id="DefaultFluxbound.materialize"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultFluxbound.materialize">[docs]</a>	<span class="k">def</span> <span class="nf">materialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultFluxbound.materialize"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultFluxbound.materialize">[docs]</a>	<span class="k">def</span> <span class="nf">materialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 		<span class="n">Tx</span> <span class="o">=</span> <span class="p">[]</span>
 		<span class="n">b</span> <span class="o">=</span> <span class="p">[]</span>
 		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lb</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
@@ -246,7 +246,7 @@
 
 		<span class="k">return</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">Tx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">b</span></div>
 
-<div class="viewcode-block" id="DefaultFluxbound.from_tuple"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultFluxbound.from_tuple">[docs]</a>	<span class="k">def</span> <span class="nf">from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultFluxbound.from_tuple"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultFluxbound.from_tuple">[docs]</a>	<span class="k">def</span> <span class="nf">from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a DefaultFluxbound instance from a tuple containing a reaction index as well as lower and upper bounds.</span>
@@ -256,7 +256,7 @@
 		<span class="n">index</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span> <span class="o">=</span> <span class="n">tup</span>
 		<span class="k">return</span> <span class="n">DefaultFluxbound</span><span class="p">(</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="p">,</span> <span class="n">index</span><span class="p">)</span></div></div>
 
-<div class="viewcode-block" id="DefaultYieldbound"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultYieldbound">[docs]</a><span class="k">class</span> <span class="nc">DefaultYieldbound</span><span class="p">(</span><span class="n">AbstractConstraint</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultYieldbound"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultYieldbound">[docs]</a><span class="k">class</span> <span class="nc">DefaultYieldbound</span><span class="p">(</span><span class="n">AbstractConstraint</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Class representing a constraint on a yield between two fluxes. Formally, this constraint can be represented as</span>
 <span class="sd">	n - yd &lt; b, assuming n and d as the numerator and denominator fluxes (yield(N,D) = N/D), y as the maximum yield and</span>
@@ -279,7 +279,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">__denominator_index</span> <span class="o">=</span> <span class="n">denominator_index</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__deviation</span> <span class="o">=</span> <span class="n">deviation</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">deviation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
 
-<div class="viewcode-block" id="DefaultYieldbound.materialize"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultYieldbound.materialize">[docs]</a>	<span class="k">def</span> <span class="nf">materialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultYieldbound.materialize"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultYieldbound.materialize">[docs]</a>	<span class="k">def</span> <span class="nf">materialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
 		<span class="n">Tx</span> <span class="o">=</span> <span class="p">[]</span>
 		<span class="n">b</span> <span class="o">=</span> <span class="p">[]</span>
 		<span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">__lb</span> <span class="o">!=</span> <span class="kc">None</span><span class="p">:</span>
@@ -297,7 +297,7 @@
 
 		<span class="k">return</span> <span class="n">concatenate</span><span class="p">(</span><span class="n">Tx</span><span class="p">,</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">b</span></div>
 
-<div class="viewcode-block" id="DefaultYieldbound.from_tuple"><a class="viewcode-back" href="../../../metaconvexpy.mcs_enumeration.html#metaconvexpy.mcs_enumeration.intervention_problem.DefaultYieldbound.from_tuple">[docs]</a>	<span class="k">def</span> <span class="nf">from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
+<div class="viewcode-block" id="DefaultYieldbound.from_tuple"><a class="viewcode-back" href="../../../cobamp.mcs_enumeration.html#cobamp.mcs_enumeration.intervention_problem.DefaultYieldbound.from_tuple">[docs]</a>	<span class="k">def</span> <span class="nf">from_tuple</span><span class="p">(</span><span class="n">tup</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a DefaultYieldbound instance from a tuple containing numerator and denominator indices, yield lower and</span>

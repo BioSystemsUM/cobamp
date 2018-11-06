@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.linear_systems.linear_systems &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.linear_systems.linear_systems &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.linear_systems.linear_systems</li>
+      <li>cobamp.linear_systems.linear_systems</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,7 +143,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.linear_systems.linear_systems</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.linear_systems.linear_systems</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 <span class="kn">import</span> <span class="nn">abc</span>
 <span class="kn">import</span> <span class="nn">cplex</span>
@@ -151,7 +151,7 @@
 
 <span class="kn">from</span> <span class="nn">..linear_systems.optimization</span> <span class="k">import</span> <span class="n">CPLEX_INFINITY</span>
 
-<div class="viewcode-block" id="LinearSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.LinearSystem">[docs]</a><span class="k">class</span> <span class="nc">LinearSystem</span><span class="p">():</span>
+<div class="viewcode-block" id="LinearSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.LinearSystem">[docs]</a><span class="k">class</span> <span class="nc">LinearSystem</span><span class="p">():</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers</span>
 <span class="sd">	such as CPLEX and passed onto other algorithms supplied with the package.</span>
@@ -164,7 +164,7 @@
 	<span class="n">model</span> <span class="o">=</span> <span class="kc">None</span>
 	<span class="n">S</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="LinearSystem.build_problem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.LinearSystem.build_problem">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
+<div class="viewcode-block" id="LinearSystem.build_problem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.LinearSystem.build_problem">[docs]</a>	<span class="nd">@abc</span><span class="o">.</span><span class="n">abstractmethod</span>
 	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">		Builds a CPLEX model with the constraints specified in the constructor arguments.</span>
@@ -176,7 +176,7 @@
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span></div>
 
-<div class="viewcode-block" id="LinearSystem.get_model"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.LinearSystem.get_model">[docs]</a>	<span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LinearSystem.get_model"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.LinearSystem.get_model">[docs]</a>	<span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns the model instance. Must call &lt;self.build_problem()&gt; to return a CPLEX model.</span>
@@ -186,7 +186,7 @@
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span></div>
 
 
-<div class="viewcode-block" id="LinearSystem.get_stoich_matrix_shape"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.LinearSystem.get_stoich_matrix_shape">[docs]</a>	<span class="k">def</span> <span class="nf">get_stoich_matrix_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="LinearSystem.get_stoich_matrix_shape"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.LinearSystem.get_stoich_matrix_shape">[docs]</a>	<span class="k">def</span> <span class="nf">get_stoich_matrix_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a tuple with the shape (rows, columns) of the supplied stoichiometric matrix.</span>
@@ -196,7 +196,7 @@
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span></div></div>
 
 
-<div class="viewcode-block" id="KShortestCompatibleLinearSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.KShortestCompatibleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">KShortestCompatibleLinearSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestCompatibleLinearSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.KShortestCompatibleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">KShortestCompatibleLinearSystem</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Abstract class representing a linear system that can be passed as an argument for the KShortestAlgorithm class.</span>
 <span class="sd">	Subclasses must instantiate the following variables:</span>
@@ -209,7 +209,7 @@
 	<span class="n">dvars</span> <span class="o">=</span> <span class="kc">None</span>
 	<span class="n">c</span> <span class="o">=</span> <span class="kc">None</span>
 
-<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_dvar_mapping"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_dvar_mapping">[docs]</a>	<span class="k">def</span> <span class="nf">get_dvar_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_dvar_mapping"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_dvar_mapping">[docs]</a>	<span class="k">def</span> <span class="nf">get_dvar_mapping</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a dictionary mapping flux indices with variable(s) on the optimization problem</span>
@@ -218,7 +218,7 @@
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvar_mapping</span></div>
 
-<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_dvars"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_dvars">[docs]</a>	<span class="k">def</span> <span class="nf">get_dvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_dvars"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_dvars">[docs]</a>	<span class="k">def</span> <span class="nf">get_dvars</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a list of variables (str or Tuple[str]) with similar order to that of the fluxes passed to the system.</span>
@@ -227,7 +227,7 @@
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvars</span></div>
 
-<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_c_variable"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_c_variable">[docs]</a>	<span class="k">def</span> <span class="nf">get_c_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestCompatibleLinearSystem.get_c_variable"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.KShortestCompatibleLinearSystem.get_c_variable">[docs]</a>	<span class="k">def</span> <span class="nf">get_c_variable</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="sd">		Returns a string referring to the constant on the optimization problem.</span>
@@ -237,7 +237,7 @@
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">c</span></div></div>
 
 
-<div class="viewcode-block" id="SimpleLinearSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.SimpleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">SimpleLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">):</span>
+<div class="viewcode-block" id="SimpleLinearSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.SimpleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">SimpleLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters</span>
 <span class="sd">	Used as arguments for various algorithms implemented in the package.</span>
@@ -258,7 +258,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ub</span> <span class="o">=</span> <span class="n">S</span><span class="p">,</span> <span class="n">lb</span><span class="p">,</span> <span class="n">ub</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">names</span> <span class="o">=</span> <span class="n">var_names</span> <span class="k">if</span> <span class="n">var_names</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="s1">&#39;v&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])]</span>
 
-<div class="viewcode-block" id="SimpleLinearSystem.build_problem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.SimpleLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SimpleLinearSystem.build_problem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.SimpleLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="n">np_names</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">)</span>
 		<span class="n">nnz</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">y</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">y</span><span class="p">)[</span><span class="mi">1</span><span class="p">],</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">)))</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">variables</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">names</span><span class="p">,</span> <span class="n">lb</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">lb</span><span class="p">,</span> <span class="n">ub</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">ub</span><span class="p">)</span>
@@ -268,7 +268,7 @@
 		<span class="n">cnames</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;C_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">linear_constraints</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lin_expr</span><span class="o">=</span><span class="n">lin_expr</span><span class="p">,</span> <span class="n">senses</span><span class="o">=</span><span class="n">senses</span><span class="p">,</span> <span class="n">rhs</span><span class="o">=</span><span class="n">rhs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">cnames</span><span class="p">)</span></div></div>
 
-<div class="viewcode-block" id="IrreversibleLinearSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.IrreversibleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">IrreversibleLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">,</span> <span class="n">KShortestCompatibleLinearSystem</span><span class="p">):</span>
+<div class="viewcode-block" id="IrreversibleLinearSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.IrreversibleLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">IrreversibleLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">,</span> <span class="n">KShortestCompatibleLinearSystem</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.</span>
 <span class="sd">	All irreversible reactions are split into their forward and backward components so every lower bound is 0.</span>
@@ -292,13 +292,13 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">__c</span> <span class="o">=</span> <span class="s2">&quot;C&quot;</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__ss_override</span> <span class="o">=</span> <span class="p">[(</span><span class="n">nc</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">nc</span> <span class="ow">in</span> <span class="n">non_consumed</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">p</span><span class="p">,</span> <span class="s1">&#39;G&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">produced</span><span class="p">]</span> <span class="o">+</span> <span class="p">[(</span><span class="n">c</span><span class="p">,</span> <span class="s1">&#39;L&#39;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">consumed</span><span class="p">]</span>
 
-<div class="viewcode-block" id="IrreversibleLinearSystem.subset_dvars"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.IrreversibleLinearSystem.subset_dvars">[docs]</a>	<span class="k">def</span> <span class="nf">subset_dvars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subset</span><span class="p">):</span>
+<div class="viewcode-block" id="IrreversibleLinearSystem.subset_dvars"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.IrreversibleLinearSystem.subset_dvars">[docs]</a>	<span class="k">def</span> <span class="nf">subset_dvars</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">subset</span><span class="p">):</span>
 
 		<span class="n">dvars</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">dvar_mapping</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">subset</span><span class="p">]</span>
 		<span class="n">dvar_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span><span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span><span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvar_mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">dvars</span><span class="p">}</span>
 		<span class="k">return</span> <span class="n">dvars</span><span class="p">,</span> <span class="n">dvar_mapping</span></div>
 
-<div class="viewcode-block" id="IrreversibleLinearSystem.build_problem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.IrreversibleLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="IrreversibleLinearSystem.build_problem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.IrreversibleLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="c1"># Defining useful length constants</span>
 		<span class="n">nM</span><span class="p">,</span> <span class="n">nR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span>
 		<span class="n">nIrrev</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">irrev</span><span class="p">)</span>
@@ -345,19 +345,19 @@
 		<span class="c1">#self.__model.write(&#39;efmmodel.lp&#39;) ## For debugging purposes</span>
 		<span class="k">return</span> <span class="n">S_full</span></div></div>
 
-<div class="viewcode-block" id="IrreversibleLinearPatternSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.IrreversibleLinearPatternSystem">[docs]</a><span class="k">class</span> <span class="nc">IrreversibleLinearPatternSystem</span><span class="p">(</span><span class="n">IrreversibleLinearSystem</span><span class="p">):</span>
+<div class="viewcode-block" id="IrreversibleLinearPatternSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.IrreversibleLinearPatternSystem">[docs]</a><span class="k">class</span> <span class="nc">IrreversibleLinearPatternSystem</span><span class="p">(</span><span class="n">IrreversibleLinearSystem</span><span class="p">):</span>
 	<span class="c1">## TODO: Code + docstrings. Do not use this yet!</span>
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">subset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 		<span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">subset</span> <span class="o">=</span> <span class="n">subset</span>
 
-<div class="viewcode-block" id="IrreversibleLinearPatternSystem.build_problem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.IrreversibleLinearPatternSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="IrreversibleLinearPatternSystem.build_problem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.IrreversibleLinearPatternSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">build_problem</span><span class="p">()</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">dvars</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dvar_mapping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subset_dvars</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">subset</span><span class="p">)</span></div></div>
 		<span class="c1">#model.</span>
 
 
-<div class="viewcode-block" id="DualLinearSystem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.DualLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">DualLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">,</span> <span class="n">KShortestCompatibleLinearSystem</span><span class="p">):</span>
+<div class="viewcode-block" id="DualLinearSystem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.DualLinearSystem">[docs]</a><span class="k">class</span> <span class="nc">DualLinearSystem</span><span class="p">(</span><span class="n">LinearSystem</span><span class="p">,</span> <span class="n">KShortestCompatibleLinearSystem</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">	Class representing a dual system based on a steady-state metabolic network whose elementary flux modes are minimal</span>
 <span class="sd">	cut sets for use with the KShortest algorithm. Based on previous work by Ballerstein et al. and Von Kamp et al.</span>
@@ -382,7 +382,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">irrev</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">S</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">b</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">__c</span> <span class="o">=</span> <span class="s2">&quot;C&quot;</span>
 
-<div class="viewcode-block" id="DualLinearSystem.build_problem"><a class="viewcode-back" href="../../../metaconvexpy.linear_systems.html#metaconvexpy.linear_systems.linear_systems.DualLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="DualLinearSystem.build_problem"><a class="viewcode-back" href="../../../cobamp.linear_systems.html#cobamp.linear_systems.linear_systems.DualLinearSystem.build_problem">[docs]</a>	<span class="k">def</span> <span class="nf">build_problem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="c1"># Defining useful length constants</span>
 		<span class="n">nM</span><span class="p">,</span> <span class="n">nR</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">S</span><span class="o">.</span><span class="n">shape</span>
 		<span class="n">veclens</span> <span class="o">=</span> <span class="p">[(</span><span class="s2">&quot;u&quot;</span><span class="p">,</span> <span class="n">nM</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;vp&quot;</span><span class="p">,</span> <span class="n">nR</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;vn&quot;</span><span class="p">,</span> <span class="n">nR</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>

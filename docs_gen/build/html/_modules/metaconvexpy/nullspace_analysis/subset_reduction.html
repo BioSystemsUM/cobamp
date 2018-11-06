@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.nullspace_analysis.subset_reduction &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.nullspace_analysis.subset_reduction &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.nullspace_analysis.subset_reduction</li>
+      <li>cobamp.nullspace_analysis.subset_reduction</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,7 +143,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.nullspace_analysis.subset_reduction</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.nullspace_analysis.subset_reduction</h1><div class="highlight"><pre>
 <span></span><span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">Inspired by Metatool&#39;s code</span>
 <span class="sd">&#39;&#39;&#39;</span>
@@ -156,7 +156,7 @@
 <span class="n">EPSILON</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="o">-</span><span class="mi">52</span>
 <span class="n">PRECISION</span> <span class="o">=</span> <span class="mf">1e-10</span>
 
-<div class="viewcode-block" id="subset_reduction"><a class="viewcode-back" href="../../../metaconvexpy.nullspace_analysis.html#metaconvexpy.nullspace_analysis.subset_reduction.subset_reduction">[docs]</a><span class="k">def</span> <span class="nf">subset_reduction</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">to_remove</span><span class="o">=</span><span class="p">[],</span> <span class="n">to_keep_single</span><span class="o">=</span><span class="p">[]):</span>
+<div class="viewcode-block" id="subset_reduction"><a class="viewcode-back" href="../../../cobamp.nullspace_analysis.html#cobamp.nullspace_analysis.subset_reduction.subset_reduction">[docs]</a><span class="k">def</span> <span class="nf">subset_reduction</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">to_remove</span><span class="o">=</span><span class="p">[],</span> <span class="n">to_keep_single</span><span class="o">=</span><span class="p">[]):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Reduces a stoichiometric matrix using nullspace analysis by identifying linearly dependent (enzyme) subsets.</span>
 <span class="sd">	These reactions are then compressed.</span>
@@ -218,7 +218,7 @@
 	<span class="k">return</span> <span class="n">rd</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="n">irrev_reduced</span><span class="p">,</span> <span class="n">rdind</span><span class="p">,</span> <span class="n">irrv_subsets</span><span class="p">,</span> <span class="n">kept_reactions</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">correlation_matrix</span></div>
 
 
-<div class="viewcode-block" id="subset_candidates"><a class="viewcode-back" href="../../../metaconvexpy.nullspace_analysis.html#metaconvexpy.nullspace_analysis.subset_reduction.subset_candidates">[docs]</a><span class="k">def</span> <span class="nf">subset_candidates</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="subset_candidates"><a class="viewcode-back" href="../../../cobamp.nullspace_analysis.html#cobamp.nullspace_analysis.subset_reduction.subset_candidates">[docs]</a><span class="k">def</span> <span class="nf">subset_candidates</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">tol</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Computes a matrix of subset candidates from the nullspace of the S matrix</span>
 <span class="sd">	Parameters</span>
@@ -241,7 +241,7 @@
 	<span class="k">return</span> <span class="n">sign</span><span class="p">(</span><span class="n">cr</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="subset_correlation_matrix"><a class="viewcode-back" href="../../../metaconvexpy.nullspace_analysis.html#metaconvexpy.nullspace_analysis.subset_reduction.subset_correlation_matrix">[docs]</a><span class="k">def</span> <span class="nf">subset_correlation_matrix</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">cr</span><span class="p">,</span> <span class="n">keepSingle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="subset_correlation_matrix"><a class="viewcode-back" href="../../../cobamp.nullspace_analysis.html#cobamp.nullspace_analysis.subset_reduction.subset_correlation_matrix">[docs]</a><span class="k">def</span> <span class="nf">subset_correlation_matrix</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">irrev</span><span class="p">,</span> <span class="n">cr</span><span class="p">,</span> <span class="n">keepSingle</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">	Parameters</span>
@@ -300,7 +300,7 @@
 	<span class="k">return</span> <span class="n">sub</span><span class="p">,</span> <span class="n">irrev_sub</span><span class="p">,</span> <span class="n">irrev_violating_subsets</span></div>
 
 
-<div class="viewcode-block" id="reduce"><a class="viewcode-back" href="../../../metaconvexpy.nullspace_analysis.html#metaconvexpy.nullspace_analysis.subset_reduction.reduce">[docs]</a><span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="n">irrev_reduced</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="reduce"><a class="viewcode-back" href="../../../cobamp.nullspace_analysis.html#cobamp.nullspace_analysis.subset_reduction.reduce">[docs]</a><span class="k">def</span> <span class="nf">reduce</span><span class="p">(</span><span class="n">S</span><span class="p">,</span> <span class="n">sub</span><span class="p">,</span> <span class="n">irrev_reduced</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Reduces a stoichiometric matrix according to the subset information present in the sub matrix and irrev_reduced.</span>
 <span class="sd">	Parameters</span>

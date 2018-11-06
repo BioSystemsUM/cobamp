@@ -1,13 +1,13 @@
-metaconvexpy.mcs\_enumeration package
+cobamp.mcs\_enumeration package
 =====================================
 
 Submodules
 ----------
 
-metaconvexpy.mcs\_enumeration.intervention\_problem module
+cobamp.mcs\_enumeration.intervention\_problem module
 ----------------------------------------------------------
 
-.. automodule:: metaconvexpy.mcs_enumeration.intervention_problem
+.. automodule:: cobamp.mcs_enumeration.intervention_problem
     :members:
     :undoc-members:
     :show-inheritance:
@@ -16,7 +16,7 @@ metaconvexpy.mcs\_enumeration.intervention\_problem module
 Module contents
 ---------------
 
-.. automodule:: metaconvexpy.mcs_enumeration
+.. automodule:: cobamp.mcs_enumeration
     :members:
     :undoc-members:
     :show-inheritance:

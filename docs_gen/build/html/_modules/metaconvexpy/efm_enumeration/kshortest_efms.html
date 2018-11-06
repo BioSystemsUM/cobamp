@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.efm_enumeration.kshortest_efms &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.efm_enumeration.kshortest_efms &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.efm_enumeration.kshortest_efms</li>
+      <li>cobamp.efm_enumeration.kshortest_efms</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,7 +143,7 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.efm_enumeration.kshortest_efms</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.efm_enumeration.kshortest_efms</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">cplex</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 <span class="kn">from</span> <span class="nn">..linear_systems.optimization</span> <span class="k">import</span> <span class="n">Solution</span><span class="p">,</span> <span class="n">copy_cplex_model</span>
@@ -154,13 +154,13 @@
 <span class="n">decompose_list</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="n">chain</span><span class="o">.</span><span class="n">from_iterable</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">a</span><span class="p">))</span>
 
 
-<div class="viewcode-block" id="value_map_apply"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.value_map_apply">[docs]</a><span class="k">def</span> <span class="nf">value_map_apply</span><span class="p">(</span><span class="n">single_fx</span><span class="p">,</span> <span class="n">pair_fx</span><span class="p">,</span> <span class="n">value_map</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="value_map_apply"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.value_map_apply">[docs]</a><span class="k">def</span> <span class="nf">value_map_apply</span><span class="p">(</span><span class="n">single_fx</span><span class="p">,</span> <span class="n">pair_fx</span><span class="p">,</span> <span class="n">value_map</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">return</span> <span class="p">[</span>
         <span class="n">pair_fx</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span> <span class="n">value_map</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="k">else</span> <span class="n">single_fx</span><span class="p">(</span><span class="n">varlist</span><span class="p">,</span> <span class="n">value_map</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">varlist</span> <span class="ow">in</span> <span class="n">value_map</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span></div>
 
 
-<div class="viewcode-block" id="KShortestEnumerator"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator">[docs]</a><span class="k">class</span> <span class="nc">KShortestEnumerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator">[docs]</a><span class="k">class</span> <span class="nc">KShortestEnumerator</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    Class implementing the k-shortest elementary flux mode algorithm. This is a lower level class implemented using the</span>
 <span class="sd">    Cplex solver as base. Maybe in the future, this will be readapted for the optlang wrapper, if performance issues</span>
@@ -227,7 +227,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">mip</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">absgap</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">mip</span><span class="o">.</span><span class="n">pool</span><span class="o">.</span><span class="n">replace</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
 
-<div class="viewcode-block" id="KShortestEnumerator.exclude_solutions"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.exclude_solutions">[docs]</a>    <span class="k">def</span> <span class="nf">exclude_solutions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sols</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.exclude_solutions"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.exclude_solutions">[docs]</a>    <span class="k">def</span> <span class="nf">exclude_solutions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sols</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Excludes the supplied solutions from the search by adding them as integer cuts.</span>
 <span class="sd">        Use at your own discretion as this will yield different EFMs than would be intended.</span>
@@ -250,7 +250,7 @@
                 <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;exclusion_cuts&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__exclusion_cuts</span><span class="p">))]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">linear_constraints</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lin_expr</span><span class="o">=</span><span class="p">[</span><span class="n">lin_expr</span><span class="p">],</span> <span class="n">senses</span><span class="o">=</span><span class="n">sense</span><span class="p">,</span> <span class="n">rhs</span><span class="o">=</span><span class="n">rhs</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.force_solutions"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.force_solutions">[docs]</a>    <span class="k">def</span> <span class="nf">force_solutions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sols</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.force_solutions"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.force_solutions">[docs]</a>    <span class="k">def</span> <span class="nf">force_solutions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sols</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Forces a set of reactions encoded as solutions to appear in the subsequent elementary modes to be calculated.</span>
 <span class="sd">        Parameters</span>
@@ -392,7 +392,7 @@
                                           <span class="n">senses</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;L&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">force_sol</span> <span class="k">else</span> <span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">],</span>
                                           <span class="n">rhs</span><span class="o">=</span><span class="p">[</span><span class="n">counter</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">force_sol</span> <span class="k">else</span> <span class="p">[</span><span class="n">counter</span><span class="p">])</span>
 
-<div class="viewcode-block" id="KShortestEnumerator.set_size_constraint"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.set_size_constraint">[docs]</a>    <span class="k">def</span> <span class="nf">set_size_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_at</span><span class="p">,</span> <span class="n">equal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.set_size_constraint"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.set_size_constraint">[docs]</a>    <span class="k">def</span> <span class="nf">set_size_constraint</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_at</span><span class="p">,</span> <span class="n">equal</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Defines the size constraint for the K-shortest algorithm.</span>
 
@@ -413,7 +413,7 @@
             <span class="n">senses</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;E&#39;</span> <span class="k">if</span> <span class="n">equal</span> <span class="k">else</span> <span class="s1">&#39;G&#39;</span><span class="p">]</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">linear_constraints</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">lin_expr</span><span class="o">=</span><span class="n">lin_expr</span><span class="p">,</span> <span class="n">names</span><span class="o">=</span><span class="n">names</span><span class="p">,</span> <span class="n">senses</span><span class="o">=</span><span class="n">senses</span><span class="p">,</span> <span class="n">rhs</span><span class="o">=</span><span class="p">[</span><span class="n">start_at</span><span class="p">])</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.get_model"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.get_model">[docs]</a>    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.get_model"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.get_model">[docs]</a>    <span class="k">def</span> <span class="nf">get_model</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">        Returns the solver instance.</span>
@@ -459,7 +459,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">__add_integer_cut</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">var_values</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">sols</span>
 
-<div class="viewcode-block" id="KShortestEnumerator.solution_iterator"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.solution_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">solution_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maximum_amount</span><span class="o">=</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.solution_iterator"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.solution_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">solution_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maximum_amount</span><span class="o">=</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Generates a solution iterator. Each next call will yield a single solution. This method should be used to allow</span>
 <span class="sd">        flexibility when enumerating EFMs for large problems. Since it uses the optimize routine, this may be slower in</span>
@@ -480,7 +480,7 @@
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Enumeration ended:&#39;</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
                 <span class="n">failed</span> <span class="o">=</span> <span class="kc">True</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.population_iterator"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.population_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">population_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_size</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.population_iterator"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.population_iterator">[docs]</a>    <span class="k">def</span> <span class="nf">population_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">max_size</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Generates a solution iterator that yields a list of solutions. Each next call returns all EFMs for a single size</span>
 <span class="sd">        starting from 1 up to max_size.</span>
@@ -503,7 +503,7 @@
                 <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;No solutions or error occurred at size &#39;</span><span class="p">,</span> <span class="n">i</span><span class="p">)</span>
                 <span class="k">raise</span> <span class="n">e</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.populate_current_size"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.populate_current_size">[docs]</a>    <span class="k">def</span> <span class="nf">populate_current_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.populate_current_size"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.populate_current_size">[docs]</a>    <span class="k">def</span> <span class="nf">populate_current_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Returns the solutions for the current size. Use the population_iterator method instead.</span>
 <span class="sd">        -------</span>
@@ -512,7 +512,7 @@
         <span class="n">sols</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__populate</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">sols</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.get_single_solution"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.get_single_solution">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.get_single_solution"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.get_single_solution">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_solution</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">        Returns a single solution. Use the solution_iterator method instead.</span>
@@ -525,7 +525,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">__add_integer_cut</span><span class="p">(</span><span class="n">sol</span><span class="o">.</span><span class="n">var_values</span><span class="p">())</span>
         <span class="k">return</span> <span class="n">sol</span></div>
 
-<div class="viewcode-block" id="KShortestEnumerator.reset_enumerator_state"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEnumerator.reset_enumerator_state">[docs]</a>    <span class="k">def</span> <span class="nf">reset_enumerator_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEnumerator.reset_enumerator_state"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEnumerator.reset_enumerator_state">[docs]</a>    <span class="k">def</span> <span class="nf">reset_enumerator_state</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Resets all integer cuts and size constraints.</span>
 <span class="sd">        -------</span>
@@ -535,7 +535,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_size_constraint</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span></div></div>
 
 
-<div class="viewcode-block" id="KShortestSolution"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestSolution">[docs]</a><span class="k">class</span> <span class="nc">KShortestSolution</span><span class="p">(</span><span class="n">Solution</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestSolution"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestSolution">[docs]</a><span class="k">class</span> <span class="nc">KShortestSolution</span><span class="p">(</span><span class="n">Solution</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    A Solution subclass that also contains attributes suitable for elementary flux modes such as non-cancellation sums</span>
 <span class="sd">    of split reactions and reaction activity.</span>
@@ -566,7 +566,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SIGNED_VALUE_MAP</span><span class="p">,</span> <span class="n">signed_value_map</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">set_attribute</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SIGNED_INDICATOR_SUM</span><span class="p">,</span> <span class="n">signed_indicator_map</span><span class="p">)</span>
 
-<div class="viewcode-block" id="KShortestSolution.get_active_indicator_varids"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestSolution.get_active_indicator_varids">[docs]</a>    <span class="k">def</span> <span class="nf">get_active_indicator_varids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestSolution.get_active_indicator_varids"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestSolution.get_active_indicator_varids">[docs]</a>    <span class="k">def</span> <span class="nf">get_active_indicator_varids</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">        Returns the indices of active indicator variables (maps with variables on the original stoichiometric matrix)</span>
@@ -576,7 +576,7 @@
         <span class="k">return</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attribute_value</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">SIGNED_INDICATOR_SUM</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]</span></div></div>
 
 
-<div class="viewcode-block" id="KShortestEFMAlgorithm"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm">[docs]</a><span class="k">class</span> <span class="nc">KShortestEFMAlgorithm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEFMAlgorithm"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm">[docs]</a><span class="k">class</span> <span class="nc">KShortestEFMAlgorithm</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">    A higher level class to use the K-Shortest algorithm. This encompasses the standard routine for enumeration of EFMs.</span>
 <span class="sd">    Requires a configuration defining an algorithm type. See &lt;KShortestProperties&gt;</span>
@@ -615,7 +615,7 @@
         <span class="k">if</span> <span class="n">forced_sets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">ksh</span><span class="o">.</span><span class="n">force_solutions</span><span class="p">(</span><span class="n">forced_sets</span><span class="p">)</span>
 
-<div class="viewcode-block" id="KShortestEFMAlgorithm.enumerate"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm.enumerate">[docs]</a>    <span class="k">def</span> <span class="nf">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_system</span><span class="p">,</span> <span class="n">excluded_sets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">forced_sets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEFMAlgorithm.enumerate"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm.enumerate">[docs]</a>    <span class="k">def</span> <span class="nf">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_system</span><span class="p">,</span> <span class="n">excluded_sets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">forced_sets</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">        Enumerates the elementary modes for a linear system</span>
 <span class="sd">        Parameters</span>
@@ -634,7 +634,7 @@
             <span class="n">sols</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="n">sols</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">sols</span></div>
 
-<div class="viewcode-block" id="KShortestEFMAlgorithm.get_enumerator"><a class="viewcode-back" href="../../../metaconvexpy.efm_enumeration.html#metaconvexpy.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm.get_enumerator">[docs]</a>    <span class="k">def</span> <span class="nf">get_enumerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_system</span><span class="p">,</span> <span class="n">excluded_sets</span><span class="p">,</span> <span class="n">forced_sets</span><span class="p">):</span>
+<div class="viewcode-block" id="KShortestEFMAlgorithm.get_enumerator"><a class="viewcode-back" href="../../../cobamp.efm_enumeration.html#cobamp.efm_enumeration.kshortest_efms.KShortestEFMAlgorithm.get_enumerator">[docs]</a>    <span class="k">def</span> <span class="nf">get_enumerator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">linear_system</span><span class="p">,</span> <span class="n">excluded_sets</span><span class="p">,</span> <span class="n">forced_sets</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.</span>
 <span class="sd">        Args:</span>

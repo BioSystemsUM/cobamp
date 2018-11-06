@@ -24,7 +24,7 @@ Via pip
 
 The easiest method is to use pip to `install the package from PyPI <https://pypi.python.org/pypi/cobra>`_::
 
-    pip install metaconvexpy
+    pip install cobamp
 
 From source
 ===========

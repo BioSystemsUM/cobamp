@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>metaconvexpy.utilities.tree_analysis &mdash; metaconvexpy 0.0.1 documentation</title>
+  <title>cobamp.utilities.tree_analysis &mdash; cobamp 0.0.1 documentation</title>
   
 
   
@@ -46,7 +46,7 @@
           
 
           
-            <a href="../../../index.html" class="icon icon-home"> metaconvexpy
+            <a href="../../../index.html" class="icon icon-home"> cobamp
           
 
           
@@ -80,7 +80,7 @@
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../installation.html">Installation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../quickstart.html">Quick start</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../metaconvexpy.html">metaconvexpy package</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../cobamp.html">cobamp package</a></li>
 </ul>
 
             
@@ -95,7 +95,7 @@
       <nav class="wy-nav-top" aria-label="top navigation">
         
           <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-          <a href="../../../index.html">metaconvexpy</a>
+          <a href="../../../index.html">cobamp</a>
         
       </nav>
 
@@ -128,7 +128,7 @@
         
           <li><a href="../../index.html">Module code</a> &raquo;</li>
         
-      <li>metaconvexpy.utilities.tree_analysis</li>
+      <li>cobamp.utilities.tree_analysis</li>
     
     
       <li class="wy-breadcrumbs-aside">
@@ -143,11 +143,11 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <h1>Source code for metaconvexpy.utilities.tree_analysis</h1><div class="highlight"><pre>
+  <h1>Source code for cobamp.utilities.tree_analysis</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">itertools</span> <span class="k">import</span> <span class="n">chain</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
 
-<div class="viewcode-block" id="Tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree">[docs]</a><span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Tree"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.Tree">[docs]</a><span class="k">class</span> <span class="nc">Tree</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	A simple class representing an n-ary tree as a node with one or more children nodes.</span>
 <span class="sd">	&#39;&#39;&#39;</span>
@@ -163,7 +163,7 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">children</span> <span class="o">=</span> <span class="p">[]</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">extra_info</span> <span class="o">=</span> <span class="n">extra_info</span>
 
-<div class="viewcode-block" id="Tree.get_children"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.get_children">[docs]</a>	<span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Tree.get_children"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.Tree.get_children">[docs]</a>	<span class="k">def</span> <span class="nf">get_children</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 
 <span class="sd">		Returns a list with all the children of this node.</span>
@@ -172,7 +172,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="k">return</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="p">]</span></div>
 
-<div class="viewcode-block" id="Tree.add_child"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.add_child">[docs]</a>	<span class="k">def</span> <span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
+<div class="viewcode-block" id="Tree.add_child"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.Tree.add_child">[docs]</a>	<span class="k">def</span> <span class="nf">add_child</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		Adds a node to the list of children in this node.</span>
 <span class="sd">		Parameters</span>
@@ -183,7 +183,7 @@
 <span class="sd">		&#39;&#39;&#39;</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">children</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="Tree.is_leaf"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.Tree.is_leaf">[docs]</a>	<span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Tree.is_leaf"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.Tree.is_leaf">[docs]</a>	<span class="k">def</span> <span class="nf">is_leaf</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">		Checks whether this node has no children (is a leaf)</span>
 <span class="sd">		Returns a boolean.</span>
@@ -216,7 +216,7 @@
 
 
 
-<div class="viewcode-block" id="fill_tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.fill_tree">[docs]</a><span class="k">def</span> <span class="nf">fill_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">sets</span><span class="p">):</span>
+<div class="viewcode-block" id="fill_tree"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.fill_tree">[docs]</a><span class="k">def</span> <span class="nf">fill_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">sets</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Fills a Tree instance with data from the Iterable[set/frozenset] supplied as the argument `sets`.</span>
 <span class="sd">	The resulting tree will be filled in a way that each set can be retrieved by traversing from the root node `tree`</span>
@@ -249,7 +249,7 @@
 			<span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">remaining_sets</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 				<span class="n">fill_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">remaining_sets</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="compress_linear_paths"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.compress_linear_paths">[docs]</a><span class="k">def</span> <span class="nf">compress_linear_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+<div class="viewcode-block" id="compress_linear_paths"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.compress_linear_paths">[docs]</a><span class="k">def</span> <span class="nf">compress_linear_paths</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Collapses sequences of nodes contained in a Tree with only one children as a single node containing all values of</span>
 <span class="sd">	those nodes.</span>
@@ -271,7 +271,7 @@
 		<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
 			<span class="n">compress_linear_paths</span><span class="p">(</span><span class="n">child</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="ignore_compressed_nodes_by_size"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.ignore_compressed_nodes_by_size">[docs]</a><span class="k">def</span> <span class="nf">ignore_compressed_nodes_by_size</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
+<div class="viewcode-block" id="ignore_compressed_nodes_by_size"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.ignore_compressed_nodes_by_size">[docs]</a><span class="k">def</span> <span class="nf">ignore_compressed_nodes_by_size</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">size</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Modifies the values of a tree&#39;s children that have been previously compressed with the &lt;compress_linear_paths&gt;</span>
 <span class="sd">	function if they contain more than a certain number of elements. The node&#39;s value is changed to &quot;REMAINING&quot;.</span>
@@ -289,7 +289,7 @@
 		<span class="k">else</span><span class="p">:</span>
 			<span class="n">ignore_compressed_nodes_by_size</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="probabilistic_tree_prune"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.probabilistic_tree_prune">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_prune</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">target_level</span><span class="p">,</span> <span class="n">current_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut_leaves</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="probabilistic_tree_prune"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.probabilistic_tree_prune">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_prune</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">target_level</span><span class="p">,</span> <span class="n">current_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">cut_leaves</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Cuts a tree&#39;s nodes under a certain height (`target_level`) and converts ensuing nodes into a single one whose value</span>
 <span class="sd">	represents the relative frequency of an element in the nodes below. Requires values on the extra_info field.</span>
@@ -315,7 +315,7 @@
 		<span class="n">tree</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="s2">&quot;REMAINING&quot;</span> <span class="k">if</span> <span class="n">cut_leaves</span> <span class="k">else</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">k</span><span class="p">)</span><span class="o">+</span><span class="s2">&quot;=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">tree</span><span class="o">.</span><span class="n">value</span><span class="o">.</span><span class="n">get</span><span class="p">)]</span>
 	<span class="k">return</span> <span class="n">target_level</span> <span class="o">==</span> <span class="n">current_level</span></div>
 
-<div class="viewcode-block" id="probabilistic_tree_compression"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.probabilistic_tree_compression">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_compression</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">total_count</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="probabilistic_tree_compression"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.probabilistic_tree_compression">[docs]</a><span class="k">def</span> <span class="nf">probabilistic_tree_compression</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">total_count</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39; and &#39;</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Compresses a node and subsequent children by removing them and modifying the value to a dictionary with the relative</span>
 <span class="sd">	frequency of each element in the subsequent nodes. Requires values on the extra_info field.</span>
@@ -347,7 +347,7 @@
 			<span class="n">probabilistic_tree_compression</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">total_count</span><span class="p">,</span> <span class="n">name_separator</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="pretty_print_tree"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.pretty_print_tree">[docs]</a><span class="k">def</span> <span class="nf">pretty_print_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">write_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="pretty_print_tree"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.pretty_print_tree">[docs]</a><span class="k">def</span> <span class="nf">pretty_print_tree</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">write_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Parameters</span>
 <span class="sd">	----------</span>
@@ -378,7 +378,7 @@
 
 	<span class="k">return</span> <span class="n">res</span></div>
 
-<div class="viewcode-block" id="apply_fx_to_all_node_values"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.apply_fx_to_all_node_values">[docs]</a><span class="k">def</span> <span class="nf">apply_fx_to_all_node_values</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">fx</span><span class="p">):</span>
+<div class="viewcode-block" id="apply_fx_to_all_node_values"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.apply_fx_to_all_node_values">[docs]</a><span class="k">def</span> <span class="nf">apply_fx_to_all_node_values</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">fx</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Applies a function to all nodes below the tree, modifying their value to its result.</span>
 <span class="sd">	Parameters</span>
@@ -392,7 +392,7 @@
 	<span class="k">for</span> <span class="n">child</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">children</span><span class="p">:</span>
 		<span class="n">apply_fx_to_all_node_values</span><span class="p">(</span><span class="n">child</span><span class="p">,</span> <span class="n">fx</span><span class="p">)</span></div>
 
-<div class="viewcode-block" id="find_all_tree_nodes"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.find_all_tree_nodes">[docs]</a><span class="k">def</span> <span class="nf">find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+<div class="viewcode-block" id="find_all_tree_nodes"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.find_all_tree_nodes">[docs]</a><span class="k">def</span> <span class="nf">find_all_tree_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Parameters</span>
 <span class="sd">	----------</span>
@@ -412,7 +412,7 @@
 	<span class="k">return</span> <span class="n">it</span></div>
 
 
-<div class="viewcode-block" id="merge_duplicate_nodes"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.merge_duplicate_nodes">[docs]</a><span class="k">def</span> <span class="nf">merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
+<div class="viewcode-block" id="merge_duplicate_nodes"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.merge_duplicate_nodes">[docs]</a><span class="k">def</span> <span class="nf">merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">):</span>
 	<span class="sd">&#39;&#39;&#39;</span>
 <span class="sd">	Merges all nodes with similar values, replacing every instance reference of all nodes with the same object if its</span>
 <span class="sd">	value is identical</span>
@@ -441,7 +441,7 @@
 	<span class="n">__merge_duplicate_nodes</span><span class="p">(</span><span class="n">tree</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="populate_nx_graph"><a class="viewcode-back" href="../../../metaconvexpy.utilities.html#metaconvexpy.utilities.tree_analysis.populate_nx_graph">[docs]</a><span class="k">def</span> <span class="nf">populate_nx_graph</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">unique_nodes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">node_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="populate_nx_graph"><a class="viewcode-back" href="../../../cobamp.utilities.html#cobamp.utilities.tree_analysis.populate_nx_graph">[docs]</a><span class="k">def</span> <span class="nf">populate_nx_graph</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">previous</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">name_separator</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">unique_nodes</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">node_dict</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
 	<span class="k">if</span> <span class="n">node_dict</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
 		<span class="n">node_dict</span> <span class="o">=</span> <span class="p">{}</span>
 	<span class="k">if</span> <span class="n">unique_nodes</span><span class="p">:</span>
