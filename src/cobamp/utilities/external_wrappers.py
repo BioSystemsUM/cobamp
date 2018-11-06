@@ -41,7 +41,7 @@ class KShortestEnumeratorWrapper(object):
 		if model.__module__ in model_readers.keys():
 			self.model_reader = model_readers[model.__module__](model)
 		else:
-			raise TypeError("The `model` instance is not currently supported by metaconvexpy. Currently available readers are: "+str(list(model_readers.keys())))
+			raise TypeError("The `model` instance is not currently supported by cobamp. Currently available readers are: "+str(list(model_readers.keys())))
 
 		self.__algo_properties = kp.KShortestProperties()
 		self.__algo_properties[kp.K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]

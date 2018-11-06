@@ -1,5 +1,5 @@
 import unittest
-from metaconvexpy.utilities.property_management import PropertyDictionary
+from cobamp.utilities.property_management import PropertyDictionary
 class PropertyDictionaryTest(unittest.TestCase):
 	def setUp(self):
 		base_mandatory = {'name':str, 'age':int, 'height':lambda x: x > 0, 'gender':['M','F','U']}
