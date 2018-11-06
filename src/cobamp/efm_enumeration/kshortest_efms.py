@@ -103,19 +103,19 @@ class KShortestEnumerator(object):
 
 		##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
-		def exclude_solutions(self, sols):
+	def exclude_solutions(self, sols):
 
-			"""
-			Excludes the supplied solutions from the search by adding them as integer cuts.
-			Use at your own discretion as this will yield different EFMs than would be intended.
-			This can also be used to exclude certain reactions from the search by supplying solutions with one reaction.
+		"""
+		Excludes the supplied solutions from the search by adding them as integer cuts.
+		Use at your own discretion as this will yield different EFMs than would be intended.
+		This can also be used to exclude certain reactions from the search by supplying solutions with one reaction.
 
-			Parameters
-			----------
-			sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
-			-------
+		Parameters
+		----------
+		sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+		-------
 
-			"""
+		"""
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
 				self.__add_integer_cut(sol.var_values())
