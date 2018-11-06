@@ -50,7 +50,7 @@ class LinearSystem():
 		return self.S.shape
 
 
-class KShortestCompatibleLinearSystem(object):
+class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
 	Abstract class representing a linear system that can be passed as an argument for the KShortestAlgorithm class.
 	Subclasses must instantiate the following variables:
@@ -122,7 +122,7 @@ class SimpleLinearSystem(LinearSystem):
 		cnames = ['C_' + str(i) for i in range(self.S.shape[0])]
 		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 
-class IrreversibleLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
+class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
 	All irreversible reactions are split into their forward and backward components so every lower bound is 0.
@@ -211,7 +211,7 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 		#model.
 
 
-class DualLinearSystem(LinearSystem, KShortestCompatibleLinearSystem):
+class DualLinearSystem(KShortestCompatibleLinearSystem):
 	"""
 	Class representing a dual system based on a steady-state metabolic network whose elementary flux modes are minimal
 	cut sets for use with the KShortest algorithm. Based on previous work by Ballerstein et al. and Von Kamp et al.
