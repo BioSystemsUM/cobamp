@@ -14,12 +14,12 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/metaconvexpy/'))
+sys.path.insert(0, os.path.abspath('../src/cobamp/'))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'metaconvexpy'
+project = 'cobamp'
 copyright = '2018, Vítor Vieira'
 author = 'Vítor Vieira'
 
@@ -136,7 +136,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, 'metaconvexpy.tex', 'metaconvexpy Documentation',
+    (master_doc, 'cobamp.tex', 'cobamp Documentation',
      'Vítor Vieira', 'manual'),
 ]
 
@@ -146,7 +146,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    (master_doc, 'metaconvexpy', 'metaconvexpy Documentation',
+    (master_doc, 'cobamp', 'cobamp Documentation',
      [author], 1)
 ]
 
@@ -157,8 +157,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'metaconvexpy', 'metaconvexpy Documentation',
-     author, 'metaconvexpy', 'One line description of project.',
+    (master_doc, 'cobamp', 'cobamp Documentation',
+     author, 'cobamp', 'One line description of project.',
      'Miscellaneous'),
 ]
 
