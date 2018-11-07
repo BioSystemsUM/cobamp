@@ -9,6 +9,7 @@ import numpy as np
 
 
 class KShortestEnumeratorWrapper(object):
+	__metaclass__ = abc.ABCMeta
 	"""
 	An abstract class for methods involving the K-shortest EFM enumeration algorithm
 	"""
@@ -29,12 +30,26 @@ class KShortestEnumeratorWrapper(object):
 		"""
 
 		Parameters
+
 		----------
-		model
-		algorithm_type
-		stop_criteria
-		forced_solutions
-		excluded_solutions
+
+			model: A Model instance from the external framework to use. Must be registered in the dict stored as
+			external_wrappers.model_readers along with its reader.
+
+			algorithm_type: ALGORITHM_TYPE_ITERATIVE or ALGORITHM_TYPE_POPULATE constants stored as class attributes.
+				ALGORITHM_TYPE_ITERATIVE is a slower method (regarding EFMs per unit of time) that enumerates EFMs one
+				at a time.
+				ALGORITHM_TYPE_POPULATE enumerates EFMs one size at a time. This is the preferred method as it's
+				generally faster.
+
+			stop_criteria: An integer that defines the stopping point for EFM enumeration. Either refers to the maximum
+			number of EFMs or the maximum size they can reach before the enumeration stops.
+
+			forced_solutions: A list of KShortestSolution or lists of reaction indexes that must show up in the
+			enumeration process. (experimental feature)
+
+			excluded_solutions: A list of KShortestSolution or lists of reaction indexes that cannot show up in the
+			enumeration process. (experimental feature)
 		"""
 
 		self.__model = model
@@ -53,6 +68,7 @@ class KShortestEnumeratorWrapper(object):
 	def __setup_algorithm(self):
 		"""
 		Creates the algorithm instance
+
 		Returns:
 
 		"""
@@ -60,28 +76,33 @@ class KShortestEnumeratorWrapper(object):
 
 	def __get_forced_solutions(self):
 		"""
-		Returns: A KShortestCompatibleLinearSystem instance
+		Returns: A list of KShortestSolution or lists of reaction indexes
 
 		"""
 		return self.__forced_solutions
 
 	def __get_excluded_solutions(self):
 		"""
-		Returns: A KShortestCompatibleLinearSystem instance
+		Returns: A list of KShortestSolution or lists of reaction indexes
 
 		"""
 		return self.__excluded_solutions
 
+	@abc.abstractmethod
 	def get_linear_system(self):
 		"""
 
-		Returns
+		Returns a KShortestCompatibleLinearSystem instance build from the model
 		-------
 
 		"""
 		return
 
 	def get_enumerator(self):
+		"""
+		Returns an iterator that yields a single EFM or a list of multiple EFMs of the same size. Call next(iterator) to
+		obtain the next set of EFMs.
+		"""
 		enumerator = self.__algo.get_enumerator(
 			linear_system=self.get_linear_system(),
 			forced_sets=self.__get_forced_solutions(),
@@ -93,11 +114,34 @@ class KShortestEnumeratorWrapper(object):
 
 
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
+	"""
+	Extension of the abstract class KShortestEnumeratorWrapper that takes a metabolic model as input and yields
+	elementary flux modes.
+	"""
 	def __init__(self, model, non_consumed, consumed, produced, **kwargs):
+		"""
+
+		Parameters
+
+		----------
+
+			model: A Model instance from the external framework to use. Must be registered in the dict stored as
+			external_wrappers.model_readers along with its reader.
+
+			non_consumed: An Iterable[int] or ndarray containing the indices of external metabolites not consumed in the
+			model.
+
+			consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
+
+			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
+
+
+		"""
 		super().__init__(model, **kwargs)
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
 
 	def get_linear_system(self):
+
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
 		return IrreversibleLinearSystem(
@@ -109,7 +153,11 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 
 
 class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
+	"""
+	Extension of the abstract class KShortestEnumeratorWrapper that takes a metabolic model as input and yields
+	minimal cut sets.
 
+	"""
 	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, **kwargs):
 		super().__init__(model, **kwargs)
 
@@ -128,9 +176,22 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b)
 
 class AbstractObjectReader(object):
+	"""
+	An abstract class for reading metabolic model objects from external frameworks, and extracting the data needed for
+	pathway analysis methods. Also deals with name conversions.
+	"""
 	__metaclass__ = abc.ABCMeta
 
 	def __init__(self, model):
+		"""
+		Parameters
+
+		----------
+
+			model: A Model instance from the external framework to use. Must be registered in the dict stored as
+			external_wrappers.model_readers along with its reader.
+
+		"""
 		self.model = model
 		self.r_ids, self.m_ids = self.get_metabolite_and_reactions_ids()
 		self.rx_instances = self.get_rx_instances()
@@ -142,28 +203,79 @@ class AbstractObjectReader(object):
 
 	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
+		"""
+		Returns a 2D numpy array with the stoichiometric matrix whose metabolite and reaction indexes match the names
+		defined in the class variables r_ids and m_ids
+		"""
 		return
 
 	@abc.abstractmethod
 	def get_model_bounds(self, as_dict):
+		"""
+		Returns the lower and upper bounds for all fluxes in the model. This either comes in the form of an ordered list
+		with tuples of size 2 (lb,ub) or a dictionary with the same tuples mapped by strings with reaction identifiers.
+
+		Parameters
+
+		----------
+
+			as_dict: A boolean value that controls whether the result is a dictionary mapping str to tuple of size 2
+		"""
 		return
 
 	@abc.abstractmethod
 	def get_irreversibilities(self, as_index):
+		"""
+		Returns a vector representing irreversible reactions, either as a vector of booleans (each value is a flux,
+		ordered in the same way as reaction identifiers) or as a vector of reaction indexes.
+
+		Parameters
+
+		----------
+
+			as_dict: A boolean value that controls whether the result is a vector of indexes
+
+		"""
 		return
 
 	@abc.abstractmethod
 	def get_rx_instances(self):
+		"""
+		Returns the reaction instances contained in the model. Varies depending on the framework.
+		"""
 		return
 
 	@abc.abstractmethod
 	def get_metabolite_and_reactions_ids(self):
+		"""
+		Returns two ordered iterables containing the metabolite and reaction ids respectively.
+		"""
 		return
 
 	def reaction_id_to_index(self, id):
+		"""
+		Returns the numerical index of a reaction when given a string representing its identifier.
+
+		Parameters
+
+		----------
+
+			id: A reaction identifier as a string
+
+		"""
 		return self.r_ids.index(id)
 
 	def metabolite_id_to_index(self, id):
+		"""
+		Returns the numerical index of a metabolite when given a string representing its identifier.
+
+		Parameters
+
+		----------
+
+			id: A metabolite identifier as a string
+
+		"""
 		return self.m_ids.index(id)
 
 
@@ -240,7 +352,8 @@ class FramedModelObjectReader(AbstractObjectReader):
 	def get_rx_instances(self):
 		return [self.model.reactions[rx] for rx in self.r_ids]
 
-
+# This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
+# model reader object. Modify this if a new reader is implemented.
 model_readers = {
 	'cobra.core.model': COBRAModelObjectReader,
 	'framed.model.cbmodel': FramedModelObjectReader

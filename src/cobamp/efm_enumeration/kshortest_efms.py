@@ -46,8 +46,11 @@ class KShortestEnumerator(object):
 		"""
 
 		Parameters
+
 		----------
-		linear_system: A <KShortestCompatibleLinearSystem>/<LinearSystem> subclass
+
+			linear_system: A KShortestCompatibleLinearSystem/<LinearSystem> subclass
+
 		"""
 
 		# Get linear system constraints and variables
@@ -111,8 +114,11 @@ class KShortestEnumerator(object):
 		This can also be used to exclude certain reactions from the search by supplying solutions with one reaction.
 
 		Parameters
+
 		----------
-		sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+
+			sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+
 		-------
 
 		"""
@@ -130,9 +136,13 @@ class KShortestEnumerator(object):
 	def force_solutions(self, sols):
 		"""
 		Forces a set of reactions encoded as solutions to appear in the subsequent elementary modes to be calculated.
+
 		Parameters
+
 		----------
-		sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+
+			sols: An Iterable containing list/tuples with active reaction combinations to exclude or Solution instances.
+
 		-------
 
 		"""
@@ -151,6 +161,7 @@ class KShortestEnumerator(object):
 		"""
 		Adds indicator variable to a copy of the supplied linear problem.
 		This uses the __dvars map to obtain a list of all variables and assigns an indicator to them.
+
 		-------
 
 		"""
@@ -208,6 +219,7 @@ class KShortestEnumerator(object):
 		"""
 		Adds constraints so that fluxes with two assigned dvars will only have one of the indicators active (flux must
 		not be carried through both senses at once to avoid cancellation)
+
 		-------
 
 		"""
@@ -220,6 +232,7 @@ class KShortestEnumerator(object):
 	def __set_objective(self):
 		"""
 		Defines the objective for the optimization problem (Minimize the sum of all indicator variables)
+
 		-------
 
 		"""
@@ -235,6 +248,7 @@ class KShortestEnumerator(object):
 		"""
 
 		Returns the amount of integer cuts added to the model
+
 		-------
 
 		"""
@@ -246,9 +260,13 @@ class KShortestEnumerator(object):
 		Adds an integer cut based on a map of flux values (from a solution).
 
 		Parameters
+
 		----------
-		value_map: A dictionary mapping solver variables with values
-		force_sol: Boolean value indicating whether the solution is to be excluded or forced.
+
+			value_map: A dictionary mapping solver variables with values
+
+			force_sol: Boolean value indicating whether the solution is to be excluded or forced.
+
 		-------
 
 		"""
@@ -274,9 +292,13 @@ class KShortestEnumerator(object):
 		Defines the size constraint for the K-shortest algorithm.
 
 		Parameters
+
 		----------
-		start_at: Size from which the solutions will be obtained.
-		equal: Boolean indicating whether the solutions will match the size or can be higher than it.
+
+			start_at: Size from which the solutions will be obtained.
+
+			equal: Boolean indicating whether the solutions will match the size or can be higher than it.
+
 		-------
 
 		"""
@@ -294,6 +316,7 @@ class KShortestEnumerator(object):
 		"""
 
 		Returns the solver instance.
+
 		-------
 
 		"""
@@ -304,6 +327,7 @@ class KShortestEnumerator(object):
 
 		Optimizes the model and returns a single KShortestSolution instance for the model, adding an exclusion integer
 		cut for it.
+
 		-------
 
 		"""
@@ -320,7 +344,9 @@ class KShortestEnumerator(object):
 	def __populate(self):
 		"""
 		Finds all feasible MIP solutions for the problem and returns them as a list of KShortestSolution instances.
-		Returns
+
+		Returns a list of KShortestSolution instances
+
 		-------
 
 		"""
@@ -341,6 +367,7 @@ class KShortestEnumerator(object):
 		Generates a solution iterator. Each next call will yield a single solution. This method should be used to allow
 		flexibility when enumerating EFMs for large problems. Since it uses the optimize routine, this may be slower in
 		the longer term.
+
 		-------
 
 		"""
@@ -361,12 +388,18 @@ class KShortestEnumerator(object):
 		"""
 		Generates a solution iterator that yields a list of solutions. Each next call returns all EFMs for a single size
 		starting from 1 up to max_size.
-		Parameters
-		----------
-		max_size: The maximum solution size.
 
-		Returns a list of KShortestSolution instances.
+		Parameters
+
+		----------
+
+			max_size: The maximum solution size.
+
+
+			Returns a list of KShortestSolution instances.
+
 		-------
+
 
 		"""
 		self.reset_enumerator_state()
@@ -382,7 +415,9 @@ class KShortestEnumerator(object):
 
 	def populate_current_size(self):
 		"""
+
 		Returns the solutions for the current size. Use the population_iterator method instead.
+
 		-------
 
 		"""
@@ -393,6 +428,7 @@ class KShortestEnumerator(object):
 		"""
 
 		Returns a single solution. Use the solution_iterator method instead.
+
 		-------
 
 		"""
@@ -404,7 +440,9 @@ class KShortestEnumerator(object):
 
 	def reset_enumerator_state(self):
 		"""
+
 		Resets all integer cuts and size constraints.
+
 		-------
 
 		"""
@@ -424,12 +462,19 @@ class KShortestSolution(Solution):
 		"""
 
 		Parameters
+
 		----------
-		value_map: A dictionary mapping variable names with values
-		status: See <Solution>
-		indicator_map: A dictionary mapping indicators with
-		dvar_mapping: A mapping between reaction indices and solver variables (Tuple[str] or str)
-		kwargs: See <Solution>
+
+			value_map: A dictionary mapping variable names with values
+
+			status: See <Solution>
+
+			indicator_map: A dictionary mapping indicators with
+
+			dvar_mapping: A mapping between reaction indices and solver variables (Tuple[str] or str)
+
+			kwargs: See <Solution>
+
 		"""
 		signed_value_map = {
 			i: value_map[varlist[0]] - value_map[varlist[1]] if isinstance(varlist, tuple) else value_map[varlist] for
@@ -447,6 +492,7 @@ class KShortestSolution(Solution):
 		"""
 
 		Returns the indices of active indicator variables (maps with variables on the original stoichiometric matrix)
+
 		-------
 
 		"""
@@ -463,9 +509,13 @@ class KShortestEFMAlgorithm(object):
 		"""
 
 		Parameters
+
 		----------
-		configuration: A KShortestProperties instance
-		verbose: Boolean indicating whether to print useful messages while enumerating.
+
+			configuration: A KShortestProperties instance
+
+			verbose: Boolean indicating whether to print useful messages while enumerating.
+
 		"""
 		assert configuration.__class__ == kp.KShortestProperties, 'Configuration class is not KShortestProperties'
 		self.configuration = configuration
@@ -475,14 +525,19 @@ class KShortestEFMAlgorithm(object):
 		## TODO: Change this method's name
 		"""
 		Enumerates the elementary modes for a linear system
-		Parameters
-		----------
-		linear_system: A KShortestCompatibleLinearSystem instance
-		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
-		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
 
-		Returns a list with solutions encoding elementary flux modes.
+		Parameters
+
+		----------
+
+			linear_system: A KShortestCompatibleLinearSystem instance
+
+			excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+
+			forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
 		-------
+		Returns a list with solutions encoding elementary flux modes.
 
 		"""
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
@@ -495,14 +550,20 @@ class KShortestEFMAlgorithm(object):
 	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
 		"""
 		Enumerates the elementary modes for a linear system
+
 		Parameters
+
 		----------
-		linear_system: A KShortestCompatibleLinearSystem instance
-		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
-		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+			linear_system: A KShortestCompatibleLinearSystem instance
+
+			excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+
+			forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+		-------
 
 		Returns a list with solutions encoding elementary flux modes.
-		-------
 
 		"""
 		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets)
@@ -513,13 +574,19 @@ class KShortestEFMAlgorithm(object):
 
 	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
 		"""
-		Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.
-		Args:
-		linear_system: A KShortestCompatibleLinearSystem instance
-		excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
-		forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
 
-		Returns a generator.
+
+		Parameters
+
+		----------
+
+			linear_system: A KShortestCompatibleLinearSystem instance
+
+			excluded_sets: Iterable[Tuple[Solution/Tuple]] with solutions to exclude from the enumeration
+
+			forced_sets: Iterable[Tuple[Solution/Tuple]] with solutions to force
+
+		Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.
 
 		"""
 		self.__prepare(linear_system, excluded_sets, forced_sets)

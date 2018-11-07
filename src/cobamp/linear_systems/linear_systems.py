@@ -11,8 +11,10 @@ class LinearSystem():
 	such as CPLEX and passed onto other algorithms supplied with the package.
 
 	Must instantiate the following variables:
-	S: System of linear equations represented as a n-by-m ndarray, preferrably with dtype as float or int
-	__model: Linear model as an instance of the solver.
+
+		S: System of linear equations represented as a n-by-m ndarray, preferrably with dtype as float or int
+
+		__model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
 	model = None
@@ -24,7 +26,6 @@ class LinearSystem():
 		Builds a CPLEX model with the constraints specified in the constructor arguments.
 		This method must be implemented by any <LinearSystem>.
 		Refer to the :ref:`constructor <self.__init__>`
-		Returns
 		-------
 
 		"""
@@ -34,6 +35,7 @@ class LinearSystem():
 		"""
 
 		Returns the model instance. Must call <self.build_problem()> to return a CPLEX model.
+
 		-------
 
 		"""
@@ -44,6 +46,7 @@ class LinearSystem():
 		"""
 
 		Returns a tuple with the shape (rows, columns) of the supplied stoichiometric matrix.
+
 		-------
 
 		"""
@@ -54,10 +57,13 @@ class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
 	Abstract class representing a linear system that can be passed as an argument for the KShortestAlgorithm class.
 	Subclasses must instantiate the following variables:
-	__dvar_mapping: A dictionary mapping reaction indexes with variable names
-	__dvars: A list of variable names (str) or Tuple[str] if two linear system variables represent a single flux.
-	Should be kept as type `list` to maintain order.
-	__c: str representing the variable to be used as constant for indicator constraints
+
+		__dvar_mapping: A dictionary mapping reaction indexes with variable names
+
+		__dvars: A list of variable names (str) or Tuple[str] if two linear system variables represent a single flux.
+		Should be kept as type `list` to maintain order.
+
+		__c: str representing the variable to be used as constant for indicator constraints
 	"""
 	dvar_mapping = None
 	dvars = None
@@ -102,11 +108,16 @@ class SimpleLinearSystem(LinearSystem):
 		Constructor for SimpleLinearSystem
 
 		Parameters
+
 		----------
-		S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-		lb: ndarray or list containing the lower bounds for all n fluxes
-		ub: ndarray or list containing the lower bounds for all n fluxes
-		var_names: - optional - ndarray or list containing the names for each flux
+
+			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
+
+			lb: ndarray or list containing the lower bounds for all n fluxes
+
+			ub: ndarray or list containing the lower bounds for all n fluxes
+
+			var_names: - optional - ndarray or list containing the names for each flux
 		"""
 		self.model = cplex.Cplex()
 		self.S, self.lb, self.ub = S, lb, ub
@@ -133,12 +144,17 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 
 		Parameters
 		----------
-		S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-		irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
-		non_consumed: An Iterable[int] or ndarray containing the indices of external metabolites not consumed in the
-		model.
-		consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
-		produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
+
+			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
+
+			irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
+
+			non_consumed: An Iterable[int] or ndarray containing the indices of external metabolites not consumed in the
+			model.
+
+			consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
+
+			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
 		"""
 		self.model = cplex.Cplex()
 		self.__ivars = None
@@ -225,11 +241,15 @@ class DualLinearSystem(KShortestCompatibleLinearSystem):
 		"""
 
 		Parameters
+
 		----------
-		S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-		irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
-		T: Target matrix as an ndarray. Should have c-by-n dimensions (c - #constraints; n - #fluxes)
-		b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
+
+			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
+			irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
+
+			T: Target matrix as an ndarray. Should have c-by-n dimensions (c - #constraints; n - #fluxes)
+
+			b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
 		"""
 		self.model = cplex.Cplex()
 		self.__ivars = None

@@ -16,7 +16,10 @@ class InterventionProblem(object):
 	def __init__(self, S):
 		"""
 		Object that generates target matrices for a given set of constraints admissible for an intervention problem
-		Parameters:
+
+		Parameters
+		----------
+
 			S: The stoichiometric matrix used to generate the enumeration problem
 		"""
 		self.__num_rx = S.shape[1]
@@ -25,9 +28,15 @@ class InterventionProblem(object):
 		"""
 
 		Parameters:
+		----------
 			constraints: An iterable containing valid constraints of
 
-		Returns:
+		Returns a tuple (T,b) with two elements:
+			T is numpy 2D array with as many rows specifying individual bounds (lower and upper bounds count as two) for
+			each reaction.
+
+			b is a numpy 1D array with the right hand side of the T.v > b inequality. This represents the value of the
+			bound.
 
 		"""
 		constraint_pairs = [const.materialize(self.__num_rx) for const in constraints]
@@ -48,7 +57,9 @@ class AbstractConstraint(object):
 		"""
 		Generates a matrix T 1-by-n or 2-by-n and a list b of length 1 or 2 to be used for target flux vector
 		definition within the intervention problem framework
+
 		Parameters:
+
 			n: Number of columns to include in the target matrix
 
 		Returns: Tuple with Iterable[ndarray] and list of float/int
@@ -75,9 +86,11 @@ class DefaultFluxbound(AbstractConstraint):
 		"""
 		Parameters
 		----------
-		lb: Numerical lower bound
-		ub: Numerical upper bound
-		r_index: Reaction index on the stoichiometric matrix to which this bound belongs
+			lb: Numerical lower bound
+
+			ub: Numerical upper bound
+
+			r_index: Reaction index on the stoichiometric matrix to which this bound belongs
 		"""
 
 		self.__r_index = r_index
@@ -121,11 +134,15 @@ class DefaultYieldbound(AbstractConstraint):
 
 		Parameters
 		----------
-		lb: numerical lower bound
-		ub: numerical upper bound
-		numerator_index: reaction index for the flux in the numerator
-		denominator_index: reaction index for the flux in the denominator
-		deviation: numerical deviation for the target space
+			lb: numerical lower bound
+
+			ub: numerical upper bound
+
+			numerator_index: reaction index for the flux in the numerator
+
+			denominator_index: reaction index for the flux in the denominator
+
+			deviation: numerical deviation for the target space
 		"""
 		self.__lb = lb
 		self.__ub = ub

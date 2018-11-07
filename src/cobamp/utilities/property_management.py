@@ -6,6 +6,7 @@ class PropertyDictionary():
 	or mandatory.
 	"""
 	def __init__(self, mandatory_properties={}, optional_properties={}):
+
 		"""
 		The values for each of the required dicts can either be:
 			- A type (such as str, int, etc...)

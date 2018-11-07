@@ -6,12 +6,17 @@ PRECISION = 1e-10
 
 def compute_nullspace(A, eps=1e-9, left=True):
     """
-    Computes the nullspace of the matrix A
+    Computes the nullspace of the matrix A.
+
     Parameters
+
     ----------
-    A: A 2D-ndarray
-    eps: Tolerance value for 0
-    left: A boolean value indicating whether the result is the left nullspace (right if False)
+
+        A: A 2D-ndarray
+
+        eps: Tolerance value for 0
+
+        left: A boolean value indicating whether the result is the left nullspace (right if False)
 
     Returns the nullspace of A as a 2D ndarray
     -------
@@ -26,9 +31,12 @@ def nullspace_blocked_reactions(K, tolerance):
     """
 
     Parameters
+
     ----------
-    K: A nullspace matrix as a 2D ndarray
-    tolerance: Tolerance value for 0
+
+        K: A nullspace matrix as a 2D ndarray
+
+        tolerance: Tolerance value for 0
 
     Returns indices of the rows of K where all values are 0
     -------

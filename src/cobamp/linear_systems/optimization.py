@@ -6,8 +6,10 @@ def random_string_generator(N):
 	"""
 
 	Parameters
+
 	----------
-	N : an integer
+
+		N : an integer
 
 	Returns a random string of uppercase character and digits of length N
 	-------
@@ -22,7 +24,7 @@ def copy_cplex_model(model):
 
 	Parameters
 	----------
-	model : A cplex.Cplex instance
+		model : A cplex.Cplex instance
 
 	Returns a deep copy of the model as a separate object.
 	-------
@@ -54,10 +56,13 @@ class Solution(object):
 
 		Parameters
 		----------
-		value_map: A dictionary mapping variable indexes with their values as determined by the solver
-		status: An object (preferrably str or int) containing the solution status
-		kwargs: Any additional information to be included in the attribute_dict variable that can be accessed by
-		the <self.attribute_value> function.
+
+			value_map: A dictionary mapping variable indexes with their values as determined by the solver
+
+			status: An object (preferrably str or int) containing the solution status
+
+			kwargs: Any additional information to be included in the attribute_dict variable that can be accessed by
+			the <self.attribute_value> function.
 		"""
 		self.__value_map = value_map
 		self.__status = status
@@ -74,10 +79,14 @@ class Solution(object):
 	def set_attribute(self, key, value):
 		"""
 		Sets the value of a given <key> as <value>.
+
 		Parameters
+
 		----------
-		key - A string
-		value - Any object to be associated with the supplied key
+
+			key - A string
+
+			value - Any object to be associated with the supplied key
 		-------
 
 		"""
@@ -85,6 +94,7 @@ class Solution(object):
 
 	def var_values(self):
 		"""
+
 		Returns a dict mapping reaction indices with the variable values.
 		-------
 
@@ -104,8 +114,10 @@ class Solution(object):
 		"""
 
 		Parameters
+
 		----------
-		attribute_name: A dictionary key (preferrably str)
+
+			attribute_name: A dictionary key (preferrably str)
 
 		Returns the value associated with the supplied key
 		-------
@@ -117,6 +129,7 @@ class Solution(object):
 		"""
 
 		Returns all keys present in the attribute dictionary.
+
 		-------
 
 		"""
@@ -130,8 +143,10 @@ class LinearSystemOptimizer(object):
 		"""
 
 		Parameters
+
 		----------
-		linear_system: A <LinearSystem> instance.
+
+			linear_system: A <LinearSystem> instance.
 		"""
 		linear_system.build_problem()
 		self.model = copy_cplex_model(linear_system.get_model())
@@ -143,10 +158,13 @@ class LinearSystemOptimizer(object):
 		Internal function to instantiate the solver and return a solution to the optimization problem
 
 		Parameters
+
 		----------
-		objective: A List[Tuple[coef,name]], where coef is an objective coefficient and name is the name of the variable
-		to be optimized.
-		minimize: A boolean that, when True, defines the problem as a minimization
+
+			objective: A List[Tuple[coef,name]], where coef is an objective coefficient and name is the name of the variable
+			to be optimized.
+
+			minimize: A boolean that, when True, defines the problem as a minimization
 
 		Returns a <Solution> instance
 		-------
@@ -164,14 +182,8 @@ class LinearSystemOptimizer(object):
 
 	def optimize(self, objective, minimize=False):
 		"""
+		### TODO: deprecate this method in the future
 		See <self.__optimize>.
-		Parameters
-		----------
-		objective
-		minimize
-
-		Returns
-		-------
 
 		"""
 		return self.__optimize(objective, minimize)
