@@ -27,7 +27,7 @@ Instalation from PyPI (stable releases)
 
 ::
 
-    pip install pyCoBAMP
+    pip install cobamp
 
 Instalation from github (latest development release)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
