@@ -2,6 +2,7 @@ import cplex, string, random, shutil
 
 CPLEX_INFINITY = cplex.infinity
 
+
 def random_string_generator(N):
 	"""
 
@@ -17,6 +18,7 @@ def random_string_generator(N):
 	"""
 	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
+
 def copy_cplex_model(model):
 	"""
 	Copies a Cplex model and returns a new object with the same contents in a separate object. Requires file creation
@@ -31,8 +33,9 @@ def copy_cplex_model(model):
 
 	"""
 	from os import mkdir, path
-	folder = "tmp_"+random_string_generator(12)
-	m_name, p_name = path.join(folder,random_string_generator(9)+".lp"), path.join(folder,random_string_generator(9)+".lp")
+	folder = "tmp_" + random_string_generator(12)
+	m_name, p_name = path.join(folder, random_string_generator(9) + ".lp"), path.join(folder, random_string_generator(
+		9) + ".lp")
 	mkdir(folder)
 
 	model.write(m_name)
@@ -51,6 +54,7 @@ class Solution(object):
 	Class representing a solution to a given linear optimization problem. Includes an internal dictionary for additional
 	information to be included.
 	"""
+
 	def __init__(self, value_map, status, **kwargs):
 		"""
 
@@ -135,10 +139,12 @@ class Solution(object):
 		"""
 		return self.__attribute_dict.keys()
 
+
 class LinearSystemOptimizer(object):
 	"""
 	Class with methods to solve a <LinearSystem> as a linear optimization problem.
 	"""
+
 	def __init__(self, linear_system):
 		"""
 
@@ -175,7 +181,7 @@ class LinearSystemOptimizer(object):
 
 		try:
 			self.model.solve()
-			value_map = dict(zip(self.model.variables.get_names(),self.model.solution.get_values()))
+			value_map = dict(zip(self.model.variables.get_names(), self.model.solution.get_values()))
 			return Solution(value_map, self.model.solution.status)
 		except Exception as e:
 			print(e)
@@ -187,5 +193,3 @@ class LinearSystemOptimizer(object):
 
 		"""
 		return self.__optimize(objective, minimize)
-
-

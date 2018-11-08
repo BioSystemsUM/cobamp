@@ -30,7 +30,6 @@ def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 
 
 class KShortestEnumerator(object):
-
 	"""
 	Class implementing the k-shortest elementary flux mode algorithm. This is a lower level class implemented using the
 	Cplex solver as base. Maybe in the future, this will be readapted for the optlang wrapper, if performance issues
@@ -104,7 +103,7 @@ class KShortestEnumerator(object):
 		self.model.parameters.mip.pool.absgap.set(0)
 		self.model.parameters.mip.pool.replace.set(2)
 
-		##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
+	##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
 	def exclude_solutions(self, sols):
 

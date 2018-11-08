@@ -1,10 +1,12 @@
 from itertools import chain
 from collections import Counter
 
+
 class Tree(object):
 	"""
 	A simple class representing an n-ary tree as a node with one or more children nodes.
 	"""
+
 	def __init__(self, value, extra_info=None):
 		"""
 		Initializes the tree with no children.
@@ -69,7 +71,6 @@ class Tree(object):
 		return str(self.value) + '(' + str(self.extra_info) + ')'
 
 
-
 def fill_tree(tree, sets):
 	"""
 	Fills a Tree instance with data from the Iterable[set/frozenset] supplied as the argument `sets`.
@@ -90,18 +91,19 @@ def fill_tree(tree, sets):
 		counts = Counter(chain(*(sets)))
 		if len(counts) > 0:
 			most_common, max_value = counts.most_common(1)[0]
-			#print(tab_level*"\t"+'Most common element is',most_common,'with',max_value,'hits.')
+			# print(tab_level*"\t"+'Most common element is',most_common,'with',max_value,'hits.')
 			new_node = Tree(most_common, extra_info=max_value)
 			sets_containing_most_common = [setf for setf in sets if most_common in setf]
-			#print(tab_level*"\t"+str(len(sets_containing_most_common)),'contain',most_common)
+			# print(tab_level*"\t"+str(len(sets_containing_most_common)),'contain',most_common)
 			remaining_sets = [setf for setf in sets if most_common not in setf]
-			#print(tab_level*"\t"+str(len(remaining_sets)),"sets remaining.")
+			# print(tab_level*"\t"+str(len(remaining_sets)),"sets remaining.")
 			tree.add_child(new_node)
 
 			if len(sets_containing_most_common) > 0:
 				fill_tree(new_node, [[k for k in setf if k != most_common] for setf in sets_containing_most_common])
 			if len(remaining_sets) > 0:
 				fill_tree(tree, remaining_sets)
+
 
 def compress_linear_paths(tree):
 	"""
@@ -125,6 +127,7 @@ def compress_linear_paths(tree):
 		for child in tree.children:
 			compress_linear_paths(child)
 
+
 def ignore_compressed_nodes_by_size(tree, size):
 	"""
 	Modifies the values of a tree's children that have been previously compressed with the <compress_linear_paths>
@@ -143,7 +146,8 @@ def ignore_compressed_nodes_by_size(tree, size):
 		else:
 			ignore_compressed_nodes_by_size(child, size)
 
-def probabilistic_tree_prune(tree, target_level, current_level=0, cut_leaves = False, name_separator=' and '):
+
+def probabilistic_tree_prune(tree, target_level, current_level=0, cut_leaves=False, name_separator=' and '):
 	"""
 	Cuts a tree's nodes under a certain height (`target_level`) and converts ensuing nodes into a single one whose value
 	represents the relative frequency of an element in the nodes below. Requires values on the extra_info field.
@@ -162,12 +166,14 @@ def probabilistic_tree_prune(tree, target_level, current_level=0, cut_leaves = F
 			tree.children = []
 		else:
 			for child in tree.children:
-				probabilistic_tree_prune(child, target_level, current_level+1, cut_leaves, name_separator)
+				probabilistic_tree_prune(child, target_level, current_level + 1, cut_leaves, name_separator)
 
 	else:
 		probabilistic_tree_compression(tree, name_separator=name_separator)
-		tree.value = "REMAINING" if cut_leaves else [str(k)+"="+str(tree.value[k]) for k in sorted(tree.value, key=tree.value.get)]
+		tree.value = "REMAINING" if cut_leaves else [str(k) + "=" + str(tree.value[k]) for k in
+													 sorted(tree.value, key=tree.value.get)]
 	return target_level == current_level
+
 
 def probabilistic_tree_compression(tree, data=None, total_count=None, name_separator=' and '):
 	"""
@@ -191,7 +197,7 @@ def probabilistic_tree_compression(tree, data=None, total_count=None, name_separ
 		tree.value = data
 		tree.children = []
 	else:
-		local_proportion = int(tree.extra_info)/total_count
+		local_proportion = int(tree.extra_info) / total_count
 		key = name_separator.join(tree.value) if isinstance(tree.value, list) else tree.value
 		if key not in data.keys():
 			data[key] = local_proportion
@@ -232,6 +238,7 @@ def pretty_print_tree(tree, write_path=None):
 
 	return res
 
+
 def apply_fx_to_all_node_values(tree, fx):
 	"""
 	Applies a function to all nodes below the tree, modifying their value to its result.
@@ -246,6 +253,7 @@ def apply_fx_to_all_node_values(tree, fx):
 	for child in tree.children:
 		apply_fx_to_all_node_values(child, fx)
 
+
 def find_all_tree_nodes(tree):
 	"""
 	Parameters
@@ -256,6 +264,7 @@ def find_all_tree_nodes(tree):
 	-------
 
 	"""
+
 	def __find_all_tree_nodes(tree, it):
 		it.append(tree)
 		for child in tree.children:
@@ -280,7 +289,7 @@ def merge_duplicate_nodes(tree):
 	all_nodes = find_all_tree_nodes(tree)
 	conv_key = lambda x: str(sorted(x) if isinstance(x, list) else x)
 	unique_keys = [conv_key(k.value) for k in all_nodes]
-	unique_node_map = {k:Tree(k) for k in unique_keys}
+	unique_node_map = {k: Tree(k) for k in unique_keys}
 
 	def __merge_duplicate_nodes(tree):
 		new_children = []
@@ -292,6 +301,7 @@ def merge_duplicate_nodes(tree):
 		tree.children = new_children
 		for child in tree.children:
 			__merge_duplicate_nodes(child)
+
 	__merge_duplicate_nodes(tree)
 
 
@@ -315,4 +325,5 @@ def populate_nx_graph(tree, G, previous=None, name_separator='\n', unique_nodes=
 		G.add_edge(previous_node, node_value)
 	if not tree.is_leaf():
 		for child in tree.children:
-			populate_nx_graph(child, G, previous=(node_value,node_value_key), name_separator=name_separator, unique_nodes=unique_nodes, node_dict=node_dict)
+			populate_nx_graph(child, G, previous=(node_value, node_value_key), name_separator=name_separator,
+							  unique_nodes=unique_nodes, node_dict=node_dict)

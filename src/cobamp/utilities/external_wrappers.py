@@ -18,7 +18,7 @@ class KShortestEnumeratorWrapper(object):
 
 	__alg_to_prop_name = {
 		ALGORITHM_TYPE_ITERATIVE: kp.K_SHORTEST_OPROPERTY_MAXSOLUTIONS,
-		ALGORITHM_TYPE_POPULATE:kp.K_SHORTEST_OPROPERTY_MAXSIZE
+		ALGORITHM_TYPE_POPULATE: kp.K_SHORTEST_OPROPERTY_MAXSIZE
 	}
 
 	__alg_to_alg_name = {
@@ -26,7 +26,8 @@ class KShortestEnumeratorWrapper(object):
 		ALGORITHM_TYPE_POPULATE: kp.K_SHORTEST_METHOD_POPULATE
 	}
 
-	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None, excluded_solutions=None):
+	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
+				 excluded_solutions=None):
 		"""
 
 		Parameters
@@ -56,7 +57,9 @@ class KShortestEnumeratorWrapper(object):
 		if model.__module__ in model_readers.keys():
 			self.model_reader = model_readers[model.__module__](model)
 		else:
-			raise TypeError("The `model` instance is not currently supported by cobamp. Currently available readers are: "+str(list(model_readers.keys())))
+			raise TypeError(
+				"The `model` instance is not currently supported by cobamp. Currently available readers are: " + str(
+					list(model_readers.keys())))
 
 		self.__algo_properties = kp.KShortestProperties()
 		self.__algo_properties[kp.K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
@@ -112,12 +115,12 @@ class KShortestEnumeratorWrapper(object):
 			yield self.model_reader.decode_k_shortest_solution(solarg)
 
 
-
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
 	Extension of the abstract class KShortestEnumeratorWrapper that takes a metabolic model as input and yields
 	elementary flux modes.
 	"""
+
 	def __init__(self, model, non_consumed, consumed, produced, **kwargs):
 		"""
 
@@ -141,7 +144,6 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
 
 	def get_linear_system(self):
-
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
 		return IrreversibleLinearSystem(
@@ -158,14 +160,16 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 	minimal cut sets.
 
 	"""
+
 	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, **kwargs):
 		super().__init__(model, **kwargs)
 
-
-		target_flux_space = [tuple([k]) + tuple(v) for k,v in target_flux_space_dict.items()]
-		target_yield_space = [k + tuple(v) for k,v in target_yield_space_dict.items()]
-		converted_fbs = [DefaultFluxbound.from_tuple(self.model_reader.convert_constraint_ids(t, False)) for t in target_flux_space]
-		converted_ybs = [DefaultYieldbound.from_tuple(self.model_reader.convert_constraint_ids(t, True)) for t in target_yield_space]
+		target_flux_space = [tuple([k]) + tuple(v) for k, v in target_flux_space_dict.items()]
+		target_yield_space = [k + tuple(v) for k, v in target_yield_space_dict.items()]
+		converted_fbs = [DefaultFluxbound.from_tuple(self.model_reader.convert_constraint_ids(t, False)) for t in
+						 target_flux_space]
+		converted_ybs = [DefaultYieldbound.from_tuple(self.model_reader.convert_constraint_ids(t, True)) for t in
+						 target_yield_space]
 		self.__ip_constraints = converted_fbs + converted_ybs
 
 	def __materialize_intv_problem(self):
@@ -174,6 +178,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 	def get_linear_system(self):
 		T, b = self.__materialize_intv_problem()
 		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b)
+
 
 class AbstractObjectReader(object):
 	"""
@@ -278,12 +283,9 @@ class AbstractObjectReader(object):
 		"""
 		return self.m_ids.index(id)
 
-
-
-
 	def convert_constraint_ids(self, tup, yield_constraint):
 		if yield_constraint:
-			constraint = tuple(list(map(self.reaction_id_to_index,tup[:2])) + list(tup[2:]))
+			constraint = tuple(list(map(self.reaction_id_to_index, tup[:2])) + list(tup[2:]))
 		else:
 			constraint = tuple([self.reaction_id_to_index(tup[0])] + list(tup[1:]))
 		return constraint
@@ -302,7 +304,7 @@ class COBRAModelObjectReader(AbstractObjectReader):
 
 	def get_stoichiometric_matrix(self):
 		S = np.zeros((len(self.m_ids), len(self.r_ids)))
-		for i,r_id in enumerate(self.r_ids):
+		for i, r_id in enumerate(self.r_ids):
 			for metab, coef in self.model.reactions.get_by_id(r_id).metabolites.items():
 				S[self.m_ids.index(metab.id), i] = coef
 
@@ -351,6 +353,7 @@ class FramedModelObjectReader(AbstractObjectReader):
 
 	def get_rx_instances(self):
 		return [self.model.reactions[rx] for rx in self.r_ids]
+
 
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.

@@ -6,6 +6,7 @@ from numpy import zeros, concatenate, array
 from itertools import chain
 import abc
 
+
 class InterventionProblem(object):
 	"""
 	Class containing functions useful when defining an problem using the intervention problem framework.
@@ -13,6 +14,7 @@ class InterventionProblem(object):
 		[1] Hädicke, O., & Klamt, S. (2011). Computing complex metabolic intervention strategies using constrained
 		minimal cut sets. Metabolic engineering, 13(2), 204-213.
 	"""
+
 	def __init__(self, S):
 		"""
 		Object that generates target matrices for a given set of constraints admissible for an intervention problem
@@ -44,7 +46,8 @@ class InterventionProblem(object):
 
 		T = concatenate(Tlist, axis=0)
 		b = array(list(chain(*blist)))
-		return T,b
+		return T, b
+
 
 class AbstractConstraint(object):
 	"""
@@ -78,10 +81,12 @@ class AbstractConstraint(object):
 		"""
 		return
 
+
 class DefaultFluxbound(AbstractConstraint):
 	"""
 	Class representing bounds for a single flux with a lower and an upper bound.
 	"""
+
 	def __init__(self, lb, ub, r_index):
 		"""
 		Parameters
@@ -101,12 +106,12 @@ class DefaultFluxbound(AbstractConstraint):
 		Tx = []
 		b = []
 		if self.__lb != None:
-			Tlb = zeros((1,n))
+			Tlb = zeros((1, n))
 			Tlb[0, self.__r_index] = -1
 			b.append(-self.__lb)
 			Tx.append(Tlb)
 		if self.__ub != None:
-			Tub = zeros((1,n))
+			Tub = zeros((1, n))
 			Tub[0, self.__r_index] = 1
 			b.append(self.__ub)
 			Tx.append(Tub)
@@ -123,12 +128,14 @@ class DefaultFluxbound(AbstractConstraint):
 		index, lb, ub = tup
 		return DefaultFluxbound(lb, ub, index)
 
+
 class DefaultYieldbound(AbstractConstraint):
 	"""
 	Class representing a constraint on a yield between two fluxes. Formally, this constraint can be represented as
 	n - yd < b, assuming n and d as the numerator and denominator fluxes (yield(N,D) = N/D), y as the maximum yield and
 	b as a deviation value.
 	"""
+
 	def __init__(self, lb, ub, numerator_index, denominator_index, deviation=0):
 		"""
 
@@ -166,7 +173,7 @@ class DefaultYieldbound(AbstractConstraint):
 			b.append(self.__deviation)
 			Tx.append(Tub)
 
-		return concatenate(Tx,axis=0), b
+		return concatenate(Tx, axis=0), b
 
 	def from_tuple(tup):
 		"""
@@ -187,4 +194,3 @@ if __name__ == '__main__':
 	ip = InterventionProblem(zeros([20, 20]))
 	constraints = [DefaultFluxbound(0, 10, 14), DefaultFluxbound(0, None, 16), DefaultYieldbound(None, 2, 3, 5)]
 	T, b = ip.generate_target_matrix(constraints)
-

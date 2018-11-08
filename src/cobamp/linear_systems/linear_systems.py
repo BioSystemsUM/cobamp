@@ -5,6 +5,7 @@ import numpy as np
 
 from ..linear_systems.optimization import CPLEX_INFINITY
 
+
 class LinearSystem():
 	"""
 	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers
@@ -40,7 +41,6 @@ class LinearSystem():
 
 		"""
 		return self.model
-
 
 	def get_stoich_matrix_shape(self):
 		"""
@@ -133,12 +133,14 @@ class SimpleLinearSystem(LinearSystem):
 		cnames = ['C_' + str(i) for i in range(self.S.shape[0])]
 		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
 
+
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
 	All irreversible reactions are split into their forward and backward components so every lower bound is 0.
 	Used as arguments for various algorithms implemented in the package.
 	"""
+
 	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=()):
 		"""
 
@@ -160,12 +162,13 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 		self.__ivars = None
 		self.S, self.irrev = S, irrev
 		self.__c = "C"
-		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for c in consumed]
+		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
+																										c in consumed]
 
 	def subset_dvars(self, subset):
 
 		dvars = [self.dvar_mapping[i] for i in subset]
-		dvar_mapping = {k:v for k,v in self.dvar_mapping.items() if v in dvars}
+		dvar_mapping = {k: v for k, v in self.dvar_mapping.items() if v in dvars}
 		return dvars, dvar_mapping
 
 	def build_problem(self):
@@ -212,8 +215,9 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 																											x not in self.irrev]
 
 		self.dvar_mapping = dict(zip(var_index_sequence, self.dvars))
-		#self.__model.write('efmmodel.lp') ## For debugging purposes
+		# self.__model.write('efmmodel.lp') ## For debugging purposes
 		return S_full
+
 
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
@@ -224,7 +228,7 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	def build_problem(self):
 		super().build_problem()
 		self.dvars, self.dvar_mapping = self.subset_dvars(self.subset)
-		#model.
+# model.
 
 
 class DualLinearSystem(KShortestCompatibleLinearSystem):
@@ -237,6 +241,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem):
 	[2] Ballerstein, K., von Kamp, A., Klamt, S., & Haus, U. U. (2011). Minimal cut sets in a metabolic network are
 	elementary modes in a dual network. Bioinformatics, 28(3), 381-387.
 	"""
+
 	def __init__(self, S, irrev, T, b):
 		"""
 

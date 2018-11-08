@@ -2,13 +2,15 @@
 Inspired by Metatool's code
 """
 
-from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, array, dot
+from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, \
+	array, dot
 from numpy.linalg import norm
 
 from ..nullspace_analysis.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
 PRECISION = 1e-10
+
 
 def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	"""
@@ -69,8 +71,8 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	irrev_scm = irrev[kept_reactions]
 	scm_kp_ids = where([keep_single[kept_reactions]])[1]
 
-
-	sub, irrev_reduced, irrv_subsets = subset_correlation_matrix(S_scm, kernel,irrev_scm, correlation_matrix,scm_kp_ids)
+	sub, irrev_reduced, irrv_subsets = subset_correlation_matrix(S_scm, kernel, irrev_scm, correlation_matrix,
+																 scm_kp_ids)
 	if len(kept_reactions) < n:
 		temp = zeros([sub.shape[0], n])
 		temp[:, kept_reactions] = sub
@@ -103,9 +105,9 @@ def subset_candidates(kernel, tol=None):
 	tol = kernel.shape[0] * EPSILON if tol is None else tol
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
-		for j in range(i+1, kernel.shape[0]):
-			cr[i,j] = cr[i,j]/sqrt(cr[i,i]*cr[j,j])
-		cr[i,i] = 1
+		for j in range(i + 1, kernel.shape[0]):
+			cr[i, j] = cr[i, j] / sqrt(cr[i, i] * cr[j, j])
+		cr[i, i] = 1
 	cr = triu(cr)
 	cr[abs(abs(cr) - 1) >= tol] = 0
 	return sign(cr)
@@ -197,15 +199,14 @@ def reduce(S, sub, irrev_reduced=None):
 
 	"""
 
-	reduced = dot(S,sub.T)
+	reduced = dot(S, sub.T)
 	reduced[abs(reduced) < PRECISION] = 0
 	reduced_indexes = unique(nonzero(reduced)[0])
-	reduced = reduced[reduced_indexes,:]
+	reduced = reduced[reduced_indexes, :]
 
 	rdm, rdn = reduced.shape
 	if rdn == 0 or rdm == 0:
 		reduced = zeros(1, rdn)
-
 
 	# if irrev_reduced is not None:
 	# 	ind = unique(nonzero(reduced)[1])

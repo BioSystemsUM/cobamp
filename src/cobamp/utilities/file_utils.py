@@ -1,5 +1,6 @@
 import pickle
 
+
 def pickle_object(obj, path):
 	"""
 	Stores an object as a file.
@@ -14,6 +15,7 @@ def pickle_object(obj, path):
 	"""
 	with open(path, "wb") as f:
 		pickle.dump(obj, f)
+
 
 def read_pickle(path):
 	"""

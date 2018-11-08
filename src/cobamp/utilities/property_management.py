@@ -1,10 +1,12 @@
 import types
 
+
 class PropertyDictionary():
 	"""
 	Implements a dict with additional control on which objects can be added to which keys and whether these are optional
 	or mandatory.
 	"""
+
 	def __init__(self, mandatory_properties={}, optional_properties={}):
 
 		"""
@@ -69,7 +71,7 @@ class PropertyDictionary():
 
 		"""
 		if item not in self.__mandatory_properties.keys() and item not in self.__optional_properties.keys():
-			raise Exception(str(item)+" has not been registered as a mandatory or optional property.")
+			raise Exception(str(item) + " has not been registered as a mandatory or optional property.")
 		elif item not in self.__properties.keys():
 			return None
 		else:
@@ -86,11 +88,12 @@ class PropertyDictionary():
 
 		"""
 		if key in self.__mandatory_properties.keys() or key in self.__optional_properties.keys():
-			expected_type = self.__mandatory_properties[key] if key in self.__mandatory_properties.keys() else self.__optional_properties[key]
+			expected_type = self.__mandatory_properties[key] if key in self.__mandatory_properties.keys() else \
+			self.__optional_properties[key]
 			if self.__check_key_value_pair(expected_type, value):
 				self.__properties[key] = value
 			else:
-				raise Exception(str(key)+" does not accept the supplied `value` as a valid argument.")
+				raise Exception(str(key) + " does not accept the supplied `value` as a valid argument.")
 
 	def has_required_properties(self):
 		"""
@@ -99,7 +102,8 @@ class PropertyDictionary():
 		-------
 
 		"""
-		return set(self.__properties.keys()) & set(self.__mandatory_properties.keys()) == set(self.__mandatory_properties.keys())
+		return set(self.__properties.keys()) & set(self.__mandatory_properties.keys()) == set(
+			self.__mandatory_properties.keys())
 
 	def __check_key_value_pair(self, expected_type, value):
 		"""
@@ -117,15 +121,17 @@ class PropertyDictionary():
 		if type(expected_type) is type:
 			is_ok = expected_type == type(value)
 			if not is_ok:
-				raise TypeError("\'value\' has type " + str(type(value)) + " but \'key\' requires type " + str(expected_type))
+				raise TypeError(
+					"\'value\' has type " + str(type(value)) + " but \'key\' requires type " + str(expected_type))
 		elif type(expected_type) == types.FunctionType:
 			is_ok = expected_type(value)
 			if not is_ok:
-				raise AssertionError("Property checking function "+expected_type.__name__+" does not allow the specified \'value\'")
+				raise AssertionError(
+					"Property checking function " + expected_type.__name__ + " does not allow the specified \'value\'")
 		else:
 			is_ok = value in expected_type
 			if not is_ok:
-				raise AssertionError("\'value\' is not contained in "+str(expected_type))
+				raise AssertionError("\'value\' is not contained in " + str(expected_type))
 
 		return is_ok
 
@@ -135,4 +141,4 @@ class PropertyDictionary():
 		-------
 
 		"""
-		return '\n'.join([str(k)+" = "+str(v) for k,v in self.__properties.items()])
+		return '\n'.join([str(k) + " = " + str(v) for k, v in self.__properties.items()])
