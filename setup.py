@@ -6,8 +6,8 @@ setup(
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["numpy",
-                        "scipy",
-                        "pandas"],
+                        "scipy"],
+
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
     description = 'cobamp - pathway analysis methods for genome-scale metabolic models',
