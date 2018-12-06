@@ -179,6 +179,29 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		T, b = self.__materialize_intv_problem()
 		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b)
 
+class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
+	"""
+	Extension of the abstract class KShortestEnumeratorWrapper that takes a metabolic model as input and yields
+	elementary flux patterns.
+	"""
+
+	def __init__(self, model, subset, non_consumed=[], consumed=[], produced=[], **kwargs):
+		super().__init__(model, **kwargs)
+		self.__subset = subset
+		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
+
+	def get_linear_system(self):
+		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
+		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
+		conv_subsets = [self.model_reader.reaction_id_to_index(s) for s in self.__subset]
+		return IrreversibleLinearPatternSystem(
+			S=self.model_reader.S,
+			irrev=self.model_reader.irrev_index,
+			subset=conv_subsets,
+			consumed=conv_cn,
+			non_consumed=conv_nc,
+			produced=conv_pr)
+
 
 class AbstractObjectReader(object):
 	"""
