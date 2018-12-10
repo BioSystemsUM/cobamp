@@ -1,5 +1,5 @@
 from ..efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
-from ..linear_systems.linear_systems import IrreversibleLinearSystem, DualLinearSystem
+from ..linear_systems.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem
 from ..mcs_enumeration.intervention_problem import *
 
 from ..efm_enumeration import kshortest_efm_properties as kp

@@ -1,25 +1,24 @@
 from itertools import combinations, chain
 from collections import Counter
-from cobamp.utilities.plotting import heatmap, annotate_heatmap, display_heatmap
+from cobamp.utilities.plotting import display_heatmap
 import matplotlib.pyplot as plt
 import pandas as pd
 
 
-def get_possible_combinations(pathway, k_min=1, k_max=1):
-	return list(
-		chain(*[[' '.join(list(frozenset(c))) for c in combinations(pathway, k)] for k in range(k_min, k_max + 1)]))
-
-
-def get_reaction_frequencies(pathways, k_min=1, k_max=1):
-	c = Counter()
-	for pathway in pathways:
-		c.update(get_possible_combinations(pathway, k_min, k_max))
-	return c
-
 
 def get_frequency_dataframe(pathway_dict, k_min=1, k_max=1):
+	def _get_possible_combinations(pathway):
+		return list(
+			chain(*[[' '.join(list(frozenset(c))) for c in combinations(pathway, k)] for k in range(k_min, k_max + 1)]))
+
+	def _get_reaction_frequencies(pathways):
+		c = Counter()
+		for pathway in pathways:
+			c.update(_get_possible_combinations(pathway))
+		return c
+
 	return pd.DataFrame(
-		{ident: get_reaction_frequencies(pathways, k_min, k_max) for ident, pathways in pathway_dict.items()})
+		{ident: _get_reaction_frequencies(pathways) for ident, pathways in pathway_dict.items()})
 
 
 if __name__ == '__main__':
