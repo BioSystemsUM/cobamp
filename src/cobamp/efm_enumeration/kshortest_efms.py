@@ -16,6 +16,7 @@ References:
 import cplex
 from itertools import chain
 from ..linear_systems.optimization import Solution, copy_cplex_model
+from ..linear_systems.linear_systems import IrreversibleLinearPatternSystem
 from . import kshortest_efm_properties as kp
 import warnings
 
@@ -67,12 +68,17 @@ class KShortestEnumerator(object):
 
 		# Setup CPLEX parameters
 		self.__set_model_parameters()
-
+		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 		# Setup k-shortest constraints
 		self.__add_kshortest_indicators()
 		self.__add_exclusivity_constraints()
 		self.__size_constraint = None
 		# TODO: change this to cplex notation
+		self.__efp_auxiliary_map = None
+
+		if self.is_efp_problem:
+			self.__add_efp_auxiliary_constraints()
+
 		self.__objective_expression = list(
 			zip(list(self.__indicator_map.values()), [1] * len(self.__indicator_map.keys())))
 		self.__set_objective()
@@ -80,6 +86,7 @@ class KShortestEnumerator(object):
 		self.__exclusion_cuts = []
 		self.set_size_constraint(1)
 		self.__current_size = 1
+		self.model.write('ksmodel.lp')
 
 	def __set_model_parameters(self):
 
@@ -123,7 +130,7 @@ class KShortestEnumerator(object):
 		"""
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
-				self.__add_integer_cut(sol.var_values())
+				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 			elif isinstance(sol, list) or isinstance(sol, tuple):
 				ivars = [self.__indicator_map[k] for k in list(chain(*[self.__dvars[i] for i in sol]))]
 				lin_expr = (ivars, [1] * len(ivars))
@@ -147,7 +154,7 @@ class KShortestEnumerator(object):
 		"""
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
-				self.__add_integer_cut(sol.var_values(), force_sol=True)
+				self.__add_integer_cut(sol.var_values(), force_sol=True, efp_cut=self.is_efp_problem)
 			elif isinstance(sol, list) or isinstance(sol, tuple):
 				ivars = [self.__indicator_map[k] for k in list(chain(*[self.__dvars[i] for i in sol]))]
 				lin_expr = (ivars, [1] * len(ivars))
@@ -206,6 +213,26 @@ class KShortestEnumerator(object):
 			self.model.indicator_constraints.add(lin_expr=ind_lin[1], sense='G', rhs=0, indvar=d, complemented=0,
 												 name=ind_names[1])
 
+	def __add_efp_auxiliary_constraints(self):
+		self.__efp_auxiliary_map = {}
+		btype = self.model.variables.type.binary
+		for ind in self.__ivars:
+			self.__efp_auxiliary_map[ind] = ''.join(['hv',ind])
+		varnames = list(self.__efp_auxiliary_map.values())
+
+		self.model.variables.add(names = varnames, types=btype*len(varnames))
+
+		## Adding MILP2
+		milp2_lex_template = lambda bv, hv: cplex.SparsePair(ind=[bv, hv],val=[1, -1])
+		milp2_rhs, milp2_senses, milp2_names = [0]*len(varnames), 'G'*len(varnames), ['MILP2'+var for var in varnames]
+		milp2_lin_expr = [milp2_lex_template(bv, hv) for bv, hv in self.__efp_auxiliary_map.items()]
+		self.model.linear_constraints.add(lin_expr=milp2_lin_expr, rhs=milp2_rhs, senses=milp2_senses, names= milp2_names)
+
+		## Adding MILP4
+		milp4_lex = [
+			(varnames, [1]*len(varnames))
+		]
+		self.model.linear_constraints.add(lin_expr=milp4_lex, senses='G', rhs=[1], names=['MILP4'])
 
 	def __add_exclusivity_constraints(self):
 		"""
@@ -247,7 +274,7 @@ class KShortestEnumerator(object):
 
 		return len(self.__integer_cuts)
 
-	def __add_integer_cut(self, value_map, force_sol=False):
+	def __add_integer_cut(self, value_map, force_sol=False, efp_cut=False):
 		"""
 		Adds an integer cut based on a map of flux values (from a solution).
 
@@ -262,22 +289,30 @@ class KShortestEnumerator(object):
 		-------
 
 		"""
+		if efp_cut:
+			assert self.__efp_auxiliary_map is not None, 'Error: trying to set an integer cut for an EFP problem without any auxiliary variable'
+
 		lin_expr_vars = []
 		counter = 0
 		for varlist in self.__dvars:
 			if isinstance(varlist, tuple):
 				if sum(abs(value_map[self.__indicator_map[var]]) for var in varlist) > 0:
-					lin_expr_vars.extend([self.__indicator_map[var] for var in varlist])
+					ivars = [self.__indicator_map[var] for var in varlist]
+					lin_expr_vars.extend(ivars)
+					if efp_cut:
+						lin_expr_vars.extend([self.__efp_auxiliary_map[v] for v in ivars])
 					counter += 1
 			else:
 				if abs(value_map[self.__indicator_map[varlist]]) > 0:
 					lin_expr_vars.append(self.__indicator_map[varlist])
+					if efp_cut:
+						lin_expr_vars.append(self.__efp_auxiliary_map[self.__indicator_map[varlist]])
 					counter += 1
 
 		self.model.linear_constraints.add(names=['cut' + str(len(self.__integer_cuts))],
-										  lin_expr=[[lin_expr_vars, [1] * len(lin_expr_vars)]],
+										  lin_expr=[(lin_expr_vars, [1]*len(lin_expr_vars))],
 										  senses=['L'] if not force_sol else ['E'],
-										  rhs=[counter - 1] if not force_sol else [counter])
+										  rhs=[counter - (1 * int(not efp_cut))] if not force_sol else [counter])
 
 	def set_size_constraint(self, start_at, equal=False):
 		"""
@@ -351,7 +386,7 @@ class KShortestEnumerator(object):
 			sol = KShortestSolution(value_map, None, self.__indicator_map, self.__dvar_mapping)
 			sols.append(sol)
 		for sol in sols:
-			self.__add_integer_cut(sol.var_values())
+			self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 		return sols
 
 	def solution_iterator(self, maximum_amount=2 ** 31 - 1):
@@ -373,7 +408,7 @@ class KShortestEnumerator(object):
 				i += 1
 				yield result
 			except Exception as e:
-				print('Enumeration ended:', e)
+				print('Enumeration ended:', e.with_traceback())
 				failed = True
 
 	def population_iterator(self, max_size):
@@ -427,7 +462,7 @@ class KShortestEnumerator(object):
 		sol = self.__optimize()
 		if sol is None:
 			raise Exception('Solution is empty')
-		self.__add_integer_cut(sol.var_values())
+		self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 		return sol
 
 	def reset_enumerator_state(self):

@@ -204,9 +204,9 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 		self.model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
 		self.dvars = vi + list(map(list, zip(vrf, vrb)))
 
-		vi_names = list(zip(*vi))[0]
-		vrf_names = list(zip(*vrf))[0]
-		vrb_names = list(zip(*vrb))[0]
+		vi_names = list(zip(*vi))[0] if len(vi) > 0 else []
+		vrf_names = list(zip(*vrf))[0] if len(vrf) > 0 else []
+		vrb_names = list(zip(*vrb))[0] if len(vrb) > 0 else []
 
 		self.dvars = list(vi_names) + list(zip(vrf_names, vrb_names))
 		var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in
