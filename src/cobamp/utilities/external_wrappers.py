@@ -67,6 +67,7 @@ class KShortestEnumeratorWrapper(object):
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
 		self.__setup_algorithm()
+		self.enumerated_sols = []
 
 	def __setup_algorithm(self):
 		"""
@@ -112,6 +113,7 @@ class KShortestEnumeratorWrapper(object):
 			excluded_sets=self.__get_excluded_solutions())
 
 		for solarg in enumerator:
+			self.enumerated_sols.append(solarg)
 			yield self.model_reader.decode_k_shortest_solution(solarg)
 
 
