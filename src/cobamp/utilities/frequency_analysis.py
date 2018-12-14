@@ -29,11 +29,11 @@ if __name__ == '__main__':
 
 
 	def generate_random_efms(n_reactions, efm_size_range, efm_number, efm_group_number):
+		from random import randint
 		def random_slightly_readable_string_generator(length):
-			from random import randint
 			s = ""
 			vwls = ['a', 'e', 'i', 'o', 'u']
-			vwl_flag = False
+			vwl_flag = bool(randint(0,1))
 			while len(s) < length:
 				some_char = chr(randint(97, 122))
 				if (some_char in vwls and vwl_flag) or (some_char not in vwls and not vwl_flag):

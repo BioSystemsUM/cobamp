@@ -71,7 +71,8 @@ class KShortestEnumerator(object):
 		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 		# Setup k-shortest constraints
 		self.__add_kshortest_indicators()
-		self.__add_exclusivity_constraints()
+		if not self.is_efp_problem:
+			self.__add_exclusivity_constraints()
 		self.__size_constraint = None
 		# TODO: change this to cplex notation
 		self.__efp_auxiliary_map = None
@@ -297,10 +298,12 @@ class KShortestEnumerator(object):
 		for varlist in self.__dvars:
 			if isinstance(varlist, tuple):
 				if sum(abs(value_map[self.__indicator_map[var]]) for var in varlist) > 0:
-					ivars = [self.__indicator_map[var] for var in varlist]
-					lin_expr_vars.extend(ivars)
 					if efp_cut:
+						ivars = [self.__indicator_map[var] for var in varlist if value_map[var] > 0]
 						lin_expr_vars.extend([self.__efp_auxiliary_map[v] for v in ivars])
+					else:
+						ivars = [self.__indicator_map[var] for var in varlist]
+					lin_expr_vars.extend(ivars)
 					counter += 1
 			else:
 				if abs(value_map[self.__indicator_map[varlist]]) > 0:

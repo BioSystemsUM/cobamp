@@ -380,9 +380,34 @@ class FramedModelObjectReader(AbstractObjectReader):
 		return [self.model.reactions[rx] for rx in self.r_ids]
 
 
+class CobampModelObjectReader(AbstractObjectReader):
+
+	def get_stoichiometric_matrix(self):
+		return self.model.get_stoichiometric_matrix()
+
+	def get_model_bounds(self, as_dict):
+		if as_dict:
+			return dict(zip(self.r_ids, self.model.bounds))
+		else:
+			return tuple(self.model.bounds)
+
+	def get_irreversibilities(self, as_index):
+		irrev = [not self.model.is_reversible_reaction(r) for r in self.r_ids]
+		if as_index:
+			irrev = list(np.where(irrev)[0])
+		return irrev
+
+	def get_metabolite_and_reactions_ids(self):
+		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
+
+	def get_rx_instances(self):
+		return None
+
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.
+
 model_readers = {
 	'cobra.core.model': COBRAModelObjectReader,
-	'framed.model.cbmodel': FramedModelObjectReader
+	'framed.model.cbmodel': FramedModelObjectReader,
+	'cobamp.core.models': CobampModelObjectReader
 }
