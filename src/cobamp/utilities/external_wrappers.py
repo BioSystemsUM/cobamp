@@ -7,6 +7,7 @@ from ..efm_enumeration import kshortest_efm_properties as kp
 import abc
 import numpy as np
 
+MAX_PRECISION = 1e-10
 
 class KShortestEnumeratorWrapper(object):
 	__metaclass__ = abc.ABCMeta
@@ -322,7 +323,8 @@ class AbstractObjectReader(object):
 			return self.__decode_k_shortest_solution(solarg)
 
 	def __decode_k_shortest_solution(self, sol):
-		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if v != 0}
+		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
+		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if abs(v) > MAX_PRECISION}
 
 
 class COBRAModelObjectReader(AbstractObjectReader):
