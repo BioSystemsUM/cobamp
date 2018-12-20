@@ -3,7 +3,7 @@ import abc
 import cplex
 import numpy as np
 
-from ..linear_systems.optimization import CPLEX_INFINITY
+from cobamp.core.optimization import CPLEX_INFINITY
 
 
 class LinearSystem():
@@ -234,7 +234,7 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 class DualLinearSystem(KShortestCompatibleLinearSystem):
 	"""
 	Class representing a dual system based on a steady-state metabolic network whose elementary flux modes are minimal
-	cut sets for use with the KShortest algorithm. Based on previous work by Ballerstein et al. and Von Kamp et al.
+	cut sets for use with the KShortest algorithms. Based on previous work by Ballerstein et al. and Von Kamp et al.
 	References:
 	[1] von Kamp, A., & Klamt, S. (2014). Enumeration of smallest intervention strategies in genome-scale metabolic
 	networks. PLoS computational biology, 10(1), e1003378.

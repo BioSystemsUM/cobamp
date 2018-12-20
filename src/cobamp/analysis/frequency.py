@@ -1,6 +1,6 @@
 from itertools import combinations, chain
 from collections import Counter
-from cobamp.utilities.plotting import display_heatmap
+from cobamp.analysis.plotting import display_heatmap
 import matplotlib.pyplot as plt
 import pandas as pd
 
