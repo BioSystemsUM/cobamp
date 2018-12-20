@@ -118,7 +118,6 @@ class KShortestEnumerator(object):
 		self.__exclusion_cuts = []
 		self.set_size_constraint(1)
 		self.__current_size = 1
-		self.model.write('ksmodel.lp')
 
 	def __set_model_parameters(self):
 
