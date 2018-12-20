@@ -2,11 +2,12 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'cobamp',
-    version = '0.0.1',
+    version = '0.0.2',
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["numpy",
-                        "scipy"],
+                        "scipy",
+                        "pandas"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
