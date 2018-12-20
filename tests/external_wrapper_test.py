@@ -1,9 +1,12 @@
 import unittest
 
+import cobamp.wrappers.method_wrappers
+
+
 class COBRAWrapperTest(unittest.TestCase):
 	def setUp(self):
 		from cobra.io.sbml3 import read_sbml_model
-		import cobamp.utilities.external_wrappers as connector
+		import cobamp.wrappers.external_wrappers as connector
 
 		model = read_sbml_model("/home/skapur/MEOCloud/Projectos/DeYeast/Models/iMM904/iMM904_peroxisome.xml")
 
@@ -16,7 +19,7 @@ class COBRAWrapperTest(unittest.TestCase):
 			('EX_succ_e_', 'EX_glc_e_') : (None, -0.001, None)
 		}
 
-		algorithm = connector.KShortestMCSEnumeratorWrapper(model, flux_space, yield_space)
+		algorithm = cobamp.wrappers.method_wrappers.KShortestMCSEnumeratorWrapper(model, flux_space, yield_space)
 		enumerator = algorithm.get_enumerator()
 		size1 = next(enumerator)
 
@@ -24,7 +27,7 @@ class COBRAWrapperTest(unittest.TestCase):
 class FRAMEDWrapperTest(unittest.TestCase):
 	def setUp(self):
 		from framed.io.sbml import load_cbmodel
-		import cobamp.utilities.external_wrappers as connector
+		import cobamp.wrappers.external_wrappers as connector
 
 		model = load_cbmodel("/home/skapur/MEOCloud/Projectos/DeYeast/Models/iMM904/iMM904_peroxisome.xml")
 
@@ -37,7 +40,7 @@ class FRAMEDWrapperTest(unittest.TestCase):
 			('R_EX_succ_e_', 'R_EX_glc_e_') : (None, -0.001, None)
 		}
 
-		algorithm = connector.KShortestMCSEnumeratorWrapper(model, flux_space, yield_space)
+		algorithm = cobamp.wrappers.method_wrappers.KShortestMCSEnumeratorWrapper(model, flux_space, yield_space)
 		enumerator = algorithm.get_enumerator()
 		size1 = next(enumerator)
 		size1

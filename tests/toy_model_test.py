@@ -1,5 +1,5 @@
-from cobamp.efm_enumeration.kshortest_efms import KShortestEnumerator
-from cobamp.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem
+from cobamp.algorithms.kshortest import KShortestEnumerator
+from cobamp.core.linear_systems import DualLinearSystem, IrreversibleLinearSystem
 import numpy as np
 from itertools import chain
 import unittest
