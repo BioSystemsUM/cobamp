@@ -1,2 +1,6 @@
 nbsphinx
 ipykernel
+cobamp
+numpy
+pandas
+scipy
