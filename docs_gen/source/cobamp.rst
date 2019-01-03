@@ -6,11 +6,12 @@ Subpackages
 
 .. toctree::
 
-    cobamp.efm_enumeration
-    cobamp.linear_systems
-    cobamp.mcs_enumeration
-    cobamp.nullspace_analysis
+    cobamp.algorithms
+    cobamp.analysis
+    cobamp.core
+    cobamp.nullspace
     cobamp.utilities
+    cobamp.wrappers
 
 Module contents
 ---------------
