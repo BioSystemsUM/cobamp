@@ -1,4 +1,4 @@
-|License| |PyPI version|
+|License| |PyPI version| |RTD version|
 
 CoBAMP
 ============
@@ -19,22 +19,14 @@ Current methods include:
 
 Documentation
 ~~~~~~~~~~~~~
-
+Documentation available at https://cobamp.readthedocs.io/
 
 
 Instalation from PyPI (stable releases)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 ::
-
     pip install cobamp
 
-Instalation from github (latest development release)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-::
-
-    pip install https://github.com/skapur/pyCoBAMP/archive/master.zip
 
 Credits and License
 ~~~~~~~~~~~~~~~~~~~
@@ -48,3 +40,5 @@ Released under the GNU Public License (version 3.0).
    :target: https://opensource.org/licenses/GPL-3.0
 .. |PyPI version| image:: https://badge.fury.io/py/cobamp.svg
    :target: https://badge.fury.io/py/pyCoBAMP
+.. |RTD version| image:: https://readthedocs.org/projects/cobamp/badge/?version=latest&style=plastic
+   :target: https://cobamp.readthedocs.io/
