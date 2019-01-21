@@ -6,6 +6,8 @@ import numpy as np
 from optlang import Model, Variable, Objective, Constraint
 from cobamp.core.optimization import CPLEX_INFINITY
 
+VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
+
 
 class LinearSystem():
 	"""
@@ -196,13 +198,13 @@ class GenericLinearSystem(LinearSystem):
 		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names)
 
 
-class SimpleLinearSystem(LinearSystem):
+class SteadyStateLinearSystem(GenericLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
+	def __init__(self, S, lb, ub, var_names):
 		"""
 		Constructor for SimpleLinearSystem
 
@@ -218,19 +220,8 @@ class SimpleLinearSystem(LinearSystem):
 
 			var_names: - optional - ndarray or list containing the names for each flux
 		"""
-		self.S, self.lb, self.ub = S, lb, ub
-		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
-
-	def build_problem(self):
-		np_names = np.array(self.names)
-		nnz = list(map(lambda y: np.nonzero(y)[1], zip(self.S)))
-		self.model.variables.add(names=self.names, lb=self.lb, ub=self.ub)
-		lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(self.S, nnz)]
-		rhs = [0] * self.S.shape[0]
-		senses = ['E'] * self.S.shape[0]
-		cnames = ['C_' + str(i) for i in range(self.S.shape[0])]
-		self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
-
+		m, n = S.shape
+		super().__init__(self.S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""
