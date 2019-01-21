@@ -1,4 +1,5 @@
 import cplex, string, random, shutil
+from optlang import Model, Variable, Constraint, Objective
 
 CPLEX_INFINITY = cplex.infinity
 
@@ -154,12 +155,10 @@ class LinearSystemOptimizer(object):
 
 			linear_system: A <LinearSystem> instance.
 		"""
-		linear_system.build_problem()
-		self.model = copy_cplex_model(linear_system.get_model())
-		self.model.set_results_stream(None)
-		self.model.set_log_stream(None)
+		self.lsystem = linear_system.build_problem()
+		self.model = linear_system.get_model
 
-	def __optimize(self, objective, minimize):
+	def optimize(self):
 		"""
 		Internal function to instantiate the solver and return a solution to the optimization problem
 
@@ -175,21 +174,10 @@ class LinearSystemOptimizer(object):
 		Returns a <Solution> instance
 		-------
 		"""
-		senses = self.model.objective.sense
-		self.model.objective.set_linear(objective)
-		self.model.objective.set_sense(senses.minimize if minimize else senses.maximize)
 
 		try:
-			self.model.solve()
-			value_map = dict(zip(self.model.variables.get_names(), self.model.solution.get_values()))
-			return Solution(value_map, self.model.solution.status)
+			self.model.optimize()
+			value_map = {v.name: v.primal for v in self.model.variables}
+			return Solution(value_map, self.model.status)
 		except Exception as e:
 			print(e)
-
-	def optimize(self, objective, minimize=False):
-		"""
-		### TODO: deprecate this method in the future
-		See <self.__optimize>.
-
-		"""
-		return self.__optimize(objective, minimize)

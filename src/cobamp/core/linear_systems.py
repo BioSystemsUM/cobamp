@@ -7,7 +7,7 @@ from optlang import Model, Variable, Objective, Constraint
 from cobamp.core.optimization import CPLEX_INFINITY
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
-
+SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 class LinearSystem():
 	"""
@@ -120,6 +120,13 @@ class LinearSystem():
 		self.model.add(vars)
 		self.model.update()
 
+	def set_objective(self, coefficients, vars=None):
+		new_objective = Objective(0)
+		if not vars:
+			vars = self.model.vars
+		nzids = np.nonzero(coefficients)[0]
+		new_objective.set_linear_coefficients(dict(list(zip([vars[i] for i in nzids],coefficients[nzids]))))
+		self.model.objective = new_objective
 
 class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
