@@ -3,6 +3,7 @@ import abc
 import cplex
 import numpy as np
 
+from optlang import Model, Variable, Objective, Constraint
 from cobamp.core.optimization import CPLEX_INFINITY
 
 
@@ -18,7 +19,7 @@ class LinearSystem():
 		__model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
-	model = None
+	model = Model()
 	S = None
 
 	@abc.abstractmethod
@@ -51,6 +52,71 @@ class LinearSystem():
 
 		"""
 		return self.S.shape
+
+	def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
+		return Constraint(dummy_var, lb=b_lb, ub=b_ub)
+
+	def dummy_variable(self):
+		return Variable(name='dummy', lb=0, ub=0)
+
+	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
+		'''
+
+		Args:
+			model: Optlang model
+			S: Two-dimensional numpy.ndarray instance
+			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
+			VAR_CONTINUOUS)
+			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
+			ub: list or tuple with length equal to the amount of columns of S containing the upper bounds for all variables
+			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
+			side of all constraints
+			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
+			side of all constraints
+			var_names: string identifiers for the variables
+
+		'''
+
+		self.add_variables_to_model(var_names, lb, ub, var_types)
+		self.add_rows_to_model(S, b_lb, b_ub)
+
+	def populate_constraints_from_matrix(self, S, constraints, vars):
+		'''
+
+		Args:
+			S: Two-dimensional numpy.ndarray instance
+			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
+			side of all constraints
+			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
+			side of all constraints
+
+			vars: list of variable instances
+
+		'''
+		coef_list = [{vars[j]: S[i, j] for j in numpy.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
+		for coefs, constraint in zip(coef_list, constraints):
+			constraint.set_linear_coefficients(coefs)
+
+	def add_rows_to_model(self, S_new, b_lb, b_ub):
+		vars = self.model.variables
+		dummy = self.dummy_variable()
+		constraints = [self.empty_constraint(b_lb[i], b_ub[i], dummy) for i in range(S_new.shape[0])]
+		self.model.add(constraints)
+		self.model.update()
+
+		self.populate_constraints_from_matrix(S_new, constraints, vars)
+
+		self.model.remove(dummy)
+		self.model.update()
+
+	def add_variables_to_model(self, var_names, lb, ub, var_types):
+
+		if isinstance(var_types, str):
+			var_types = [var_types] * len(lb)
+
+		vars = [Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in zip(var_names, lb, ub, var_types)]
+		self.model.add(vars)
+		self.model.update()
 
 
 class KShortestCompatibleLinearSystem(LinearSystem):
@@ -97,13 +163,46 @@ class KShortestCompatibleLinearSystem(LinearSystem):
 		return self.c
 
 
+class GenericLinearSystem(LinearSystem):
+	"""
+	Class representing a generic system of linear (in)equations
+	Used as arguments for various algorithms implemented in the package.
+	"""
+
+	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
+		"""
+		Constructor for GenericLinearSystem
+
+		Parameters
+
+			model: Optlang model
+			S: Two-dimensional numpy.ndarray instance
+			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
+			VAR_CONTINUOUS)
+			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
+			ub: list or tuple with length equal to the amount of columns of S containing the upper bounds for all variables
+			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
+			side of all constraints
+			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
+			side of all constraints
+			var_names: string identifiers for the variables
+
+		"""
+		self.S, self.lb, self.ub, self.b_lb, self.b_ub, self.var_types = S, lb, ub, b_lb, b_ub, var_types
+
+		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
+
+	def build_problem(self):
+		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names)
+
+
 class SimpleLinearSystem(LinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, lb, ub, var_names=None):
+	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
 		"""
 		Constructor for SimpleLinearSystem
 
@@ -119,7 +218,6 @@ class SimpleLinearSystem(LinearSystem):
 
 			var_names: - optional - ndarray or list containing the names for each flux
 		"""
-		self.model = cplex.Cplex()
 		self.S, self.lb, self.ub = S, lb, ub
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
 
