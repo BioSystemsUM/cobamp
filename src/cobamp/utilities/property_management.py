@@ -26,7 +26,7 @@ class PropertyDictionary():
 		self.__optional_properties = optional_properties
 		self.__properties = {}
 
-	def __add_new_properties(self, mandatory_properties, optional_properties):
+	def add_new_properties(self, mandatory_properties, optional_properties):
 		"""
 		Adds new properties to the dictionary and/or updates existing ones, if present.
 		Parameters

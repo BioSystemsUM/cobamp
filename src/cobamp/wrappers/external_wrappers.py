@@ -41,7 +41,7 @@ class AbstractObjectReader(object):
 		return
 
 	@abc.abstractmethod
-	def get_model_bounds(self, as_dict):
+	def get_model_bounds(self, as_dict, separate_list):
 		"""
 		Returns the lower and upper bounds for all fluxes in the model. This either comes in the form of an ordered list
 		with tuples of size 2 (lb,ub) or a dictionary with the same tuples mapped by strings with reaction identifiers.
@@ -51,6 +51,8 @@ class AbstractObjectReader(object):
 		----------
 
 			as_dict: A boolean value that controls whether the result is a dictionary mapping str to tuple of size 2
+			separate: A boolean value that controls whether the result is two numpy.array(), one for lb and the other\n
+			to ub
 		"""
 		return
 
@@ -124,7 +126,8 @@ class AbstractObjectReader(object):
 
 	def __decode_k_shortest_solution(self, sol):
 		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
-		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if abs(v) > MAX_PRECISION}
+		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if
+				abs(v) > MAX_PRECISION}
 
 
 class COBRAModelObjectReader(AbstractObjectReader):
@@ -137,12 +140,15 @@ class COBRAModelObjectReader(AbstractObjectReader):
 
 		return S
 
-	def get_model_bounds(self, as_dict):
+	def get_model_bounds(self, as_dict = False, separate_list=False):
 		bounds = [r.bounds for r in self.rx_instances]
 		if as_dict:
 			return dict(zip(self.r_ids, bounds))
 		else:
-			return tuple(bounds)
+			if separate_list:
+				return [bounds for bounds in list(zip(*tuple(bounds)))]
+			else:
+				return tuple(bounds)
 
 	def get_irreversibilities(self, as_index):
 		irrev = [not r.reversibility for r in self.rx_instances]
@@ -156,18 +162,20 @@ class COBRAModelObjectReader(AbstractObjectReader):
 	def get_metabolite_and_reactions_ids(self):
 		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
 
-
 class FramedModelObjectReader(AbstractObjectReader):
 
 	def get_stoichiometric_matrix(self):
 		return np.array(self.model.stoichiometric_matrix())
 
-	def get_model_bounds(self, as_dict):
+	def get_model_bounds(self, as_dict=False, separate_list=False):
 		bounds = [(r.lb, r.ub) for r in self.rx_instances]
 		if as_dict:
 			return dict(zip(self.r_ids, bounds))
 		else:
-			return tuple(bounds)
+			if separate_list:
+				return [bounds for bounds in list(zip(*tuple(bounds)))]
+			else:
+				return tuple(bounds)
 
 	def get_irreversibilities(self, as_index):
 		irrev = [not r.reversible for r in self.rx_instances]
@@ -187,11 +195,14 @@ class CobampModelObjectReader(AbstractObjectReader):
 	def get_stoichiometric_matrix(self):
 		return self.model.get_stoichiometric_matrix()
 
-	def get_model_bounds(self, as_dict):
+	def get_model_bounds(self, as_dict, separate_list = False):
 		if as_dict:
 			return dict(zip(self.r_ids, self.model.bounds))
 		else:
-			return tuple(self.model.bounds)
+			if separate_list:
+				return [bounds for bounds in list(zip(*tuple(self.model.bounds)))]
+			else:
+				return tuple(self.model.bounds)
 
 	def get_irreversibilities(self, as_index):
 		irrev = [not self.model.is_reversible_reaction(r) for r in self.r_ids]
@@ -204,6 +215,7 @@ class CobampModelObjectReader(AbstractObjectReader):
 
 	def get_rx_instances(self):
 		return None
+
 
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.
