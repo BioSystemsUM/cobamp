@@ -21,9 +21,7 @@ class LinearSystem():
 		__model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
-	model = Model()
-	S = None
-
+	model = None
 	@abc.abstractmethod
 	def build_problem(self):
 		"""
@@ -66,7 +64,7 @@ class LinearSystem():
 
 		Args:
 			model: Optlang model
-			S: Two-dimensional numpy.ndarray instance
+			S: Two-dimensional np.ndarray instance
 			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
 			VAR_CONTINUOUS)
 			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
@@ -86,7 +84,7 @@ class LinearSystem():
 		'''
 
 		Args:
-			S: Two-dimensional numpy.ndarray instance
+			S: Two-dimensional np.ndarray instance
 			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
 			side of all constraints
 			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
@@ -95,7 +93,7 @@ class LinearSystem():
 			vars: list of variable instances
 
 		'''
-		coef_list = [{vars[j]: S[i, j] for j in numpy.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
+		coef_list = [{vars[j]: S[i, j] for j in np.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
 		for coefs, constraint in zip(coef_list, constraints):
 			constraint.set_linear_coefficients(coefs)
 
@@ -120,13 +118,21 @@ class LinearSystem():
 		self.model.add(vars)
 		self.model.update()
 
-	def set_objective(self, coefficients, vars=None):
-		new_objective = Objective(0)
+	def set_objective(self, coefficients, minimize, vars=None):
+		# dummy = self.dummy_variable()
+		# new_objective = Objective(dummy)
+		# self.model.add(dummy)
+		# self.model.add(new_objective)
+		# self.model.update()
 		if not vars:
-			vars = self.model.vars
+			vars = self.model.variables
 		nzids = np.nonzero(coefficients)[0]
-		new_objective.set_linear_coefficients(dict(list(zip([vars[i] for i in nzids],coefficients[nzids]))))
-		self.model.objective = new_objective
+		self.model.objective = Objective(sum(vars[i]*coefficients[i] for i in nzids))
+		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
+		# new_objective.set_linear_coefficients(dict(list(zip([vars[i] for i in nzids],coefficients[nzids]))))
+		# self.model.objective = new_objective
+		# self.model.remove(dummy)
+		# self.model.update()
 
 class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
@@ -185,7 +191,7 @@ class GenericLinearSystem(LinearSystem):
 		Parameters
 
 			model: Optlang model
-			S: Two-dimensional numpy.ndarray instance
+			S: Two-dimensional np.ndarray instance
 			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
 			VAR_CONTINUOUS)
 			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
@@ -197,6 +203,7 @@ class GenericLinearSystem(LinearSystem):
 			var_names: string identifiers for the variables
 
 		"""
+		self.model = Model()
 		self.S, self.lb, self.ub, self.b_lb, self.b_ub, self.var_types = S, lb, ub, b_lb, b_ub, var_types
 
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
@@ -228,7 +235,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 			var_names: - optional - ndarray or list containing the names for each flux
 		"""
 		m, n = S.shape
-		super().__init__(self.S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
+		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""

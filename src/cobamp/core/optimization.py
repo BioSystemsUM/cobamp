@@ -156,7 +156,7 @@ class LinearSystemOptimizer(object):
 			linear_system: A <LinearSystem> instance.
 		"""
 		self.lsystem = linear_system.build_problem()
-		self.model = linear_system.get_model
+		self.model = linear_system.get_model()
 
 	def optimize(self):
 		"""
