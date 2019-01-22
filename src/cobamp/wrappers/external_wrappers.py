@@ -146,7 +146,7 @@ class COBRAModelObjectReader(AbstractObjectReader):
 			return dict(zip(self.r_ids, bounds))
 		else:
 			if separate_list:
-				return [bounds for bounds in list(zip(*tuple(bounds)))]
+				return [list(bounds) for bounds in list(zip(*tuple(bounds)))]
 			else:
 				return tuple(bounds)
 
