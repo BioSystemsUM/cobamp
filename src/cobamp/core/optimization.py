@@ -201,7 +201,7 @@ class LinearSystemOptimizer(object):
 		except Exception as e:
 			frozen_exception = e
 
-		if status or not hard_fail:
+		if status or not self.hard_fail:
 			return Solution(value_map, self.model.status, objective_value=ov)
 		else:
 			raise frozen_exception
