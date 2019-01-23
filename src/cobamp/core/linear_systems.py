@@ -119,20 +119,16 @@ class LinearSystem():
 		self.model.update()
 
 	def set_objective(self, coefficients, minimize, vars=None):
-		# dummy = self.dummy_variable()
-		# new_objective = Objective(dummy)
-		# self.model.add(dummy)
-		# self.model.add(new_objective)
-		# self.model.update()
 		if not vars:
 			vars = self.model.variables
-		nzids = np.nonzero(coefficients)[0]
-		self.model.objective = Objective(sum(vars[i]*coefficients[i] for i in nzids))
-		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
-		# new_objective.set_linear_coefficients(dict(list(zip([vars[i] for i in nzids],coefficients[nzids]))))
-		# self.model.objective = new_objective
-		# self.model.remove(dummy)
-		# self.model.update()
+		lcoefs = {k: v for k, v in zip(vars, coefficients) if v != 0}
+		dummy = self.dummy_variable()
+		new_obj = Objective(dummy)
+		self.model.objective = new_obj
+		new_obj.set_linear_coefficients(lcoefs)
+		self.model.remove(dummy)
+		self.model.objective.direction = SENSE_MAXIMIZE if
+
 
 class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
