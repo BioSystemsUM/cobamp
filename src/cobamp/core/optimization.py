@@ -1,4 +1,5 @@
 import cplex, string, random, shutil
+from numpy import nan
 from optlang import Model, Variable, Constraint, Objective
 
 CPLEX_INFINITY = cplex.infinity
@@ -73,6 +74,9 @@ class Solution(object):
 		self.__status = status
 		self.__attribute_dict = kwargs
 
+		if 'objective_value' in kwargs:
+			self.__obj_value = kwargs['objective_value']
+
 	def __getitem__(self, item):
 		if hasattr(item, '__iter__') and not isinstance(item, str):
 			return {k: self.__value_map[k] for k in item}
@@ -140,13 +144,20 @@ class Solution(object):
 		"""
 		return self.__attribute_dict.keys()
 
+	def objective_value(self):
+		"""
+
+		Returns the objective value for this solution
+
+		"""
+		return self.__obj_value
 
 class LinearSystemOptimizer(object):
 	"""
 	Class with methods to solve a <LinearSystem> as a linear optimization problem.
 	"""
 
-	def __init__(self, linear_system):
+	def __init__(self, linear_system, hard_fail=False):
 		"""
 
 		Parameters
@@ -154,9 +165,11 @@ class LinearSystemOptimizer(object):
 		----------
 
 			linear_system: A <LinearSystem> instance.
+			hard_fail: A boolean flag indicating whether an Exception is raised when the optimization fails
 		"""
 		self.lsystem = linear_system.build_problem()
 		self.model = linear_system.get_model()
+		self.hard_fail = hard_fail
 
 	def optimize(self):
 		"""
@@ -174,10 +187,17 @@ class LinearSystemOptimizer(object):
 		Returns a <Solution> instance
 		-------
 		"""
-
+		value_map = {v.name: nan for v in self.model.variables}
+		status = None
 		try:
 			self.model.optimize()
 			value_map = {v.name: v.primal for v in self.model.variables}
-			return Solution(value_map, self.model.status)
+			status = self.model.status
 		except Exception as e:
-			print(e)
+			frozen_exception = e
+
+		if status or not hard_fail:
+			return Solution(value_map, self.model.status, objective_value=self.model.objective.value)
+		else:
+			raise frozen_exception
+
