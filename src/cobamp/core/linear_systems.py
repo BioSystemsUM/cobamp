@@ -127,7 +127,7 @@ class LinearSystem():
 		self.model.objective = new_obj
 		new_obj.set_linear_coefficients(lcoefs)
 		self.model.remove(dummy)
-		self.model.objective.direction = SENSE_MAXIMIZE if
+		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
 
 
 class KShortestCompatibleLinearSystem(LinearSystem):
