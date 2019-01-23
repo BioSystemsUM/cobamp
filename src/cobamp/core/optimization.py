@@ -1,6 +1,7 @@
 import cplex, string, random, shutil
 from numpy import nan
 from optlang import Model, Variable, Constraint, Objective
+from collections import OrderedDict
 
 CPLEX_INFINITY = cplex.infinity
 
@@ -187,17 +188,21 @@ class LinearSystemOptimizer(object):
 		Returns a <Solution> instance
 		-------
 		"""
-		value_map = {v.name: nan for v in self.model.variables}
+		value_map = OrderedDict({v.name: nan for v in self.model.variables})
 		status = None
+		ov = nan
+
 		try:
 			self.model.optimize()
-			value_map = {v.name: v.primal for v in self.model.variables}
+			value_map = OrderedDict({v.name: v.primal for v in self.model.variables})
 			status = self.model.status
+			ov = self.model.objective.value
+
 		except Exception as e:
 			frozen_exception = e
 
 		if status or not hard_fail:
-			return Solution(value_map, self.model.status, objective_value=self.model.objective.value)
+			return Solution(value_map, self.model.status, objective_value=ov)
 		else:
 			raise frozen_exception
 
