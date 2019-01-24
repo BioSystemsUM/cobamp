@@ -129,6 +129,9 @@ class LinearSystem():
 		self.model.remove(dummy)
 		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
 
+	def write_to_lp(self, filename):
+		with open(filename, 'w') as f:
+			f.write(self.model.to_lp())
 
 class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
