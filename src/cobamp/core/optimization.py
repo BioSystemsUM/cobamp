@@ -1,5 +1,5 @@
 import cplex, string, random, shutil
-from numpy import nan
+from numpy import nan, array
 from optlang import Model, Variable, Constraint, Objective
 from collections import OrderedDict
 
@@ -152,6 +152,15 @@ class Solution(object):
 
 		"""
 		return self.__obj_value
+
+	def x(self):
+		'''
+
+		Returns a ndarray with the solution values in order (from the variables)
+
+		'''
+
+		return array(self.__value_map.values())
 
 class LinearSystemOptimizer(object):
 	"""
