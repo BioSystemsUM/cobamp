@@ -135,6 +135,10 @@ class PropertyDictionary():
 
 		return is_ok
 
+	def add_if_not_none(self, key, value):
+		if value is not None:
+			self[key] = value
+
 	def __repr__(self):
 		"""
 		Returns a string representation of the internal dictionary where all keys/values are stored.
