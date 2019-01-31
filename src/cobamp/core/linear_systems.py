@@ -7,6 +7,7 @@ from optlang import Model, Variable, Objective, Constraint
 from cobamp.core.optimization import CPLEX_INFINITY
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
+VARIABLE, CONSTRAINT = 'var','const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 class LinearSystem():
@@ -97,6 +98,8 @@ class LinearSystem():
 		for coefs, constraint in zip(coef_list, constraints):
 			constraint.set_linear_coefficients(coefs)
 
+		self.model.update()
+
 	def add_rows_to_model(self, S_new, b_lb, b_ub):
 		vars = self.model.variables
 		dummy = self.dummy_variable()
@@ -109,6 +112,18 @@ class LinearSystem():
 		self.model.remove(dummy)
 		self.model.update()
 
+	def remove_from_model(self, index, what):
+		container = self.model.variables if what == VARIABLE else self.model.linear_constraints if what == CONSTRAINT else None
+		if type(index) in (list, tuple):
+			for i in index:
+				self.model.remove(container[i])
+		self.model.update()
+
+	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
+		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
+
+		self.populate_constraints_from_matrix(S_new, self.model.linear_constraints, vars)
+
 	def add_variables_to_model(self, var_names, lb, ub, var_types):
 
 		if isinstance(var_types, str):
@@ -117,6 +132,8 @@ class LinearSystem():
 		vars = [Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
 		self.model.update()
+
+		return vars
 
 	def set_objective(self, coefficients, minimize, vars=None):
 		if not vars:
@@ -234,7 +251,40 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 			var_names: - optional - ndarray or list containing the names for each flux
 		"""
 		m, n = S.shape
+		self.lb, self.ub = lb, ub
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
+
+
+class CORSOFBASystem(SteadyStateLinearSystem):
+	"""
+	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters
+	Used as arguments for various algorithms implemented in the package.
+	"""
+
+	def __init__(self, S, lb, ub, var_names, constraint=1, constraintby='val', eps=1e-6, nl=1):
+		"""
+		Constructor for SimpleLinearSystem
+
+		Parameters
+
+		----------
+
+			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
+
+			lb: ndarray or list containing the lower bounds for all n fluxes
+
+			ub: ndarray or list containing the lower bounds for all n fluxes
+
+			var_names: - optional - ndarray or list containing the names for each flux
+		"""
+		m, n = S.shape
+		super().__init__(S, lb, ub, var_names)
+
+
+
+
+
+
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""

@@ -160,7 +160,7 @@ class Solution(object):
 
 		'''
 
-		return array(self.__value_map.values())
+		return array(list(self.__value_map.values()))
 
 class LinearSystemOptimizer(object):
 	"""
