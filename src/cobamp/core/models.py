@@ -2,11 +2,11 @@ from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from collections import OrderedDict
 import warnings
+from copy import deepcopy
 
 LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
-
-
+BACKPREFIX = 'flux_backwards'
 class ConstraintBasedModel(object):
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None):
 
@@ -39,7 +39,7 @@ class ConstraintBasedModel(object):
 
 
 		self.bounds = self.__interpret_bounds(thermodynamic_constraints)
-
+		self.original_bounds = deepcopy(self.bounds)
 		self.reaction_names, self.metabolite_names = reaction_names, metabolite_names
 
 		self.reaction_id_map, self.metabolite_id_map = (OrderedDict([(v,k) for k,v in d]) for d in [self.reaction_names, self.metabolite_names])
@@ -87,6 +87,7 @@ class ConstraintBasedModel(object):
 
 	def get_bounds_as_list(self):
 		return list(zip(self.bounds))
+
 	def is_reversible_reaction(self, index):
 		lb, ub = self.bounds[self.__decode_index(index, self.reaction_names)]
 		return (lb < 0 and ub > 0)
@@ -170,8 +171,8 @@ class ConstraintBasedModel(object):
 
 	def make_irreversible(self):
 		lb, ub = self.get_bounds_as_list()
-		irrev = array([i for i in range(self.S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
-		rev = array([i for i in range(self.S.shape[1]) if i not in irrev])
+		irrev = array([i for i in range(self.__S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+		rev = array([i for i in range(self.__S.shape[1]) if i not in irrev])
 		Sr = self.__S[:, rev]
 		offset = self.__S.shape[1]
 		rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
@@ -188,7 +189,9 @@ class ConstraintBasedModel(object):
 			else:
 				nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
 
-		model = ConstraintBasedModel(S_new, list(zip(nlb,nub)))
+		revnames = ['_'.join([name,BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
+		rnames = self.reaction_names + revnames
+		model = ConstraintBasedModel(S_new, list(zip(nlb,nub)), rnames, self.metabolite_names)
 		return model, rx_mapping
 
 	def set_objective(self, coef_dict, minimize=False):
