@@ -167,7 +167,7 @@ class LinearSystemOptimizer(object):
 	Class with methods to solve a <LinearSystem> as a linear optimization problem.
 	"""
 
-	def __init__(self, linear_system, hard_fail=False):
+	def __init__(self, linear_system, hard_fail=False, build=True):
 		"""
 
 		Parameters
@@ -177,7 +177,8 @@ class LinearSystemOptimizer(object):
 			linear_system: A <LinearSystem> instance.
 			hard_fail: A boolean flag indicating whether an Exception is raised when the optimization fails
 		"""
-		self.lsystem = linear_system.build_problem()
+		if build:
+			linear_system.build_problem()
 		self.model = linear_system.get_model()
 		self.hard_fail = hard_fail
 

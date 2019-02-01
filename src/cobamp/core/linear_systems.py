@@ -81,7 +81,7 @@ class LinearSystem():
 		self.add_variables_to_model(var_names, lb, ub, var_types)
 		self.add_rows_to_model(S, b_lb, b_ub)
 
-	def populate_constraints_from_matrix(self, S, constraints, vars):
+	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
 		'''
 
 		Args:
@@ -94,11 +94,17 @@ class LinearSystem():
 			vars: list of variable instances
 
 		'''
-		coef_list = [{vars[j]: S[i, j] for j in np.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
+		if only_nonzero:
+			coef_list = [{vars[j]: S[i, j] for j in range(S.shape[1])} for i in range(S.shape[0])]
+		else:
+			coef_list = [{vars[j]: S[i, j] for j in np.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
+
 		for coefs, constraint in zip(coef_list, constraints):
 			constraint.set_linear_coefficients(coefs)
 
 		self.model.update()
+
+
 
 	def add_rows_to_model(self, S_new, b_lb, b_ub):
 		vars = self.model.variables
@@ -145,6 +151,18 @@ class LinearSystem():
 		new_obj.set_linear_coefficients(lcoefs)
 		self.model.remove(dummy)
 		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
+
+	def set_variable_bounds(self, vars, lb, ub):
+		for var, ulb, uub in zip(vars, lb, ub):
+			var.lb = ulb
+			var.ub = uub
+		self.model.update()
+
+	def set_constraint_bounds(self, constraints, lb, ub):
+		for constr, ulb, uub in zip(constraints, lb, ub):
+			constr.lb = ulb
+			constr.ub = uub
+		self.model.update()
 
 	def write_to_lp(self, filename):
 		with open(filename, 'w') as f:
@@ -253,38 +271,6 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
-
-
-class CORSOFBASystem(SteadyStateLinearSystem):
-	"""
-	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters
-	Used as arguments for various algorithms implemented in the package.
-	"""
-
-	def __init__(self, S, lb, ub, var_names, constraint=1, constraintby='val', eps=1e-6, nl=1):
-		"""
-		Constructor for SimpleLinearSystem
-
-		Parameters
-
-		----------
-
-			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-
-			lb: ndarray or list containing the lower bounds for all n fluxes
-
-			ub: ndarray or list containing the lower bounds for all n fluxes
-
-			var_names: - optional - ndarray or list containing the names for each flux
-		"""
-		m, n = S.shape
-		super().__init__(S, lb, ub, var_names)
-
-
-
-
-
-
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem):
 	"""

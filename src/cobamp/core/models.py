@@ -1,5 +1,6 @@
-from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack
+from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
+from .optimization import LinearSystemOptimizer
 from collections import OrderedDict
 import warnings
 from copy import deepcopy
@@ -7,8 +8,9 @@ from copy import deepcopy
 LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
+
 class ConstraintBasedModel(object):
-	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None):
+	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True):
 
 		def __validate_args():
 
@@ -46,10 +48,11 @@ class ConstraintBasedModel(object):
 
 		self.inflows, self.outflows = self.__identify_boundaries()
 
-		lb, ub = self.get_bounds_as_list()
+		self.c = None
+		self.model = None
 
-		self.model = SteadyStateLinearSystem(S, lb, ub, var_names=self.reaction_names)
-		self.model.build_problem()
+		if optimizer:
+			self.initialize_optimizer()
 
 	def __interpret_bounds(self, thermodynamic_constraints):
 		def interpret_bound(bound_obj):
@@ -76,8 +79,13 @@ class ConstraintBasedModel(object):
 
 	# TODO: Maybe find a cleaner way to import the stoich matrix
 	#def __parse_stoichiometric_matrix(self, S):
+	def initialize_optimizer(self):
+		lb, ub = self.get_bounds_as_list()
+		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names)
+		self.model.build_problem()
+		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 
-	def __decode_index(self, index, labels):
+	def decode_index(self, index, labels):
 		if isinstance(index, int):
 			return index
 		elif index in labels and labels is not None:
@@ -89,7 +97,7 @@ class ConstraintBasedModel(object):
 		return list(zip(self.bounds))
 
 	def is_reversible_reaction(self, index):
-		lb, ub = self.bounds[self.__decode_index(index, self.reaction_names)]
+		lb, ub = self.bounds[self.decode_index(index, self.reaction_names)]
 		return (lb < 0 and ub > 0)
 
 	def __identify_boundaries(self):
@@ -99,18 +107,18 @@ class ConstraintBasedModel(object):
 		return tuple(outflows - both), tuple(inflows - both)
 
 	def get_reactions_from_metabolite(self, index):
-		dec_index = self.__decode_index(index, self.metabolite_names)
+		dec_index = self.decode_index(index, self.metabolite_names)
 		ids = where(self.__S[dec_index,:])[0]
 		return tuple(map(lambda x: (self.reaction_id_map[x],self.__S[dec_index,x]), ids))
 
 	def get_metabolites_from_reaction(self, index):
-		dec_index = self.__decode_index(index, self.reaction_names)
+		dec_index = self.decode_index(index, self.reaction_names)
 		ids = where(self.__S[:,dec_index])[0]
 		return tuple(map(lambda x: (self.metabolite_id_map[x],self.__S[x,dec_index]), ids))
 
 	def get_stoichiometric_matrix(self, rows=None, columns=None):
-		row_index = [self.__decode_index(i, self.metabolite_names) for i in rows] if rows else None
-		col_index = [self.__decode_index(i, self.reaction_names) for i in columns] if columns else None
+		row_index = [self.decode_index(i, self.metabolite_names) for i in rows] if rows else None
+		col_index = [self.decode_index(i, self.reaction_names) for i in columns] if columns else None
 
 		if rows and columns:
 			return self.__S[row_index, col_index]
@@ -121,12 +129,32 @@ class ConstraintBasedModel(object):
 		else:
 			return self.__S
 
+	def set_stoichiometric_matrix(self, values, rows=None, columns=None):
+		row_index = [self.decode_index(i, self.metabolite_names) for i in rows] if rows else None
+		col_index = [self.decode_index(i, self.reaction_names) for i in columns] if columns else None
+
+		if rows and columns:
+			self.__S[row_index, col_index] = values
+		elif rows:
+			self.__S[row_index,:] = values
+		elif columns:
+			self.__S[:, col_index] = values
+		else:
+			self.__S = values
+
+		if self.model:
+			constraints = [self.model.model.constraints[i] for i in rows] if rows else self.model.model.constraints
+			vars = [self.model.model.variables[i] for i in columns] if rows else self.model.model.variables
+
+			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
+
+
 	def add_metabolite(self, arg, name=None):
 		assert not name in self.metabolite_names, 'Duplicate metabolite name found!'
 		if isinstance(arg, dict):
 			row = zeros(1,self.__S.shape[1])
 			for k,v in arg.items():
-				row[self.__decode_index(k, self.reaction_names)] = v
+				row[self.decode_index(k, self.reaction_names)] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.reaction_names):
 				row = arg
@@ -137,14 +165,15 @@ class ConstraintBasedModel(object):
 		self.__S = vstack([self.__S, row])
 		self.metabolite_names.append(name)
 
-		self.model.add_rows_to_model(row, b_lb=array([0]), b_ub=array([0]))
+		if self.model:
+			self.model.add_rows_to_model(row, b_lb=array([0]), b_ub=array([0]))
 
 	def add_reaction(self, arg, bounds, name=None):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
 			col = zeros(1,self.__S.shape[0])
 			for k,v in arg.items():
-				col[self.__decode_index(k, self.metabolite_names)] = v
+				col[self.decode_index(k, self.metabolite_names)] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.reaction_names):
 				col = arg
@@ -154,20 +183,26 @@ class ConstraintBasedModel(object):
 			raise ValueError('Invalid argument type: ',type(arg),'. Please supply an ndarray or dict instead.')
 		self.__S = hstack([self.__S, col])
 		self.reaction_names.append(name)
-		self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
+		self.bounds.append(bounds)
+
+		if self.model:
+			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
 
 	def remove_reaction(self, index):
-		j = self.__decode_index(index, self.reaction_names)
+		j = self.decode_index(index, self.reaction_names)
 		if not isinstance(index, int):
 			self.reaction_names.pop(j)
 		self.bounds.pop(j)
-		self.model.remove_from_model(j, 'var')
+		if self.model:
+			self.model.remove_from_model(j, 'var')
 
 	def remove_metabolite(self, index):
-		i = self.__decode_index(index, self.metabolite_names)
+		i = self.decode_index(index, self.metabolite_names)
 		if not isinstance(index, int):
 			self.metabolite_names.pop(i)
-		self.model.remove_from_model(i, 'const')
+
+		if self.model:
+			self.model.remove_from_model(i, 'const')
 
 	def make_irreversible(self):
 		lb, ub = self.get_bounds_as_list()
@@ -194,8 +229,124 @@ class ConstraintBasedModel(object):
 		model = ConstraintBasedModel(S_new, list(zip(nlb,nub)), rnames, self.metabolite_names)
 		return model, rx_mapping
 
+	def get_reaction_bounds(self, index):
+		return self.bounds[self.decode_index(index, self.reaction_names)]
+
+	def set_reaction_bounds(self, index, **kwargs):
+		true_idx = self.decode_index(index, self.reaction_names)
+		lb, ub = self.get_reaction_bounds(true_idx)
+		if 'lb' in kwargs:
+			lb = kwargs['lb']
+		if 'ub' in kwargs:
+			ub = kwargs['ub']
+		self.bounds = (lb,ub)
+
+		if self.model:
+			var = self.model.variables[true_idx]
+			self.model.set_variable_bounds([var],[lb],[ub])
+
+
 	def set_objective(self, coef_dict, minimize=False):
-		f = zeros(len(self.reaction_names))
-		for k,v in coef_dict.items():
-			f[self.__decode_index(k, self.reaction_names)] = v
-		self.model.set_objective(f, minimize)
+		if self.model:
+			f = zeros(len(self.reaction_names))
+			self.c = f
+			for k,v in coef_dict.items():
+				f[self.decode_index(k, self.reaction_names)] = v
+			self.model.set_objective(f, minimize)
+		else:
+			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
+
+	def optimize(self):
+		return self.optimizer.optimize()
+
+class CORSOModel(ConstraintBasedModel):
+	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO')):
+		if not cbmodel.model:
+			cbmodel.initialize_optimizer()
+
+		self.cbmodel = cbmodel
+
+		irrev_model, self.mapping = cbmodel.make_irreversible()
+
+		S = irrev_model.get_stoichiometric_matrix()
+		bounds = irrev_model.bounds
+
+		self.cost_index_mapping = zeros(S.shape[1])
+
+		self.corso_rx, self.corso_mt = corso_element_names
+		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names)
+		self.add_metabolite(zeros(len(self.reaction_names)), self.corso_mt)
+
+		self.add_reaction(zeros(len(self.metabolite_names)), (0, 0), self.corso_rx)
+
+		self.original_bounds = deepcopy(self.bounds)
+
+		for orx, nrx in self.mapping.items():
+			if isinstance(orx, int):
+				self.cost_index_mapping[nrx] = orx
+			else:
+				for nrx_split in nrx:
+					self.cost_index_mapping[nrx_split] = orx
+
+	def solve_original_model(self, of_dict, minimize=False):
+		self.cbmodel.set_objective(of_dict, minimize)
+		sol = self.cbmodel.optimize()
+		return sol
+
+	def revert_to_original_bounds(self):
+		for rx,bounds in zip(self.reaction_names, self.original_bounds):
+			lb, ub = bounds
+			self.set_reaction_bounds(rx, lb=lb, ub=ub)
+
+	def set_costs(self, cost):
+		true_cost = zeros(len(self.reaction_names))
+		true_cost[self.cost_index_mapping] = cost
+		true_cost[-1] = -1
+		self.set_stoichiometric_matrix(true_cost, rows=[self.corso_mt])
+
+
+	def set_corso_objective(self):
+		self.set_objective({self.corso_rx:1}, True)
+
+	def optimize_corso(self, cost, of_dict, minimize=False, constraint=1, constraintby='val', eps=1e-6):
+		flux1 = self.solve_original_model(of_dict, minimize)
+
+		if abs(flux1.f()) < eps:
+			return flux1
+
+		if constraintby == 'perc':
+			f1_f = flux1.x()[self.cbmodel.c != 0]*(constraint/100)
+		elif constraintby == 'val':
+			if (flux1.f() < constraint and not minimize) or (flux1.f() > constraint and minimize):
+				raise Exception('Objective flux is not sufficient for the the set constraint value.')
+			else:
+				f1_f = constraint
+		else:
+			raise Exception('Invalid constraint options.')
+
+		self.set_reaction_bounds(self.corso_rx, lb=0, ub=1e20)
+		corso_of_dict = deepcopy(of_dict)
+		corso_of_dict[self.corso_rx] = 1
+
+		self.set_costs(cost)
+		for i,rx in enumerate(nonzero(f1_f)[0]):
+			true_idx = self.decode_index(rx, self.reaction_names)
+			involved = self.mapping[true_idx]
+			fluxval = f1_f[i]
+
+			if isinstance(int, involved):
+				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval)
+			else:
+				self.set_reaction_bounds(involved[0], lb=fluxval, ub=fluxval)
+				self.set_reaction_bounds(involved[1], lb=fluxval, ub=fluxval)
+
+		self.set_objective(corso_of_dict, True)
+		sol = self.optimize()
+
+		self.revert_to_original_bounds()
+
+		return sol
+
+
+
+
