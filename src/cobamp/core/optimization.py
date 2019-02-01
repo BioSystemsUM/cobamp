@@ -51,7 +51,6 @@ def copy_cplex_model(model):
 	shutil.rmtree(folder)
 	return new_model
 
-
 class Solution(object):
 	"""
 	Class representing a solution to a given linear optimization problem. Includes an internal dictionary for additional
@@ -216,3 +215,9 @@ class LinearSystemOptimizer(object):
 		else:
 			raise frozen_exception
 
+class CORSOSolution(Solution):
+	def __init__(self, sol, f, index_map, var_names):
+		x = sol.x()
+		nx = array([x[index_map[i]] if isinstance(int, index_map[i]) else x[index_map[i][0]] - x[index_map[i][1]] for i in range(len(index_map))])
+		nvalmap = OrderedDict([(k,v) for k,v in zip(nx,var_names)])
+		super().__init__(nvalmap,sol.status(), objective_value=f)

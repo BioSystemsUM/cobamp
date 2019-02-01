@@ -1,6 +1,6 @@
 from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
-from .optimization import LinearSystemOptimizer
+from .optimization import LinearSystemOptimizer, CORSOSolution
 from collections import OrderedDict
 import warnings
 from copy import deepcopy
@@ -341,12 +341,11 @@ class CORSOModel(ConstraintBasedModel):
 				self.set_reaction_bounds(involved[1], lb=fluxval, ub=fluxval)
 
 		self.set_objective(corso_of_dict, True)
-		sol = self.optimize()
 
+		sol = self.optimize()
 		self.revert_to_original_bounds()
 
-		return sol
-
+		return flux1, CORSOSolution(sol, f1_f, self.cost_index_mapping, self.cbmodel.reaction_names)
 
 
 
