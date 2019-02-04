@@ -166,11 +166,15 @@ class LinearSystem():
 		self.model.update()
 
 	def set_variable_types(self, vars, types):
-		for var,typ in zip(vars,types):
-			if typ in VAR_TYPES:
-				var.type = typ
-			else:
-				warnings.warn('Invalid variable type: '+typ)
+		if isinstance(types, str):
+			for var in vars:
+				var.type = types
+		else:
+			for var,typ in zip(vars,types):
+				if typ in VAR_TYPES:
+					var.type = typ
+				else:
+					warnings.warn('Invalid variable type: '+typ)
 		self.model.update()
 
 	def write_to_lp(self, filename):
