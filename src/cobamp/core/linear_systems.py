@@ -159,8 +159,7 @@ class LinearSystem():
 
 	def set_constraint_bounds(self, constraints, lb, ub):
 		for constr, ulb, uub in zip(constraints, lb, ub):
-			constr.lb = ulb
-			constr.ub = uub
+			constr.set_bounds(ulb,uub)
 		self.model.update()
 
 	def write_to_lp(self, filename):
