@@ -1,5 +1,5 @@
 import cplex, string, random, shutil
-from numpy import nan, array
+from numpy import nan, array, int_, float_
 from optlang import Model, Variable, Constraint, Objective
 from collections import OrderedDict
 
@@ -218,6 +218,6 @@ class LinearSystemOptimizer(object):
 class CORSOSolution(Solution):
 	def __init__(self, sol, f, index_map, var_names):
 		x = sol.x()
-		nx = array([x[index_map[i]] if isinstance(int, index_map[i]) else x[index_map[i][0]] - x[index_map[i][1]] for i in range(len(index_map))])
-		nvalmap = OrderedDict([(k,v) for k,v in zip(nx,var_names)])
-		super().__init__(nvalmap,sol.status(), objective_value=f)
+		nx = [x[i] if isinstance(x[i], float_) else x[i][0] - x[i][1] for i in range(max(index_map)+1)]
+		nvalmap = OrderedDict([(k,v) for k,v in zip(var_names, nx)])
+		super().__init__(nvalmap, sol.status(), objective_value=f)

@@ -94,7 +94,7 @@ class LinearSystem():
 			vars: list of variable instances
 
 		'''
-		if only_nonzero:
+		if not only_nonzero:
 			coef_list = [{vars[j]: S[i, j] for j in range(S.shape[1])} for i in range(S.shape[0])]
 		else:
 			coef_list = [{vars[j]: S[i, j] for j in np.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
@@ -113,13 +113,13 @@ class LinearSystem():
 		self.model.add(constraints)
 		self.model.update()
 
-		self.populate_constraints_from_matrix(S_new, constraints, vars)
+		self.populate_constraints_from_matrix(S_new, constraints, vars[:-1])
 
 		self.model.remove(dummy)
 		self.model.update()
 
 	def remove_from_model(self, index, what):
-		container = self.model.variables if what == VARIABLE else self.model.linear_constraints if what == CONSTRAINT else None
+		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
 		if type(index) in (list, tuple):
 			for i in index:
 				self.model.remove(container[i])
@@ -128,7 +128,7 @@ class LinearSystem():
 	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
 		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
 
-		self.populate_constraints_from_matrix(S_new, self.model.linear_constraints, vars)
+		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars)
 
 	def add_variables_to_model(self, var_names, lb, ub, var_types):
 
@@ -154,8 +154,7 @@ class LinearSystem():
 
 	def set_variable_bounds(self, vars, lb, ub):
 		for var, ulb, uub in zip(vars, lb, ub):
-			var.lb = ulb
-			var.ub = uub
+			var.set_bounds(ulb,uub)
 		self.model.update()
 
 	def set_constraint_bounds(self, constraints, lb, ub):
