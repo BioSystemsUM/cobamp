@@ -2,11 +2,13 @@ from itertools import chain
 import abc
 import cplex
 import numpy as np
+import warnings
 
 from optlang import Model, Variable, Objective, Constraint
 from cobamp.core.optimization import CPLEX_INFINITY
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
+VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
 VARIABLE, CONSTRAINT = 'var','const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
@@ -157,9 +159,18 @@ class LinearSystem():
 			var.set_bounds(ulb,uub)
 		self.model.update()
 
+
 	def set_constraint_bounds(self, constraints, lb, ub):
 		for constr, ulb, uub in zip(constraints, lb, ub):
 			constr.set_bounds(ulb,uub)
+		self.model.update()
+
+	def set_variable_types(self, vars, types):
+		for var,typ in zip(vars,types):
+			if typ in VAR_TYPES:
+				var.type = typ
+			else:
+				warnings.warn('Invalid variable type: '+typ)
 		self.model.update()
 
 	def write_to_lp(self, filename):
