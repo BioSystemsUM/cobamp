@@ -232,27 +232,11 @@ class ConstraintBasedModel(object):
 
 	def make_irreversible(self):
 		lb, ub = self.get_bounds_as_list()
-		irrev = array([i for i in range(self.__S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
-		rev = array([i for i in range(self.__S.shape[1]) if i not in irrev])
-		Sr = self.__S[:, rev]
-		offset = self.__S.shape[1]
-		rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
-		for i, rx in enumerate(rev):
-			rx_mapping[rx].append(offset + i)
-		rx_mapping = {k: tuple(v) if isinstance(v, list) else v for k, v in rx_mapping.items()}
-
-		S_new = hstack([self.__S, -Sr])
-		nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
-		for orig_rx, new_rx in rx_mapping.items():
-			if isinstance(new_rx, tuple):
-				nub[new_rx[0]] = abs(lb[orig_rx])
-				nub[new_rx[1]] = ub[orig_rx]
-			else:
-				nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
-
+		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
+		rev = array([int(v[0]) for k,v in rx_mapping.items() if isinstance(v, (list,tuple))])
 		revnames = ['_'.join([name,BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
 		rnames = self.reaction_names + revnames
-		model = ConstraintBasedModel(S_new, list(zip(nlb,nub)), rnames, self.metabolite_names, optimizer=self.model is not None)
+		model = ConstraintBasedModel(Sn, list(zip(nlb,nub)), rnames, self.metabolite_names, optimizer=self.model is not None)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
