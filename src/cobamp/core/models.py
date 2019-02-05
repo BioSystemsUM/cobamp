@@ -9,6 +9,29 @@ LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
 
+
+def make_irreversible_model(S, lb, ub):
+	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+	rev = array([i for i in range(S.shape[1]) if i not in irrev])
+	Sr = S[:, rev]
+	offset = S.shape[1]
+	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
+	for i, rx in enumerate(rev):
+		rx_mapping[rx].append(offset + i)
+	rx_mapping = {k: tuple(v) if isinstance(v, list) else v for k, v in rx_mapping.items()}
+
+	S_new = hstack([S, -Sr])
+	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
+	for orig_rx, new_rx in rx_mapping.items():
+		if isinstance(new_rx, tuple):
+			nub[new_rx[0]] = abs(lb[orig_rx])
+			nub[new_rx[1]] = ub[orig_rx]
+		else:
+			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
+
+	return S_new, nlb, nub, rx_mapping
+
+
 class ConstraintBasedModel(object):
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True):
 
