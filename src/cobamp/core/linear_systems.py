@@ -159,10 +159,19 @@ class LinearSystem():
 			var.set_bounds(ulb,uub)
 		self.model.update()
 
-
 	def set_constraint_bounds(self, constraints, lb, ub):
-		for constr, ulb, uub in zip(constraints, lb, ub):
-			constr.set_bounds(ulb,uub)
+		for c, ulb, uub in zip(constraints, lb, ub):
+			b = ulb, uub
+			lb_is_greater = b[0] > c.ub if c.ub is not None else False
+			ub_is_lower = b[1] < c.lb if c.lb is not None else False
+			if lb_is_greater:
+				c.ub = b[1]
+				c.lb = b[0]
+			elif ub_is_lower:
+				c.lb = b[0]
+				c.ub = b[1]
+			else:
+				c.lb, c.ub = b
 		self.model.update()
 
 	def set_variable_types(self, vars, types):
