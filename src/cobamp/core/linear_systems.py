@@ -162,8 +162,8 @@ class LinearSystem():
 	def set_constraint_bounds(self, constraints, lb, ub):
 		for c, ulb, uub in zip(constraints, lb, ub):
 			b = ulb, uub
-			lb_is_greater = b[0] > c.ub if c.ub is not None else False
-			ub_is_lower = b[1] < c.lb if c.lb is not None else False
+			lb_is_greater = b[0] > c.ub if ((c.ub is not None) and (b[0] is not None)) else False
+			ub_is_lower = b[1] < c.lb if ((c.lb is not None) and (b[1] is not None)) else False
 			if lb_is_greater:
 				c.ub = b[1]
 				c.lb = b[0]
