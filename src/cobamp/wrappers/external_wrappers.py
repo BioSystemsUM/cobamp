@@ -31,6 +31,8 @@ class AbstractObjectReader(object):
 		self.irrev_index = self.get_irreversibilities(True)
 		self.lb, self.ub = tuple(zip(*self.get_model_bounds(False)))
 		self.bounds_dict = self.get_model_bounds(True)
+		self.genes = self.get_model_genes()
+		self.gene_protein_reaction_rules = self.get_model_gprs()
 
 	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
@@ -85,6 +87,22 @@ class AbstractObjectReader(object):
 		"""
 		return
 
+	@abc.abstractmethod
+	def get_model_genes(self):
+		"""
+
+		Returns the identifiers for the genes contained in the model
+
+		"""
+
+	@abc.abstractmethod
+	def get_model_gprs(self):
+		"""
+
+		Returns the model gene-protein-reaction rules associated with each reaction
+
+		"""
+
 	def reaction_id_to_index(self, id):
 		"""
 		Returns the numerical index of a reaction when given a string representing its identifier.
@@ -110,6 +128,9 @@ class AbstractObjectReader(object):
 
 		"""
 		return self.m_ids.index(id)
+
+	def get_gene_protein_reaction_rule(self, id):
+		return self.gene_protein_reaction_rules[id]
 
 	def convert_constraint_ids(self, tup, yield_constraint):
 		if yield_constraint:
@@ -161,6 +182,12 @@ class COBRAModelObjectReader(AbstractObjectReader):
 
 	def get_metabolite_and_reactions_ids(self):
 		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
+
+	def get_model_genes(self):
+		return set([g.id for g in self.model.genes])
+
+	def get_model_gprs(self):
+		return [r.gene_name_reaction_rule for r in self.model.reactions]
 
 class FramedModelObjectReader(AbstractObjectReader):
 
