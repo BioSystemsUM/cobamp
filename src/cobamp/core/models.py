@@ -129,15 +129,15 @@ class ConstraintBasedModel(object):
 		both = outflows | inflows
 		return tuple(outflows - both), tuple(inflows - both)
 
-	def get_reactions_from_metabolite(self, index):
-		dec_index = self.decode_index(index, self.metabolite_names)
-		ids = where(self.__S[dec_index,:])[0]
-		return tuple(map(lambda x: (self.reaction_id_map[x],self.__S[dec_index,x]), ids))
-
-	def get_metabolites_from_reaction(self, index):
-		dec_index = self.decode_index(index, self.reaction_names)
-		ids = where(self.__S[:,dec_index])[0]
-		return tuple(map(lambda x: (self.metabolite_id_map[x],self.__S[x,dec_index]), ids))
+	# def get_reactions_from_metabolite(self, index):
+	# 	dec_index = self.decode_index(index, self.metabolite_names)
+	# 	ids = where(self.__S[dec_index,:])[0]
+	# 	return tuple(map(lambda x: (self.reaction_id_map[x],self.__S[dec_index,x]), ids))
+	#
+	# def get_metabolites_from_reaction(self, index):
+	# 	dec_index = self.decode_index(index, self.reaction_names)
+	# 	ids = where(self.__S[:,dec_index])[0]
+	# 	return tuple(map(lambda x: (self.metabolite_id_map[x],self.__S[x,dec_index]), ids))
 
 	def get_stoichiometric_matrix(self, rows=None, columns=None):
 		row_index = [self.decode_index(i, self.metabolite_names) for i in rows] if rows else None
