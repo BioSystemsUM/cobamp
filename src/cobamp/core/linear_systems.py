@@ -146,7 +146,7 @@ class LinearSystem():
 	def set_objective(self, coefficients, minimize, vars=None):
 		if not vars:
 			vars = self.model.variables
-		lcoefs = {k: v for k, v in zip(vars, coefficients) if v != 0}
+		lcoefs = {k: v for k, v in zip(vars, coefficients)} #if v != 0}
 		dummy = self.dummy_variable()
 		new_obj = Objective(dummy)
 		self.model.objective = new_obj
