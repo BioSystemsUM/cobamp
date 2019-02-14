@@ -103,6 +103,10 @@ class AbstractObjectReader(object):
 
 		"""
 
+	@abc.abstractmethod
+	def convert_gprs_to_list(self, rx):
+		return
+
 	def reaction_id_to_index(self, id):
 		"""
 		Returns the numerical index of a reaction when given a string representing its identifier.
@@ -129,6 +133,9 @@ class AbstractObjectReader(object):
 		"""
 		return self.m_ids.index(id)
 
+
+
+
 	def get_gene_protein_reaction_rule(self, id):
 		return self.gene_protein_reaction_rules[id]
 
@@ -149,6 +156,24 @@ class AbstractObjectReader(object):
 		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
 		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if
 				abs(v) > MAX_PRECISION}
+
+	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False):
+		gpr_map = {rx: self.convert_gprs_to_list(rx) for rx in self.r_ids}
+
+		def aux_apply(fx, it):
+			args = [k for k in it if k is not None]
+			return fx(args) if args else None
+
+		def eval_gpr(lists):
+			return aux_apply(or_fx,
+							 [aux_apply(and_fx, [expression[x] for x in gs if x in expression.keys()]) for gs in lists])
+
+		exp_map = {rx: eval_gpr(gpr_map[rx]) for rx in gpr_map}
+
+		if as_vector:
+			return [exp_map[k] for k in self.r_ids]
+		else:
+			return exp_map
 
 
 class COBRAModelObjectReader(AbstractObjectReader):
@@ -187,7 +212,13 @@ class COBRAModelObjectReader(AbstractObjectReader):
 		return set([g.id for g in self.model.genes])
 
 	def get_model_gprs(self):
-		return [r.gene_name_reaction_rule for r in self.model.reactions]
+		return [r.gene_reaction_rule for r in self.model.reactions]
+
+	def convert_gprs_to_list(self, rx):
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs()[self.r_ids.index(rx)].split('or')))
+		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
+		return rules
+
 
 class FramedModelObjectReader(AbstractObjectReader):
 
@@ -215,6 +246,12 @@ class FramedModelObjectReader(AbstractObjectReader):
 
 	def get_rx_instances(self):
 		return [self.model.reactions[rx] for rx in self.r_ids]
+
+	def convert_gprs_to_list(self, rx):
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), rx.gene_reaction_rule.split('or')))
+		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
+		return rules
+
 
 
 class CobampModelObjectReader(AbstractObjectReader):
