@@ -1,18 +1,38 @@
+from collections import OrderedDict
 from itertools import chain
 import abc
-import cplex
 import numpy as np
 import warnings
-from functools import reduce
 
 from optlang import Model, Variable, Objective, Constraint
-from cobamp.core.optimization import CPLEX_INFINITY
-from cobamp.core.models import make_irreversible_model
+#from cobamp.core.models import make_irreversible_model
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
 VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
 VARIABLE, CONSTRAINT = 'var','const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
+
+def make_irreversible_model(S, lb, ub):
+	irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+	rev = np.array([i for i in range(S.shape[1]) if i not in irrev])
+	Sr = S[:, rev]
+	offset = S.shape[1]
+	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
+	for i, rx in enumerate(rev):
+		rx_mapping[rx].append(offset + i)
+	rx_mapping = OrderedDict([(k,tuple(v)) if isinstance(v, list) else v for k, v in rx_mapping.items()])
+
+	S_new = np.hstack([S, -Sr])
+	nlb, nub = np.zeros(S_new.shape[1]), np.zeros(S_new.shape[1])
+	for orig_rx, new_rx in rx_mapping.items():
+		if isinstance(new_rx, tuple):
+			nub[new_rx[0]] = abs(lb[orig_rx])
+			nub[new_rx[1]] = ub[orig_rx]
+		else:
+			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
+
+	return S_new, nlb, nub, rx_mapping
+
 
 class LinearSystem():
 	"""
