@@ -5,6 +5,7 @@ import numpy as np
 import warnings
 
 from optlang import Model, Variable, Objective, Constraint
+from optlang.symbolics import Basic, Zero
 #from cobamp.core.models import make_irreversible_model
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
@@ -78,13 +79,14 @@ class LinearSystem():
 		"""
 		return self.S.shape
 
-	def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
-		return Constraint(dummy_var, lb=b_lb, ub=b_ub)
+	#def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
+	def empty_constraint(self, b_lb, b_ub):
+		return Constraint(Zero, lb=b_lb, ub=b_ub)
 
 	def dummy_variable(self):
 		return Variable(name='dummy', lb=0, ub=0)
 
-	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
+	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False):
 		'''
 
 		Args:
@@ -103,7 +105,7 @@ class LinearSystem():
 		'''
 
 		self.add_variables_to_model(var_names, lb, ub, var_types)
-		self.add_rows_to_model(S, b_lb, b_ub)
+		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero)
 
 	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
 		'''
@@ -130,16 +132,18 @@ class LinearSystem():
 
 
 
-	def add_rows_to_model(self, S_new, b_lb, b_ub):
+	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False):
 		vars = self.model.variables
-		dummy = self.dummy_variable()
-		constraints = [self.empty_constraint(b_lb[i], b_ub[i], dummy) for i in range(S_new.shape[0])]
-		self.model.add(constraints)
+		#dummy = self.dummy_variable()
+		constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
+
+		self.model.add(constraints, sloppy=True)
+
 		self.model.update()
 
-		self.populate_constraints_from_matrix(S_new, constraints, vars[:-1])
-
-		self.model.remove(dummy)
+		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
+		#self.model.update()
+		#self.model.remove(dummy)
 		self.model.update()
 
 	def remove_from_model(self, index, what):
@@ -287,7 +291,7 @@ class GenericLinearSystem(LinearSystem):
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
 
 	def build_problem(self):
-		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names)
+		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names, True)
 
 
 class SteadyStateLinearSystem(GenericLinearSystem):
