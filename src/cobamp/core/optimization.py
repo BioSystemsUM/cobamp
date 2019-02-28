@@ -197,13 +197,16 @@ class LinearSystemOptimizer(object):
 		Returns a <Solution> instance
 		-------
 		"""
-		value_map = OrderedDict([(v.name, nan) for v in self.model.variables])
+		names = self.model._get_variables_names()
+
+		value_map = OrderedDict([(v, nan) for v in names])
 		status = None
 		ov = nan
 
 		try:
 			self.model.optimize()
-			value_map = OrderedDict([(v.name,v.primal) for v in self.model.variables])
+			values = self.model._get_primal_values()
+			value_map = OrderedDict([(k,v) for k,v in zip(names, values)])
 			status = self.model.status
 			ov = self.model.objective.value
 
