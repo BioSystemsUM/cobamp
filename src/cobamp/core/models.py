@@ -1,4 +1,4 @@
-from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_
+from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from .optimization import LinearSystemOptimizer, CORSOSolution
 from ..utilities.test_utils import timeit
@@ -6,6 +6,7 @@ from collections import OrderedDict
 import warnings
 from copy import deepcopy
 
+INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
@@ -120,7 +121,7 @@ class ConstraintBasedModel(object):
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 
 	def decode_index(self, index, labels):
-		if type(index) in [int_, int]:
+		if type(index) in INT_TYPES:
 			return index
 		elif labels is not None:
 			return self.map_labels[labels][index]
@@ -348,14 +349,15 @@ class CORSOModel(ConstraintBasedModel):
 
 		if abs(flux1.objective_value()) < eps:
 			return flux1, flux1
-
+		f1_x = flux1.x()
 		if constraintby == 'perc':
-			f1_f = flux1.x()[self.cbmodel.c != 0]*(constraint/100)
+			#f1_f = flux1.x()[self.cbmodel.c != 0]
+			f1_f = {idx:f1_x*(constraint/100) for idx in of_dict.keys()}
 		elif constraintby == 'val':
 			if (flux1.objective_value() < constraint and not minimize) or (flux1.objective_value() > constraint and minimize):
 				raise Exception('Objective flux is not sufficient for the the set constraint value.')
 			else:
-				f1_f = constraint
+				f1_f = {idx:constraint for idx in of_dict.keys()}
 		else:
 			raise Exception('Invalid constraint options.')
 
@@ -364,10 +366,10 @@ class CORSOModel(ConstraintBasedModel):
 		corso_of_dict[self.corso_rx] = 1
 
 		self.set_costs(cost)
-		for i,rx in enumerate(nonzero(f1_f)[0]):
+		for rx in f1_f.keys():
 			true_idx = self.decode_index(rx, 'reaction')
 			involved = self.mapping[true_idx]
-			fluxval = f1_f[i] if isinstance(f1_f, ndarray) else f1_f
+			fluxval = f1_f[rx] #if isinstance(f1_f, ndarray) else f1_f
 
 			if isinstance(involved, (int,int_)):
 				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval)
@@ -377,10 +379,11 @@ class CORSOModel(ConstraintBasedModel):
 
 		self.set_objective(corso_of_dict, True)
 
+
 		sol = self.optimize()
 		self.revert_to_original_bounds()
 
-		return flux1, CORSOSolution(sol, f1_f, self.cost_index_mapping, self.cbmodel.reaction_names)
+		return flux1, CORSOSolution(sol, sum([of_dict[k]*f1_f[k] for k in of_dict.keys()]), self.cost_index_mapping, self.cbmodel.reaction_names)
 
 
 
