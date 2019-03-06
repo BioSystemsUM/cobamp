@@ -201,6 +201,8 @@ class LinearSystemOptimizer(object):
 		status = None
 		ov = nan
 
+		self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
+		self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
 		try:
 			self.model.optimize()
 			value_map = OrderedDict([(v.name,v.primal) for v in self.model.variables])
