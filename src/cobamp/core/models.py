@@ -35,7 +35,7 @@ def make_irreversible_model(S, lb, ub):
 
 class ConstraintBasedModel(object):
 	@timeit
-	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True):
+	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True, solver=None):
 
 		def __validate_args():
 
@@ -57,9 +57,8 @@ class ConstraintBasedModel(object):
 
 			assert reactions_ok, 'Reaction name dimensions do not match the supplied stoichiometrix matrix'
 			assert metabolites_ok, 'Metabolite name dimensions do not match the supplied stoichiometrix matrix'
-
 			return m,n
-
+		self.solver = solver
 		m,n = __validate_args()
 		#self.__S = self.__parse_stoichiometric_matrix(S)
 		self.__S = array(S)
@@ -116,7 +115,7 @@ class ConstraintBasedModel(object):
 	#def __parse_stoichiometric_matrix(self, S):
 	def initialize_optimizer(self):
 		lb, ub = self.get_bounds_as_list()
-		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names)
+		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names, solver=self.solver)
 		self.model.build_problem()
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 
@@ -254,7 +253,7 @@ class ConstraintBasedModel(object):
 		rev = array([int(v[0]) for k,v in rx_mapping.items() if isinstance(v, (list,tuple))])
 		revnames = ['_'.join([name,BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
 		rnames = self.reaction_names + revnames
-		model = ConstraintBasedModel(Sn, list(zip(nlb,nub)), rnames, self.metabolite_names, optimizer=self.model is not None)
+		model = ConstraintBasedModel(Sn, list(zip(nlb,nub)), rnames, self.metabolite_names, optimizer=self.model is not None, solver=self.solver)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
@@ -290,7 +289,7 @@ class ConstraintBasedModel(object):
 
 class CORSOModel(ConstraintBasedModel):
 	@timeit
-	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO')):
+	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO'), solver=None):
 		if not cbmodel.model:
 			cbmodel.initialize_optimizer()
 
@@ -304,7 +303,7 @@ class CORSOModel(ConstraintBasedModel):
 		self.cost_index_mapping = zeros(S.shape[1], dtype=int_)
 
 		self.corso_rx, self.corso_mt = corso_element_names
-		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names)
+		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver)
 		self.add_metabolite(zeros(len(self.reaction_names)), self.corso_mt)
 
 		self.add_reaction(zeros(len(self.metabolite_names)), (0, 0), self.corso_rx)

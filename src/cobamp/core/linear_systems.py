@@ -4,9 +4,31 @@ import abc
 import numpy as np
 import warnings
 
-from optlang import Model, Variable, Objective, Constraint
+#from optlang import Model, Variable, Objective, Constraint
+import optlang
 from optlang.symbolics import Basic, Zero
 #from cobamp.core.models import make_irreversible_model
+
+CUSTOM_DEFAULT_SOLVER = None
+
+def get_default_solver():
+	if CUSTOM_DEFAULT_SOLVER:
+		return CUSTOM_DEFAULT_SOLVER
+	else:
+		for solver,status in optlang.list_available_solvers().items():
+			if status:
+				#CUSTOM_DEFAULT_SOLVER = solver
+				return solver
+
+def get_solver_interfaces():
+	s = {}
+	for solver, status in optlang.list_available_solvers().items():
+		if status:
+			s[solver] = eval('optlang.'+solver.lower()+'_interface')
+	return s
+
+SOLVER_INTERFACES = get_solver_interfaces()
+DEFAULT_SOLVER = get_default_solver()
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
 VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
@@ -34,7 +56,7 @@ def make_irreversible_model(S, lb, ub):
 
 	return S_new, nlb, nub, rx_mapping
 
-
+import optlang.gurobi_interface
 class LinearSystem():
 	"""
 	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers
@@ -48,6 +70,17 @@ class LinearSystem():
 	"""
 	__metaclass__ = abc.ABCMeta
 	model = None
+
+	def select_solver(self, solver=None):
+		if not solver:
+			solver = get_default_solver()
+			self.interface = SOLVER_INTERFACES[solver]
+		else:
+			if solver in SOLVER_INTERFACES:
+				self.interface = SOLVER_INTERFACES[solver]
+			else:
+				raise Exception(solver,'Solver not found. Choose from ',list(SOLVER_INTERFACES.keys()))
+
 	@abc.abstractmethod
 	def build_problem(self):
 		"""
@@ -81,10 +114,10 @@ class LinearSystem():
 
 	#def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
 	def empty_constraint(self, b_lb, b_ub):
-		return Constraint(Zero, lb=b_lb, ub=b_ub)
+		return self.interface.Constraint(Zero, lb=b_lb, ub=b_ub)
 
 	def dummy_variable(self):
-		return Variable(name='dummy', lb=0, ub=0)
+		return self.interface.Variable(name='dummy', lb=0, ub=0)
 
 	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False):
 		'''
@@ -163,8 +196,11 @@ class LinearSystem():
 		if isinstance(var_types, str):
 			var_types = [var_types] * len(lb)
 
-		vars = [Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in zip(var_names, lb, ub, var_types)]
+		vars = [self.interface.Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
+		# debug lines - TODO: remove this
+		# for var in vars:
+		# 	print(var)
 		self.model.update()
 
 		return vars
@@ -172,9 +208,9 @@ class LinearSystem():
 	def set_objective(self, coefficients, minimize, vars=None):
 		if not vars:
 			vars = self.model.variables
-		lcoefs = {k: v for k, v in zip(vars, coefficients)} #if v != 0}
+		lcoefs = {k: v for k, v in zip(vars, coefficients) if v != 0}
 		dummy = self.dummy_variable()
-		new_obj = Objective(dummy)
+		new_obj = self.interface.Objective(dummy)
 		self.model.objective = new_obj
 		new_obj.set_linear_coefficients(lcoefs)
 		self.model.remove(dummy)
@@ -266,7 +302,7 @@ class GenericLinearSystem(LinearSystem):
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names):
+	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names, solver=None):
 		"""
 		Constructor for GenericLinearSystem
 
@@ -285,7 +321,8 @@ class GenericLinearSystem(LinearSystem):
 			var_names: string identifiers for the variables
 
 		"""
-		self.model = Model()
+		self.select_solver(solver)
+		self.model = self.interface.Model()
 		self.S, self.lb, self.ub, self.b_lb, self.b_ub, self.var_types = S, lb, ub, b_lb, b_ub, var_types
 
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
@@ -300,7 +337,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, lb, ub, var_names):
+	def __init__(self, S, lb, ub, var_names, solver=None):
 		"""
 		Constructor for SimpleLinearSystem
 
@@ -318,7 +355,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		"""
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
-		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names)
+		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver)
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinearSystem):
 	"""
