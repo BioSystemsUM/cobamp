@@ -203,6 +203,8 @@ class LinearSystemOptimizer(object):
 		status = None
 		ov = nan
 
+		self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
+		self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
 		try:
 			self.model.optimize()
 			values = self.model._get_primal_values()
