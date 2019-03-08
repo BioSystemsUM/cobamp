@@ -35,6 +35,7 @@ VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
 VARIABLE, CONSTRAINT = 'var','const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
+
 def make_irreversible_model(S, lb, ub):
 	irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
 	rev = np.array([i for i in range(S.shape[1]) if i not in irrev])
@@ -56,7 +57,6 @@ def make_irreversible_model(S, lb, ub):
 
 	return S_new, nlb, nub, rx_mapping
 
-import optlang.gurobi_interface
 class LinearSystem():
 	"""
 	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers
@@ -80,6 +80,18 @@ class LinearSystem():
 				self.interface = SOLVER_INTERFACES[solver]
 			else:
 				raise Exception(solver,'Solver not found. Choose from ',list(SOLVER_INTERFACES.keys()))
+
+	def get_configuration(self):
+		return self.model.configuration
+
+	def set_default_configuration(self):
+		cfg = self.model.configuration
+
+		cfg.tolerances.feasibility = 1e-9
+		cfg.tolerances.optimality = 1e-9
+		cfg.tolerances.integrality = 1e-12
+		cfg.lpmethod = 'auto'
+		cfg.presolve = True
 
 	@abc.abstractmethod
 	def build_problem(self):
@@ -215,6 +227,7 @@ class LinearSystem():
 		new_obj.set_linear_coefficients(lcoefs)
 		self.model.remove(dummy)
 		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
+		self.model.update()
 
 	def set_variable_bounds(self, vars, lb, ub):
 		for var, ulb, uub in zip(vars, lb, ub):
@@ -323,6 +336,7 @@ class GenericLinearSystem(LinearSystem):
 		"""
 		self.select_solver(solver)
 		self.model = self.interface.Model()
+		self.set_default_configuration()
 		self.S, self.lb, self.ub, self.b_lb, self.b_ub, self.var_types = S, lb, ub, b_lb, b_ub, var_types
 
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
