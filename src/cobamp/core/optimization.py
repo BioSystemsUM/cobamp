@@ -1,5 +1,6 @@
 import cplex, string, random, shutil
-from numpy import nan, array, int_, float_
+from numpy import nan, array, int_, float_, abs
+import pandas as pd
 from optlang import Model, Variable, Constraint, Objective
 from collections import OrderedDict
 
@@ -84,6 +85,10 @@ class Solution(object):
 			return self.__value_map[item]
 		else:
 			raise TypeError('\'item\' is not a sequence or string.')
+
+	def to_series(self):
+
+		return pd.Series(self.var_values())
 
 	def set_attribute(self, key, value):
 		"""
@@ -203,8 +208,8 @@ class LinearSystemOptimizer(object):
 		status = None
 		ov = nan
 
-		self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
-		self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
+		#self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
+		#self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
 		try:
 			self.model.optimize()
 			values = self.model._get_primal_values()
@@ -221,8 +226,13 @@ class LinearSystemOptimizer(object):
 			raise frozen_exception
 
 class CORSOSolution(Solution):
-	def __init__(self, sol, f, index_map, var_names):
-		x = sol.x()
-		nx = [x[i] if isinstance(x[i], float_) else x[i][0] - x[i][1] for i in range(max(index_map)+1)]
+	def __init__(self, sol_max, sol_min, f, index_map, var_names, eps = 1e-8):
+		x = sol_min.x()
+		rev = index_map[max(index_map)+1:]
+
+		nx = x[:max(index_map)+1]
+		nx[rev] = x[rev] - sol_min.x()[max(index_map)+1:-1]
+		nx[abs(nx) < eps] = 0
+		#nx = [x[i] if not isinstance(index_map[i], (tuple,list)) else x[i][0] - x[i][1] for i in range(max(index_map)+1)]
 		nvalmap = OrderedDict([(k,v) for k,v in zip(var_names, nx)])
-		super().__init__(nvalmap, sol.status(), objective_value=f)
+		super().__init__(nvalmap, [sol_max.status(), sol_min.status()], objective_value=f)

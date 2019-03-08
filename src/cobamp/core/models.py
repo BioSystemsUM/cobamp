@@ -33,6 +33,7 @@ def make_irreversible_model(S, lb, ub):
 
 	return S_new, nlb, nub, rx_mapping
 
+
 class ConstraintBasedModel(object):
 	@timeit
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True, solver=None):
@@ -269,6 +270,9 @@ class ConstraintBasedModel(object):
 		bound = (lb,ub)
 		self.bounds[true_idx] = bound
 
+		if 'temporary' in kwargs and kwargs['temporary'] == False:
+			self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
+
 		if self.model:
 			var = self.model.model.variables[true_idx]
 			self.model.set_variable_bounds([var],[lb],[ub])
@@ -279,8 +283,8 @@ class ConstraintBasedModel(object):
 			f = zeros(len(self.reaction_names))
 			self.c = f
 			for k,v in coef_dict.items():
-				f[self.decode_index(k, 'reaction')] = v
-			self.model.set_objective(f, minimize)
+				self.c[self.decode_index(k, 'reaction')] = v
+			self.model.set_objective(self.c, minimize)
 		else:
 			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
 
@@ -335,15 +339,15 @@ class CORSOModel(ConstraintBasedModel):
 		true_cost = append(true_cost,array([-1]))
 		self.set_stoichiometric_matrix(true_cost.reshape(1, len(true_cost)), rows=[self.corso_mt])
 
-	def set_reaction_bounds(self, index, **kwargs):
-		super().set_reaction_bounds(index, **kwargs)
-		self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
+	# def set_reaction_bounds(self, index, **kwargs):
+	# 	super().set_reaction_bounds(index, **kwargs)
+	# 	self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
 
 	def set_corso_objective(self):
 		self.set_objective({self.corso_rx:1}, True)
 
 	def optimize_corso(self, cost, of_dict, minimize=False, constraint=1, constraintby='val', eps=1e-6, flux1=None):
-		if not flux1:
+		if flux1 is None:
 			flux1 = self.solve_original_model(of_dict, minimize)
 
 		if abs(flux1.objective_value()) < eps:
@@ -351,7 +355,7 @@ class CORSOModel(ConstraintBasedModel):
 		f1_x = flux1.x()
 		if constraintby == 'perc':
 			#f1_f = flux1.x()[self.cbmodel.c != 0]
-			f1_f = {idx:f1_x*(constraint/100) for idx in of_dict.keys()}
+			f1_f = {idx:f1_x[idx]*(constraint/100) for idx in of_dict.keys()}
 		elif constraintby == 'val':
 			if (flux1.objective_value() < constraint and not minimize) or (flux1.objective_value() > constraint and minimize):
 				raise Exception('Objective flux is not sufficient for the the set constraint value.')
@@ -361,8 +365,8 @@ class CORSOModel(ConstraintBasedModel):
 			raise Exception('Invalid constraint options.')
 
 		self.set_reaction_bounds(self.corso_rx, lb=0, ub=1e20)
-		corso_of_dict = deepcopy(of_dict)
-		corso_of_dict[self.corso_rx] = 1
+		# corso_of_dict = deepcopy(of_dict)
+		# corso_of_dict[self.corso_rx] = 1
 
 		self.set_costs(cost)
 		for rx in f1_f.keys():
@@ -371,18 +375,18 @@ class CORSOModel(ConstraintBasedModel):
 			fluxval = f1_f[rx] #if isinstance(f1_f, ndarray) else f1_f
 
 			if isinstance(involved, (int,int_)):
-				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval)
+				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval, temporary=True)
 			else:
-				self.set_reaction_bounds(involved[0], lb=fluxval, ub=fluxval)
-				self.set_reaction_bounds(involved[1], lb=fluxval, ub=fluxval)
+				self.set_reaction_bounds(involved[0], lb=fluxval, ub=fluxval, temporary=True)
+				self.set_reaction_bounds(involved[1], lb=0, ub=0, temporary=True)
 
-		self.set_objective(corso_of_dict, True)
+		self.set_objective({self.corso_rx:1}, True)
 
 
 		sol = self.optimize()
 		self.revert_to_original_bounds()
 
-		return flux1, CORSOSolution(sol, sum([of_dict[k]*f1_f[k] for k in of_dict.keys()]), self.cost_index_mapping, self.cbmodel.reaction_names)
+		return flux1, CORSOSolution(flux1, sol, sum([of_dict[k]*f1_f[k] for k in of_dict.keys()]), self.cost_index_mapping, self.cbmodel.reaction_names, eps = eps)
 
 
 
