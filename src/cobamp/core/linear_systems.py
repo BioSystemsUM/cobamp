@@ -15,8 +15,8 @@ def get_default_solver():
 	if CUSTOM_DEFAULT_SOLVER:
 		return CUSTOM_DEFAULT_SOLVER
 	else:
-		for solver,status in optlang.list_available_solvers().items():
-			if status:
+		for solver in ['CPLEX','GUROBI','GLPK','MOSEK','SCIPY']:
+			if optlang.list_available_solvers()[solver]:
 				#CUSTOM_DEFAULT_SOLVER = solver
 				return solver
 
@@ -86,12 +86,16 @@ class LinearSystem():
 
 	def set_default_configuration(self):
 		cfg = self.model.configuration
+		try:
+			cfg.tolerances.feasibility = 1e-9
+			cfg.tolerances.optimality = 1e-9
+			cfg.tolerances.integrality = 1e-9
+			cfg.lpmethod = 'auto'
+			cfg.presolve = True
 
-		cfg.tolerances.feasibility = 1e-9
-		cfg.tolerances.optimality = 1e-9
-		cfg.tolerances.integrality = 1e-12
-		cfg.lpmethod = 'auto'
-		cfg.presolve = True
+		except:
+			print('Could not set parameters with this solver')
+
 
 	@abc.abstractmethod
 	def build_problem(self):
