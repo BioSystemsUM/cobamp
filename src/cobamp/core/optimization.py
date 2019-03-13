@@ -1,7 +1,6 @@
 import cplex, string, random, shutil
-from numpy import nan, array, int_, float_, abs
+from numpy import nan, array, int_, float_, abs, zeros, max
 import pandas as pd
-from optlang import Model, Variable, Constraint, Objective
 from collections import OrderedDict
 
 CPLEX_INFINITY = cplex.infinity
@@ -166,6 +165,7 @@ class Solution(object):
 
 		return array(list(self.__value_map.values()))
 
+
 class LinearSystemOptimizer(object):
 	"""
 	Class with methods to solve a <LinearSystem> as a linear optimization problem.
@@ -236,3 +236,26 @@ class CORSOSolution(Solution):
 		#nx = [x[i] if not isinstance(index_map[i], (tuple,list)) else x[i][0] - x[i][1] for i in range(max(index_map)+1)]
 		nvalmap = OrderedDict([(k,v) for k,v in zip(var_names, nx)])
 		super().__init__(nvalmap, [sol_max.status(), sol_min.status()], objective_value=f)
+
+class GIMMESolution(Solution):
+	def __init__(self, sol, exp_vector, var_names, mapping=None):
+		self.exp_vector = exp_vector
+		gimme_solution = sol.x()
+		if mapping:
+			gimme_solution =[max(gimme_solution[array(new)]) if isinstance(new, (tuple,list)) else gimme_solution[new] for orig, new
+			 in mapping.items()]
+		super().__init__(
+			value_map=OrderedDict([(k, v) for k, v in zip(var_names, gimme_solution)]),
+			status=sol.status(),
+			objective_value=sol.objective_value()
+		)
+
+	def get_reaction_activity(self, flux_threshold):
+		gimme_fluxes = array([kv[1] for i, kv in enumerate(self.var_values().items())])
+		activity = zeros(gimme_fluxes.shape)
+		ones = (self.exp_vector > flux_threshold) | (self.exp_vector == -1)
+		twos = gimme_fluxes > 0
+		activity[ones] = 1
+		activity[twos & ~ones] = 2
+
+		return activity
