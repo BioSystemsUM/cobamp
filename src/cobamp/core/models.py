@@ -1,6 +1,6 @@
 from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
-from .optimization import LinearSystemOptimizer, CORSOSolution
+from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from ..utilities.test_utils import timeit
 from collections import OrderedDict
 import warnings
@@ -280,19 +280,33 @@ class ConstraintBasedModel(object):
 
 	def set_objective(self, coef_dict, minimize=False):
 		if self.model:
-			f = zeros(len(self.reaction_names))
-			self.c = f
-			for k,v in coef_dict.items():
-				self.c[self.decode_index(k, 'reaction')] = v
-			self.model.set_objective(self.c, minimize)
+			if isinstance(coef_dict, dict):
+				f = zeros(len(self.reaction_names))
+				self.c = f
+				for k,v in coef_dict.items():
+					self.c[self.decode_index(k, 'reaction')] = v
+				self.model.set_objective(self.c, minimize)
+			elif isinstance(coef_dict, ndarray):
+				self.model.set_objective(coef_dict, minimize)
+			else:
+				raise TypeError('`coef_dict` must either be a dict or an ndarray')
 		else:
 			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
 
 	def optimize(self):
 		return self.optimizer.optimize()
 
+	def revert_to_original_bounds(self):
+		for rx, bounds in zip(self.reaction_names, self.original_bounds):
+			clb, cub = self.get_reaction_bounds(rx)
+			lb, ub = bounds
+
+			if clb != lb or cub != ub:
+				self.set_reaction_bounds(rx, lb=lb, ub=ub)
+
+
+
 class CORSOModel(ConstraintBasedModel):
-	@timeit
 	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO'), solver=None):
 		if not cbmodel.model:
 			cbmodel.initialize_optimizer()
@@ -325,14 +339,6 @@ class CORSOModel(ConstraintBasedModel):
 		self.cbmodel.set_objective(of_dict, minimize)
 		sol = self.cbmodel.optimize()
 		return sol
-
-	def revert_to_original_bounds(self):
-		for rx, bounds in zip(self.reaction_names, self.original_bounds):
-			clb, cub = self.get_reaction_bounds(rx)
-			lb, ub = bounds
-
-			if clb != lb or cub != ub:
-				self.set_reaction_bounds(rx, lb=lb, ub=ub)
 
 	def set_costs(self, cost):
 		true_cost = cost[self.cost_index_mapping]
@@ -382,11 +388,74 @@ class CORSOModel(ConstraintBasedModel):
 
 		self.set_objective({self.corso_rx:1}, True)
 
+		## TODO: Remove this in the future
+		## debug line
+		# self.model.model.problem.write('corso_model_py.lp')
 
 		sol = self.optimize()
 		self.revert_to_original_bounds()
 
 		return flux1, CORSOSolution(flux1, sol, sum([of_dict[k]*f1_f[k] for k in of_dict.keys()]), self.cost_index_mapping, self.cbmodel.reaction_names, eps = eps)
 
+class GIMMEModel(ConstraintBasedModel):
+	def __init__(self, cbmodel, solver=None):
+		self.cbmodel = cbmodel
+		if not self.cbmodel.model:
+			self.cbmodel.initialize_optimizer()
+
+		irrev_model, self.mapping = cbmodel.make_irreversible()
+
+		S = irrev_model.get_stoichiometric_matrix()
+		bounds = irrev_model.bounds
+		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver, optimizer=True)
+
+	def __adjust_objective_to_irreversible(self, objective_dict):
+		obj_dict = {}
+		for k,v in objective_dict.items():
+			irrev_map = self.mapping[self.cbmodel.decode_index(k,'reaction')]
+			if isinstance(irrev_map, (list,tuple)):
+				for i in irrev_map:
+					obj_dict[i] = v
+			else:
+				obj_dict[irrev_map] = v
+		return obj_dict
+
+	def __adjust_expression_vector_to_irreversible(self, exp_vector):
+		exp_vector_n = zeros(len(self.reaction_names), )
+		for rxn, val in enumerate(exp_vector):
+			rxmap = self.mapping[rxn]
+			if isinstance(rxmap, tuple):
+				exp_vector_n[rxmap[0]] = exp_vector_n[rxmap[1]] = val
+			else:
+				exp_vector_n[rxmap] = val
+		return exp_vector_n
+
+	def optimize_gimme(self, exp_vector, objectives, obj_frac, flux_thres):
+		N = len(self.cbmodel.reaction_names)
+		objectives_irr = [self.__adjust_objective_to_irreversible(obj) for obj in objectives]
+		exp_vector_irr = self.__adjust_expression_vector_to_irreversible(exp_vector)
+
+		def find_objective_value(obj):
+			self.cbmodel.set_objective(obj, False)
+			return self.cbmodel.optimize().objective_value()
+
+		objective_values = list(map(find_objective_value, objectives_irr))
+
+		gimme_model_objective = array(
+			[flux_thres - exp_vector_irr[i] if -1 < exp_vector_irr[i] < flux_thres else 0 for i in range(N)])
+
+		objective_lbs = zeros(len(self.reaction_names))
+		for ov, obj in zip(objective_values,objectives_irr):
+			for rx,v in obj.items():
+				objective_lbs[rx] = v * ov * obj_frac
+
+		objective_ids = nonzero(objective_lbs)[0]
+		for id, lb in zip(objective_ids, objective_lbs):
+			self.set_reaction_bounds(id, lb=lb, temporary=True)
+
+		self.set_objective(gimme_model_objective, True)
+		sol = self.optimize()
+		self.revert_to_original_bounds()
+		return GIMMESolution(sol, exp_vector, self.cbmodel.reaction_names, self.mapping)
 
 
