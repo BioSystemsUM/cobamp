@@ -139,14 +139,14 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 
 	"""
 	m, n = S.shape
-	if keepSingle is None:
-		keepSingle = array([])
-	irrev_violating_subsets = []
-	sub = zeros([len(keepSingle), n])
-	sub[(array(range(len(keepSingle))), array(keepSingle))] = 1
-	irrev_sub = irrev[keepSingle]
-	in_subset = array([False] * n)
-	in_subset[keepSingle] = True
+	if keepSingle and sum(keepSingle) > 0:
+		#keepSingle = array([])
+		irrev_violating_subsets = []
+		sub = zeros([len(keepSingle), n])
+		sub[(array(range(len(keepSingle))), array(keepSingle))] = 1
+		irrev_sub = irrev[keepSingle]
+		in_subset = array([False] * n)
+		in_subset[keepSingle] = True
 
 	for i in range(cr.shape[0] - 1, -1, -1):
 		reactions = where(cr[:, i] != 0)[0]
