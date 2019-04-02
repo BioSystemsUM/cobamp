@@ -2,6 +2,8 @@ from cobamp.algorithms.kshortest import InterventionProblem
 
 import abc
 import numpy as np
+from scipy.io import loadmat
+from numpy import where
 
 MAX_PRECISION = 1e-10
 
@@ -24,7 +26,7 @@ class AbstractObjectReader(object):
 
 		"""
 		self.model = model
-		self.r_ids, self.m_ids = self.get_metabolite_and_reactions_ids()
+		self.r_ids, self.m_ids = self.get_reaction_and_metabolite_ids()
 		self.rx_instances = self.get_rx_instances()
 		self.S = self.get_stoichiometric_matrix()
 		self.irrev_bool = self.get_irreversibilities(False)
@@ -81,7 +83,7 @@ class AbstractObjectReader(object):
 		return
 
 	@abc.abstractmethod
-	def get_metabolite_and_reactions_ids(self):
+	def get_reaction_and_metabolite_ids(self):
 		"""
 		Returns two ordered iterables containing the metabolite and reaction ids respectively.
 		"""
@@ -96,7 +98,7 @@ class AbstractObjectReader(object):
 		"""
 
 	@abc.abstractmethod
-	def get_model_gprs(self):
+	def get_model_gprs(self, apply_fx=None):
 		"""
 
 		Returns the model gene-protein-reaction rules associated with each reaction
@@ -104,7 +106,7 @@ class AbstractObjectReader(object):
 		"""
 
 	@abc.abstractmethod
-	def convert_gprs_to_list(self, rx):
+	def convert_gprs_to_list(self, rx, apply_fx):
 		return
 
 	def reaction_id_to_index(self, id):
@@ -157,8 +159,8 @@ class AbstractObjectReader(object):
 		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if
 				abs(v) > MAX_PRECISION}
 
-	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False):
-		gpr_map = {rx: self.convert_gprs_to_list(rx) for rx in self.r_ids}
+	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False, apply_fx=None):
+		gpr_map = {rx: self.convert_gprs_to_list(rx, apply_fx) for rx in self.r_ids}
 
 		def aux_apply(fx, it):
 			args = [k for k in it if k is not None]
@@ -205,21 +207,66 @@ class COBRAModelObjectReader(AbstractObjectReader):
 	def get_rx_instances(self):
 		return [self.model.reactions.get_by_id(rx) for rx in self.r_ids]
 
-	def get_metabolite_and_reactions_ids(self):
+	def get_reaction_and_metabolite_ids(self):
 		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
 
 	def get_model_genes(self):
 		return set([g.id for g in self.model.genes])
 
-	def get_model_gprs(self):
-		return [r.gene_reaction_rule for r in self.model.reactions]
+	def get_model_gprs(self, apply_fx=None):
+		if not apply_fx:
+			return [r.gene_reaction_rule for r in self.model.reactions]
+		else:
+			return [apply_fx(r.gene_reaction_rule) for r in self.model.reactions]
 
-	def convert_gprs_to_list(self, rx):
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs()[self.r_ids.index(rx)].split('or')))
+	def convert_gprs_to_list(self, rx, apply_fx):
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
 
+class MatFormatReader(AbstractObjectReader):
+	def get_stoichiometric_matrix(self):
+		return (self.model['S'][0][0]).toarray()
 
+	def get_model_bounds(self, as_dict = False, separate_list=False):
+		lb, ub = [(self.model[k][0][0]).ravel() for k in ('lb','ub')]
+		tuples = [(r, (l, u)) for r, l, u in zip(self.r_ids, lb, ub)]
+		if as_dict:
+			return dict(tuples)
+		else:
+			if separate_list:
+				return lb, ub
+			else:
+				return tuple(tuples)
+			
+	def get_irreversibilities(self, as_index):
+		bv = (self.model['rev'][0][0]).ravel().astype(bool)
+		if as_index:
+			return where(bv)[0]
+		else:
+			return bv
+
+	def get_rx_instances(self):
+		pass
+	
+	def get_reaction_and_metabolite_ids(self):
+		return [[k[0][0] for k in self.model[t][0][0]] for t in ['rxns','mets']]
+	
+	def get_model_genes(self):
+		return set([k[0][0] for k in self.model['genes'][0][0]])
+	
+	def get_model_gprs(self, apply_fx=None):
+		gprs = [k[0][0] if len(k[0]) > 0 else '' for k in self.model['grRules'][0][0]]
+		if apply_fx:
+			return list(map(apply_fx, gprs))
+		else:
+			return gprs
+
+	def convert_gprs_to_list(self, rx, apply_fx):
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
+		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
+		return rules
+	
 class FramedModelObjectReader(AbstractObjectReader):
 
 	def get_stoichiometric_matrix(self):
@@ -241,7 +288,7 @@ class FramedModelObjectReader(AbstractObjectReader):
 			irrev = list(np.where(irrev)[0])
 		return irrev
 
-	def get_metabolite_and_reactions_ids(self):
+	def get_reaction_and_metabolite_ids(self):
 		return tuple(self.model.reactions.keys()), tuple(self.model.metabolites.keys())
 
 	def get_rx_instances(self):
@@ -251,8 +298,6 @@ class FramedModelObjectReader(AbstractObjectReader):
 		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), rx.gene_reaction_rule.split('or')))
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
-
-
 
 class CobampModelObjectReader(AbstractObjectReader):
 
@@ -274,7 +319,7 @@ class CobampModelObjectReader(AbstractObjectReader):
 			irrev = list(np.where(irrev)[0])
 		return irrev
 
-	def get_metabolite_and_reactions_ids(self):
+	def get_reaction_and_metabolite_ids(self):
 		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
 
 	def get_rx_instances(self):
