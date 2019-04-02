@@ -175,19 +175,21 @@ class LinearSystem():
 			coef_list = [{vars[j]: S[i, j] for j in np.nonzero(S[i, :])[0]} for i in range(S.shape[0])]
 
 		for coefs, constraint in zip(coef_list, constraints):
-			constraint.set_linear_coefficients(coefs)
+			if constraint.indicator_variable is None:
+				constraint.set_linear_coefficients(coefs)
 
 		self.model.update()
 
 
 
-	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None):
-		vars = self.model.variables
+	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None):
+		if vars:
+			vars = self.model.variables
 		#dummy = self.dummy_variable()
 		constraints = [self.empty_constraint(b_lb[i], b_ub[i])  for i in range(S_new.shape[0])]
 		if indicator_rows:
 			for row, var_idx, complement in indicator_rows:
-				constraints[row] = self.interface.Constraint(Zero, lb=0, ub=0, indicator_variable=vars[var_idx], active_when=complement)
+				constraints[row] = self.interface.Constraint(sum(S_new[row,i]*vars[i] for i in S_new[row,:].nonzero()[0]), lb=0, ub=0, indicator_variable=vars[var_idx], active_when=complement)
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
