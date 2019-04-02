@@ -112,6 +112,10 @@ class ConstraintBasedModel(object):
 		if optimizer:
 			self.initialize_optimizer()
 
+	def __getstate__(self):
+		print('getstate call')
+		return self.__dict__
+
 	def __update_decoder_map(self):
 		self.reaction_decoder_map = self.metabolite_decoder_map = None
 
@@ -158,6 +162,7 @@ class ConstraintBasedModel(object):
 	def decode_index(self, index, labels):
 		if type(index) in INT_TYPES:
 			return index
+
 		elif labels is not None:
 			return self.map_labels[labels][index]
 		else:

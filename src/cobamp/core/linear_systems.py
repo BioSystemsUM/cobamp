@@ -135,7 +135,7 @@ class LinearSystem():
 	def dummy_variable(self):
 		return self.interface.Variable(name='dummy', lb=0, ub=0)
 
-	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False):
+	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False, indicator_rows=None):
 		'''
 
 		Args:
@@ -154,7 +154,7 @@ class LinearSystem():
 		'''
 
 		self.add_variables_to_model(var_names, lb, ub, var_types)
-		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero)
+		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
 	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
 		'''
@@ -181,11 +181,13 @@ class LinearSystem():
 
 
 
-	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False):
+	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None):
 		vars = self.model.variables
 		#dummy = self.dummy_variable()
-		constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
-
+		constraints = [self.empty_constraint(b_lb[i], b_ub[i])  for i in range(S_new.shape[0])]
+		if indicator_rows:
+			for row, var_idx, complement in indicator_rows:
+				constraints[row] = self.interface.Constraint(Zero, lb=0, ub=0, indicator_variable=vars[var_idx], active_when=complement)
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
