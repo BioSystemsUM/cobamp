@@ -12,6 +12,31 @@ SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
 
 
+def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
+	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0)])
+	rev = array([i for i in range(S.shape[1]) if i not in irrev])
+	Sr = S[:, rev]
+	offset = S.shape[1]
+	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
+	for i, rx in enumerate(rev):
+		rx_mapping[rx].append(offset + i)
+	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
+
+	S_new = hstack([S, -Sr])
+	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
+	for orig_rx, new_rx in rx_mapping.items():
+		if isinstance(new_rx, tuple):
+			nlb[new_rx[0]] = lb[orig_rx] if lb[orig_rx] >=0 else 0 # not necessary since they're already 0
+			nub[new_rx[0]] = ub[orig_rx] if ub[orig_rx] >=0 else 0 # not necessary since they're already 0
+			nlb[new_rx[1]] = ub[orig_rx] *-1 if (ub[orig_rx] *-1) >= 0 else 0
+			nub[new_rx[1]] = lb[orig_rx] *-1 if (lb[orig_rx] *-1) >= 0 else 0
+
+		else:
+			nlb[new_rx] =  lb[orig_rx]
+			nub[new_rx] = ub[orig_rx]
+
+	return S_new, nlb, nub, rx_mapping
+
 def make_irreversible_model(S, lb, ub):
 	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
 	rev = array([i for i in range(S.shape[1]) if i not in irrev])
@@ -32,6 +57,16 @@ def make_irreversible_model(S, lb, ub):
 			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
 
 	return S_new, nlb, nub, rx_mapping
+
+
+def _invert_bounds(S, lb, ub):
+	irrev_reverse_idx = where((lb <= 0) & (ub <= 0))[0]
+	# S[:, irrev_reverse_idx] = -S[:, irrev_reverse_idx]
+	temp = ub[irrev_reverse_idx]
+	ub[irrev_reverse_idx] = -lb[irrev_reverse_idx]
+	lb[irrev_reverse_idx] = 0
+
+	return S, lb, ub
 
 
 class ConstraintBasedModel(object):
@@ -388,9 +423,6 @@ class CORSOModel(ConstraintBasedModel):
 
 		self.set_objective({self.corso_rx:1}, True)
 
-		## TODO: Remove this in the future
-		## debug line
-		# self.model.model.problem.write('corso_model_py.lp')
 
 		sol = self.optimize()
 		self.revert_to_original_bounds()
