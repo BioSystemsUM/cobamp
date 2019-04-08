@@ -7,7 +7,6 @@ import warnings
 #from optlang import Model, Variable, Objective, Constraint
 import optlang
 from optlang.symbolics import Basic, Zero
-#from cobamp.core.models import make_irreversible_model
 
 CUSTOM_DEFAULT_SOLVER = None
 
@@ -44,7 +43,7 @@ def make_irreversible_model(S, lb, ub):
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
 	for i, rx in enumerate(rev):
 		rx_mapping[rx].append(offset + i)
-	rx_mapping = OrderedDict([(k,tuple(v)) if isinstance(v, list) else v for k, v in rx_mapping.items()])
+	rx_mapping = OrderedDict([(k,tuple(v)) if isinstance(v, list) else (k,v) for k, v in rx_mapping.items()])
 
 	S_new = np.hstack([S, -Sr])
 	nlb, nub = np.zeros(S_new.shape[1]), np.zeros(S_new.shape[1])
@@ -56,6 +55,7 @@ def make_irreversible_model(S, lb, ub):
 			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
 
 	return S_new, nlb, nub, rx_mapping
+
 
 class LinearSystem():
 	"""
@@ -78,8 +78,10 @@ class LinearSystem():
 		else:
 			if solver in SOLVER_INTERFACES:
 				self.interface = SOLVER_INTERFACES[solver]
+
 			else:
 				raise Exception(solver,'Solver not found. Choose from ',list(SOLVER_INTERFACES.keys()))
+		self.solver = solver
 
 	def get_configuration(self):
 		return self.model.configuration
@@ -183,13 +185,13 @@ class LinearSystem():
 
 
 	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None):
-		if vars:
+		if not vars:
 			vars = self.model.variables
 		#dummy = self.dummy_variable()
-		constraints = [self.empty_constraint(b_lb[i], b_ub[i])  for i in range(S_new.shape[0])]
+		constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
 		if indicator_rows:
 			for row, var_idx, complement in indicator_rows:
-				constraints[row] = self.interface.Constraint(sum(S_new[row,i]*vars[i] for i in S_new[row,:].nonzero()[0]), lb=0, ub=0, indicator_variable=vars[var_idx], active_when=complement)
+				constraints[row] = self.interface.Constraint(sum(S_new[row,i]*vars[i] for i in S_new[row,:].nonzero()[0]), lb=b_lb[row], ub=b_ub[row], indicator_variable=vars[var_idx], active_when=complement)
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
@@ -198,6 +200,7 @@ class LinearSystem():
 		#self.model.update()
 		#self.model.remove(dummy)
 		self.model.update()
+		return constraints
 
 	def remove_from_model(self, index, what):
 		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
@@ -307,14 +310,11 @@ class KShortestCompatibleLinearSystem(LinearSystem):
 		"""
 		return self.dvars
 
+	def add_c_variable(self):
+		self.c = self.add_variables_to_model(['C'],[1],[None],VAR_CONTINUOUS)[0]
+
 	def get_c_variable(self):
-		"""
-
-		Returns a string referring to the constant on the optimization problem.
-		-------
-
-		"""
-		return self.c
+		return self.model.variables['C']
 
 
 class GenericLinearSystem(LinearSystem):
@@ -403,71 +403,26 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinea
 
 			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
 		"""
-		lb = [0 if i in irrev else None for i in range(S.shape[1])]
-		ub = [None]*S.shape[1]
+		lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
+		ub = [1]*S.shape[1]
 		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
 		fwd_names = ['V'+str(i) if not isinstance(v, list) else 'V'+str(i)+'F' for i,v in rev_mapping.items()]
-		bwd_names = ['V'+str(i)+'R' for i,v in rev_mapping.items() if isinstance(v, list)]
+		bwd_names = ['V'+str(i)+'R' for i,v in rev_mapping.items() if isinstance(v, (list,tuple))]
+
+		lbi = [0]*len(lbi) + [1]
+		ubi = [None]*len(ubi) + [None]
 
 		self.__ivars = None
-		self.S, self.irrev = S, irrev
-		self.__c = "C"
 		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for c in consumed]
-		super().__init__(Si, lbi, ubi, fwd_names+bwd_names)
+		Si = np.hstack([Si,np.zeros((Si.shape[0],1))])
+		super().__init__(Si, lbi, ubi, fwd_names+bwd_names+['C'])
 
-	# def subset_dvars(self, subset):
-	#
-	# 	dvars = [self.dvar_mapping[i] for i in subset]
-	# 	dvar_mapping = {k: v for k, v in self.dvar_mapping.items() if v in dvars}
-	# 	return dvars, dvar_mapping
+		#self.add_c_variable()
 
-	# def build_problem(self):
-	# 	# Defining useful length constants
-	# 	nM, nR = self.S.shape
-	# 	nIrrev = len(self.irrev)
-	# 	nRev = nR - nIrrev
-	# 	veclens = [("irr", nIrrev), ("revfw", nRev), ("revbw", nRev)]
-	# 	Sxi, Sxr = self.S[:, self.irrev], np.delete(self.S, self.irrev, axis=1)
-	# 	S_full = np.concatenate([Sxi, Sxr, -Sxr], axis=1)
-	#
-	# 	vi, vrf, vrb = [[(pref + str(i), 0, CPLEX_INFINITY) for i in range(n)] for pref, n in veclens]
-	#
-	# 	vd = chain(vi, vrf, vrb)
-	# 	names, lb, ub = list(zip(*vd))
-	# 	self.model.variables.add(names=names, lb=lb, ub=ub)
-	#
-	# 	np_names = np.array(names)
-	# 	nnz = list(map(lambda y: np.nonzero(y)[1], zip(S_full)))
-	#
-	# 	lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(S_full, nnz)]
-	#
-	# 	rhs = [0] * S_full.shape[0]
-	# 	senses = ['E'] * S_full.shape[0]
-	# 	cnames = ['C_' + str(i) for i in range(S_full.shape[0])]
-	#
-	# 	if self.__ss_override != []:
-	# 		for id_i, sense_i, rhs_i in self.__ss_override:
-	# 			rhs[id_i] = rhs_i
-	# 			senses[id_i] = sense_i
-	#
-	# 	self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
-	# 	self.model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
-	# 	self.dvars = vi + list(map(list, zip(vrf, vrb)))
-	#
-	# 	vi_names = list(zip(*vi))[0] if len(vi) > 0 else []
-	# 	vrf_names = list(zip(*vrf))[0] if len(vrf) > 0 else []
-	# 	vrb_names = list(zip(*vrb))[0] if len(vrb) > 0 else []
-	#
-	# 	self.dvars = list(vi_names) + list(zip(vrf_names, vrb_names))
-	# 	var_index_sequence = (self.irrev.tolist() if isinstance(self.irrev, np.ndarray) else self.irrev) + [x for x in
-	# 																										list(range(
-	# 																											nR)) if
-	# 																										x not in self.irrev]
-	#
-	# 	self.dvar_mapping = dict(zip(var_index_sequence, self.dvars))
-	# 	# self.__model.write('efmmodel.lp') ## For debugging purposes
-	# 	return S_full
 
+		#self.add_variables_to_model(['C'],[1],[None],VAR_CONTINUOUS)
+		self.dvars = list(range(S.shape[1]+len(bwd_names)))
+		self.dvar_mapping = dict(rev_mapping)
 
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
@@ -511,6 +466,11 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		super().__init__(*self.generate_dual_problem(S, irrev, T, b))
 
 
+		offset = S.shape[0]
+		self.dvars = list(range(offset, offset+(S.shape[1]*2)))
+
+		self.dvar_mapping = {i: (i, S.shape[1]+i) for i in range(S.shape[1])}
+
 	def generate_dual_problem(self, S, irrev, T, b):
 		m, n = S.shape
 		veclens = [("u", m), ("vp", n), ("vn", n), ("w", self.T.shape[0])]
@@ -535,11 +495,6 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		w_idx = [m+n+n+i for i in range(len(b))]
 		Sd[-1,w_idx] = b
 		Sd[-1,-1] = 1
-		vp_names = list(zip(*vp))[0]
-		vn_names = list(zip(*vn))[0]
-
-		self.dvars = list(zip(vp_names, vn_names))
-		self.dvar_mapping = dict(zip(range(len(self.dvars)), self.dvars))
 
 		b_ub = np.hstack([np.array([None]*Sdi.shape[0]), np.array([0]*Sdr.shape[0]), np.array([0])])
 		b_lb = np.array([0]*(Sd.shape[0]), dtype=object)
@@ -547,50 +502,3 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		b_lb[-1] = None
 
 		return Sd, VAR_CONTINUOUS, v_lb, v_ub, b_lb, b_ub, names
-
-	# def build_problem(self):
-	#
-	# 	self.po
-	# def build_problem(self):
-	# 	# Defining useful length constants
-	# 	nM, nR = self.S.shape
-	# 	veclens = [("u", nM), ("vp", nR), ("vn", nR), ("w", self.T.shape[0])]
-	# 	I = np.identity(nR)
-	# 	Sxi, Sxr = self.S[:, self.irrev].T, np.delete(self.S, self.irrev, axis=1).T
-	# 	Ii, Ir = I[self.irrev, :], np.delete(I, self.irrev, axis=0)
-	# 	Ti, Tr = self.T[:, self.irrev].T, np.delete(self.T, self.irrev, axis=1).T
-	#
-	# 	u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else -CPLEX_INFINITY, CPLEX_INFINITY) for i in range(n)] for
-	# 					pref, n in
-	# 					veclens]
-	#
-	# 	Sdi = np.concatenate([Sxi, Ii, -Ii, Ti], axis=1)
-	# 	Sdr = np.concatenate([Sxr, Ir, -Ir, Tr], axis=1)
-	# 	Sd = np.concatenate([Sdi, Sdr], axis=0)
-	# 	vd = chain(u, vp, vn, w)
-	# 	names, lb, ub = list(zip(*vd))
-	# 	self.model.variables.add(names=names, lb=lb, ub=ub)
-	#
-	# 	np_names = np.array(names)
-	# 	nnz = list(map(lambda y: np.nonzero(y)[1], zip(Sd)))
-	#
-	# 	lin_expr = [cplex.SparsePair(ind=np_names[x].tolist(), val=row[x].tolist()) for row, x in zip(Sd, nnz)]
-	# 	rhs = [0] * (Sdi.shape[0] + Sdr.shape[0])
-	# 	senses = 'G' * Sdi.shape[0] + 'E' * Sdr.shape[0]
-	# 	cnames = ['Ci' + str(i) for i in range(Sdi.shape[0])] + ['Cr' + str(i) for i in range(Sdr.shape[0])]
-	#
-	# 	self.model.linear_constraints.add(lin_expr=lin_expr, senses=senses, rhs=rhs, names=cnames)
-	#
-	# 	self.model.variables.add(names=['C'], lb=[1], ub=[CPLEX_INFINITY])
-	#
-	# 	b_coefs = self.b.tolist() + [1]
-	# 	b_names = list(list(zip(*w))[0] + tuple(['C']))
-	# 	self.model.linear_constraints.add(lin_expr=[(b_names, b_coefs)], senses=['L'], rhs=[0], names=['Cb'])
-	#
-	# 	vp_names = list(zip(*vp))[0]
-	# 	vn_names = list(zip(*vn))[0]
-	#
-	# 	self.dvars = list(zip(vp_names, vn_names))
-	# 	self.dvar_mapping = dict(zip(range(len(self.dvars)), self.dvars))
-	#
-	# 	return Sd

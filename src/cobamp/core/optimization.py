@@ -183,8 +183,10 @@ class LinearSystemOptimizer(object):
 		"""
 		if build:
 			linear_system.build_problem()
+		self.solver = linear_system.solver
 		self.model = linear_system.get_model()
 		self.hard_fail = hard_fail
+
 
 	def optimize(self):
 		"""
@@ -212,10 +214,10 @@ class LinearSystemOptimizer(object):
 		#self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
 
 		# tINIT test parameters
-		self.model.problem.Params.MIPGap = 1e-9
-		self.model.configuration.tolerances.feasibility = 1e-8
-		self.model.configuration.tolerances.optimality = 1e-8
-		self.model.configuration.verbosity = 3
+		# self.model.problem.Params.MIPGap = 1e-9
+		# self.model.configuration.tolerances.feasibility = 1e-8
+		# self.model.configuration.tolerances.optimality = 1e-8
+		# self.model.configuration.verbosity = 3
 
 		try:
 			self.model.optimize()
@@ -232,6 +234,45 @@ class LinearSystemOptimizer(object):
 		else:
 			raise frozen_exception
 
+	def populate(self, limit=None):
+		intf_dict = {
+			'CPLEX':self.__populate_cplex,
+		 	'GUROBI':self.__populate_gurobi
+		}
+		if self.solver in ['CPLEX','GUROBI']:
+			return intf_dict[self.solver](limit)
+		else:
+			raise ValueError('The provided solver does not have an implemented populate function. Choose from' +
+							 ''.join(list(intf_dict.keys())))
+
+	def __populate_cplex(self, limit=None):
+		instance = self.model.problem
+		if not limit:
+			instance.parameters.mip.pool.capacity = instance.parameters.mip.pool.capacity.max()
+		else:
+			instance.parameters.mip.pool.capacity = limit
+		vnames = instance.variables.get_names()
+		mnames = self.model._get_variables_names()
+		solutions = []
+		try:
+			instance.populate_solution_pool()
+			pool_intf = instance.solution.pool
+			nsols = pool_intf.get_num()
+			for s in range(nsols):
+				vmap = {k:v for k,v in zip(vnames, pool_intf.get_values(s))}
+				ord_vmap = OrderedDict([(k, vmap[k]) for k in mnames])
+				sol = Solution(ord_vmap, 'optimal', objective_value=pool_intf.get_objective_value(s))
+				# TODO: get status dict from optlang and use it accordingly
+				solutions.append(sol)
+		except Exception as e:
+			print(e)
+
+		return solutions
+
+	def __populate_gurobi(self, limit=None):
+		pass
+
+
 class CORSOSolution(Solution):
 	def __init__(self, sol_max, sol_min, f, index_map, var_names, eps = 1e-8):
 		x = sol_min.x()
@@ -240,7 +281,6 @@ class CORSOSolution(Solution):
 		nx = x[:max(index_map)+1]
 		nx[rev] = x[rev] - sol_min.x()[max(index_map)+1:-1]
 		nx[abs(nx) < eps] = 0
-		#nx = [x[i] if not isinstance(index_map[i], (tuple,list)) else x[i][0] - x[i][1] for i in range(max(index_map)+1)]
 		nvalmap = OrderedDict([(k,v) for k,v in zip(var_names, nx)])
 		super().__init__(nvalmap, [sol_max.status(), sol_min.status()], objective_value=f)
 
@@ -266,3 +306,51 @@ class GIMMESolution(Solution):
 		activity[twos & ~ones] = 2
 
 		return activity
+
+class KShortestSolution(Solution):
+	"""
+	A Solution subclass that also contains attributes suitable for elementary flux modes such as non-cancellation sums
+	of split reactions and reaction activity.
+	"""
+	SIGNED_INDICATOR_SUM = 'signed_indicator_map'
+	SIGNED_VALUE_MAP = 'signed_value_map'
+
+	def __init__(self, value_map, status, indicator_map, dvar_mapping, dvars, **kwargs):
+		"""
+
+		Parameters
+
+		----------
+
+			value_map: A dictionary mapping variable names with values
+
+			status: See <Solution>
+
+			indicator_map: A dictionary mapping indicators with
+
+			dvar_mapping: A mapping between reaction indices and solver variables (Tuple[str] or str)
+
+			kwargs: See <Solution>
+
+		"""
+		signed_value_map = {
+			i: value_map[dvars[varlist[0]]] - value_map[dvars[varlist[1]]] if isinstance(varlist, (tuple,list)) else value_map[dvars[varlist]] for
+			i, varlist in dvar_mapping.items()}
+		signed_indicator_map = {
+			i: value_map[indicator_map[dvars[varlist[0]]]] - value_map[indicator_map[dvars[varlist[1]]]] if isinstance(varlist,
+																										 (tuple,list)) else
+			value_map[indicator_map[dvars[varlist]]] for
+			i, varlist in dvar_mapping.items()}
+		super().__init__(value_map, status, **kwargs)
+		self.set_attribute(self.SIGNED_VALUE_MAP, signed_value_map)
+		self.set_attribute(self.SIGNED_INDICATOR_SUM, signed_indicator_map)
+
+	def get_active_indicator_varids(self):
+		"""
+
+		Returns the indices of active indicator variables (maps with variables on the original stoichiometric matrix)
+
+		-------
+
+		"""
+		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if v != 0]
