@@ -14,7 +14,7 @@ setup(
     description = 'cobamp - pathway analysis methods for genome-scale metabolic models',
     license = 'GNU General Public License v3.0',
     keywords = 'pathway analysis metabolic model',
-    url = 'https://github.com/BioSystems/cobamp',
+    url = 'https://github.com/BioSystemsUM/cobamp',
     long_description = open('README.rst').read(),
     classifiers = [
         'Development Status :: 4 - Beta',
