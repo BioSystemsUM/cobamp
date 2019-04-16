@@ -131,8 +131,8 @@ class LinearSystem():
 		return self.S.shape
 
 	#def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
-	def empty_constraint(self, b_lb, b_ub):
-		return self.interface.Constraint(Zero, lb=b_lb, ub=b_ub)
+	def empty_constraint(self, b_lb, b_ub, **kwargs):
+		return self.interface.Constraint(Zero, lb=b_lb, ub=b_ub, **kwargs)
 
 	def dummy_variable(self):
 		return self.interface.Variable(name='dummy', lb=0, ub=0)
@@ -184,11 +184,14 @@ class LinearSystem():
 
 
 
-	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None):
+	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
 		if not vars:
 			vars = self.model.variables
 		#dummy = self.dummy_variable()
-		constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
+		if names != None:
+			constraints = [self.empty_constraint(b_lb[i], b_ub[i], name=names[i]) for i in range(S_new.shape[0])]
+		else:
+			constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
 		if indicator_rows:
 			for row, var_idx, complement in indicator_rows:
 				constraints[row] = self.interface.Constraint(sum(S_new[row,i]*vars[i] for i in S_new[row,:].nonzero()[0]), lb=b_lb[row], ub=b_ub[row], indicator_variable=vars[var_idx], active_when=complement)
@@ -429,10 +432,12 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	def __init__(self, S, irrev, subset, **kwargs):
 		super().__init__(S, irrev, **kwargs)
 		self.subset = subset
+		self.dvars = list(subset)
+		self.dvar_mapping = {k:v for k,v in self.dvar_mapping.items() if k in subset}
 
 	def build_problem(self):
 		super().build_problem()
-		self.dvars, self.dvar_mapping = self.subset_dvars(self.subset)
+
 
 
 class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
@@ -446,7 +451,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	elementary modes in a dual network. Bioinformatics, 28(3), 381-387.
 	"""
 
-	def __init__(self, S, irrev, T, b):
+	def __init__(self, S, irrev, T, b, solver=None):
 		"""
 
 		Parameters
@@ -463,7 +468,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
 		self.__c = "C"
-		super().__init__(*self.generate_dual_problem(S, irrev, T, b))
+		super().__init__(*self.generate_dual_problem(S, irrev, T, b), solver=solver)
 
 
 		offset = S.shape[0]
@@ -482,7 +487,6 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
 						pref, n in
 						veclens]
-
 		Sdi = np.hstack([Sxi, Ii, -Ii, Ti, np.zeros([Sxi.shape[0],1])])
 		Sdr = np.hstack([Sxr, Ir, -Ir, Tr, np.zeros([Sxr.shape[0],1])])
 		Sd = np.vstack([Sdi, Sdr, np.zeros([1, Sdi.shape[1]])])
