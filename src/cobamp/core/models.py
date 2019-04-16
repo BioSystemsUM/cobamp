@@ -113,7 +113,6 @@ class ConstraintBasedModel(object):
 			self.initialize_optimizer()
 
 	def __getstate__(self):
-		print('getstate call')
 		return self.__dict__
 
 	def __update_decoder_map(self):
@@ -317,11 +316,10 @@ class ConstraintBasedModel(object):
 			var = self.model.model.variables[true_idx]
 			self.model.set_variable_bounds([var],[lb],[ub])
 
-
 	def set_objective(self, coef_dict, minimize=False):
 		if self.model:
 			if isinstance(coef_dict, dict):
-				f = zeros(len(self.reaction_names))
+				f = zeros(self.__S.shape[1],)
 				self.c = f
 				for k,v in coef_dict.items():
 					self.c[self.decode_index(k, 'reaction')] = v
