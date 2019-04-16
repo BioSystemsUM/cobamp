@@ -1,6 +1,20 @@
 # Change log
 Major changes between versions will be documented on this file.
 
+## [0.1.0rc1] - 2019-04-18
+### Added
+ - SCIPY MAT format model reader
+ - Gene-protein-rule support with gene expression data integration functions
+ - Analysis functions (mainly frequency and graphs) with some plotting capability
+ - Transformer classes for algorithms that alter a metabolic network, 
+ guaranteeing mapping between the reactions of both
+ - Higher-level classes (linear_systems module) for semi-efficient definition of LP problems based on Optlang
+ - Classes for evaluating and converting into postfix type arithmetic and boolean expressions
+
+### Changed
+ - Major code refactor. Module structure drastically changed and reorganized.
+ - Many bugfixes
+
 ## [0.0.2] - 2018-12-20
 ### Added
  - Basic metabolic model classes for when an SBML file is not available or necessary
@@ -11,6 +25,7 @@ Major changes between versions will be documented on this file.
 
 ### Removed
  - Some modules that were too specific for the changes above
+
 ## [0.0.1] - 2018-12-04
 ### Added
 
