@@ -16,7 +16,7 @@ import abc
 import cplex
 from copy import deepcopy
 from itertools import chain
-from numpy import concatenate, array, zeros, hstack, ones
+from numpy import concatenate, array, zeros, hstack, ones, identity
 
 from cobamp.core.models import ConstraintBasedModel
 from cobamp.core.optimization import LinearSystemOptimizer, KShortestSolution
@@ -155,12 +155,16 @@ class KShortestEnumerator(object):
 			if isinstance(sol, KShortestSolution):
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem, equality=equality, length_override=length_override)
 			elif isinstance(sol, list) or isinstance(sol, tuple):
-				ivars = [self.indicator_map[k] for k in self.__dvars]
-				lin_expr = (ivars, [1] * len(ivars))
-				sense = ['L']
-				rhs = [len(sol) - 1]
-				names = ['exclusion_cuts' + str(len(self.__exclusion_cuts))]
-				self.model.linear_constraints.add(lin_expr=[lin_expr], senses=sense, rhs=rhs, names=names)
+				values = {i:0 for i in range(len(self.model.model.variables))}
+				for k in sol:
+					dvars = self.__dvar_mapping[k]
+					if isinstance(dvars, (list, tuple)):
+						for v in dvars:
+							values[self.indicator_map[self.__dvars[v]]] = 1
+					else:
+						values[self.indicator_map[self.__dvars[dvars]]] = 1
+					values[k] = 1
+				self.__add_integer_cut(values, efp_cut=self.is_efp_problem, equality=equality, length_override=length_override)
 
 	def exclude_solutions(self, sols):
 
@@ -178,7 +182,7 @@ class KShortestEnumerator(object):
 		-------
 
 		"""
-		self.__add_cuts(sols, length_override=0)
+		self.__add_cuts(sols, length_override=1, equality=False)
 
 	def force_solutions(self, sols):
 		"""
@@ -241,27 +245,27 @@ class KShortestEnumerator(object):
 		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators, vars=vlist)
 		self.indicator_map = dict(zip(dvars, self.__ivars))
 
+	def __add_kshortest_indicators_big_m(self):
+		## TODO: implement
+		pass
 
 	def __add_efp_auxiliary_constraints(self):
 		self.__efp_auxiliary_map = {}
-		btype = self.model.variables.type.binary
-		for ind in self.__ivars:
-			self.__efp_auxiliary_map[ind] = ''.join(['hv',ind])
-		varnames = list(self.__efp_auxiliary_map.values())
+		itype = VAR_BINARY
+		indicator_vars = [self.model.model.variables[v] for v in self.indicator_map.values()]
+		ilb, iub = [0]*len(indicator_vars), [1]*len(indicator_vars)
+		helpers = self.model.add_variables_to_model(['efp_h'+str(i) for i in range(len(indicator_vars))], lb=ilb, ub=iub, var_types=itype)
 
-		self.model.variables.add(names = varnames, types=btype*len(varnames))
+		vlist = indicator_vars + helpers
+		mat_template = identity(len(self.indicator_map))
+		mat = hstack([mat_template, -mat_template])
+		rhs_l = [0]*len(self.indicator_map)
+		rhs_u = [None]*len(self.indicator_map)
 
 		## Adding MILP2
-		milp2_lex_template = lambda bv, hv: cplex.SparsePair(ind=[bv, hv],val=[1, -1])
-		milp2_rhs, milp2_senses, milp2_names = [0]*len(varnames), 'G'*len(varnames), ['MILP2'+var for var in varnames]
-		milp2_lin_expr = [milp2_lex_template(bv, hv) for bv, hv in self.__efp_auxiliary_map.items()]
-		self.model.linear_constraints.add(lin_expr=milp2_lin_expr, rhs=milp2_rhs, senses=milp2_senses, names= milp2_names)
-
+		self.model.add_rows_to_model(self, mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist, names=None)
 		## Adding MILP4
-		milp4_lex = [
-			(varnames, [1]*len(varnames))
-		]
-		self.model.linear_constraints.add(lin_expr=milp4_lex, senses='G', rhs=[1], names=['MILP4'])
+		self.model.add_rows_to_model(self, ones(1, len(indicator_vars)), [1], [None], only_nonzero=False, indicator_rows=None, vars=helpers, names=None)
 
 	def __add_exclusivity_constraints(self):
 		"""
@@ -344,7 +348,7 @@ class KShortestEnumerator(object):
 			only_nonzero=True,
 			vars=cut_vars
 		)
-
+		cut[0].name = '_'.join([str(k) for k in ['IC_OV',length_override,'EQ' if equality else 'LE',len(self.__integer_cuts)]])
 		self.__integer_cuts.append(cut)
 
 
@@ -435,7 +439,6 @@ class KShortestEnumerator(object):
 
 		"""
 		i = 0
-		self.reset_enumerator_state()
 		self.set_size_constraint(1)
 		failed = False
 		while not failed and i < maximum_amount:
@@ -465,7 +468,6 @@ class KShortestEnumerator(object):
 
 
 		"""
-		self.reset_enumerator_state()
 		for i in range(1, max_size + 1):
 			print('Starting size', str(i))
 			try:
