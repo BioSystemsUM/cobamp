@@ -247,6 +247,17 @@ class LinearSystemOptimizer(object):
 
 	def __populate_cplex(self, limit=None):
 		instance = self.model.problem
+		
+		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		instance.parameters.clocktype.set(1)
+		instance.parameters.advance.set(0)
+		instance.parameters.mip.strategy.fpheur.set(1)
+		instance.parameters.emphasis.mip.set(2)
+		instance.parameters.mip.limits.populate.set(1000000)
+		instance.parameters.mip.pool.intensity.set(4)
+		instance.parameters.mip.pool.absgap.set(0)
+		instance.parameters.mip.pool.replace.set(2)
+
 		if not limit:
 			instance.parameters.mip.pool.capacity = instance.parameters.mip.pool.capacity.max()
 		else:
