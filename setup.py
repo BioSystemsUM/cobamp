@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'cobamp',
-    version = '0.0.2',
+    version = '0.1.0rc1',
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["numpy",
@@ -14,7 +14,7 @@ setup(
     description = 'cobamp - pathway analysis methods for genome-scale metabolic models',
     license = 'GNU General Public License v3.0',
     keywords = 'pathway analysis metabolic model',
-    url = 'https://github.com/skapur/pyCoBAMP',
+    url = 'https://github.com/BioSystems/cobamp',
     long_description = open('README.rst').read(),
     classifiers = [
         'Development Status :: 4 - Beta',
