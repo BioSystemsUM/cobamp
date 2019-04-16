@@ -139,13 +139,14 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 
 	"""
 	m, n = S.shape
-	if keepSingle and sum(keepSingle) > 0:
+	in_subset = array([False] * n)
+
+	if (keepSingle is not None) and (len(keepSingle) > 0):
 		#keepSingle = array([])
 		irrev_violating_subsets = []
 		sub = zeros([len(keepSingle), n])
 		sub[(array(range(len(keepSingle))), array(keepSingle))] = 1
 		irrev_sub = irrev[keepSingle]
-		in_subset = array([False] * n)
 		in_subset[keepSingle] = True
 
 	for i in range(cr.shape[0] - 1, -1, -1):
@@ -173,8 +174,8 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 		if len(ind) > 0:
 			irrev_violating_subsets = sub[ind, :]
 			sub = delete(sub, ind, 0)
-			irrv_to_keep = delete(array(range(len(irrev))), ind, 0)
-			irrev_sub = irrev[irrv_to_keep]
+			irrv_to_keep = delete(array(range(len(irrev_sub))), ind, 0)
+			irrev_sub = irrev_sub[irrv_to_keep]
 
 	return sub, irrev_sub, irrev_violating_subsets
 
@@ -208,11 +209,11 @@ def reduce(S, sub, irrev_reduced=None):
 	if rdn == 0 or rdm == 0:
 		reduced = zeros(1, rdn)
 
-	# if irrev_reduced is not None:
-	# 	ind = unique(nonzero(reduced)[1])
-	# 	reduced = reduced[:, ind]
-	# 	irrev_reduced = irrev_reduced[ind]
-	# else:
-	# 	irrev_reduced = []
+	if irrev_reduced is not None:
+		ind = unique(nonzero(reduced)[1])
+		reduced = reduced[:, ind]
+		irrev_reduced = irrev_reduced[ind]
+	else:
+		irrev_reduced = []
 
 	return reduced, reduced_indexes, irrev_reduced
