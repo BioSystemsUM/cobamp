@@ -12,6 +12,14 @@ cobamp.utilities.file\_utils module
     :undoc-members:
     :show-inheritance:
 
+cobamp.utilities.postfix\_expressions module
+--------------------------------------------
+
+.. automodule:: cobamp.utilities.postfix_expressions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 cobamp.utilities.property\_management module
 --------------------------------------------
 
@@ -24,6 +32,14 @@ cobamp.utilities.set\_utils module
 ----------------------------------
 
 .. automodule:: cobamp.utilities.set_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+cobamp.utilities.test\_utils module
+-----------------------------------
+
+.. automodule:: cobamp.utilities.test_utils
     :members:
     :undoc-members:
     :show-inheritance:

@@ -28,6 +28,14 @@ cobamp.core.optimization module
     :undoc-members:
     :show-inheritance:
 
+cobamp.core.transformer module
+------------------------------
+
+.. automodule:: cobamp.core.transformer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 Module contents
 ---------------
