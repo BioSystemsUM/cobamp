@@ -7,7 +7,9 @@ setup(
     packages = find_packages('src'),
     install_requires = ["numpy",
                         "scipy",
-                        "pandas"],
+                        "pandas",
+                        "optlang",
+                        "matplotlib"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
