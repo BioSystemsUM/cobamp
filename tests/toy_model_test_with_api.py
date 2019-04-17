@@ -1,5 +1,4 @@
-from cobamp.algorithms.kshortest import KShortestEFMAlgorithm
-from cobamp.algorithms.kshortest_efm_properties import *
+from cobamp.algorithms.kshortest import *
 from cobamp.core.linear_systems import DualLinearSystem, IrreversibleLinearSystem
 import numpy as np
 import unittest
