@@ -1,9 +1,7 @@
-import cplex, string, random, shutil
+import string, random, shutil
 from numpy import nan, array, int_, float_, abs, zeros, max
 import pandas as pd
 from collections import OrderedDict
-
-CPLEX_INFINITY = cplex.infinity
 
 
 def random_string_generator(N):
@@ -20,36 +18,6 @@ def random_string_generator(N):
 
 	"""
 	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
-
-
-def copy_cplex_model(model):
-	"""
-	Copies a Cplex model and returns a new object with the same contents in a separate object. Requires file creation
-	and reading permissions.
-
-	Parameters
-	----------
-		model : A cplex.Cplex instance
-
-	Returns a deep copy of the model as a separate object.
-	-------
-
-	"""
-	from os import mkdir, path
-	folder = "tmp_" + random_string_generator(12)
-	m_name, p_name = path.join(folder, random_string_generator(9) + ".lp"), path.join(folder, random_string_generator(
-		9) + ".lp")
-	mkdir(folder)
-
-	model.write(m_name)
-	model.parameters.write_file(p_name)
-
-	new_model = cplex.Cplex()
-	new_model.parameters.read_file(p_name)
-	new_model.read(m_name)
-
-	shutil.rmtree(folder)
-	return new_model
 
 class Solution(object):
 	"""

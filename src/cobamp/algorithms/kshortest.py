@@ -13,7 +13,6 @@ References:
 """
 import abc
 
-import cplex
 from copy import deepcopy
 from itertools import chain
 from numpy import concatenate, array, zeros, hstack, ones, identity
@@ -24,7 +23,6 @@ from cobamp.core.linear_systems import IrreversibleLinearPatternSystem, VAR_BINA
 from ..utilities.property_management import PropertyDictionary
 import warnings
 
-CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
 
 
