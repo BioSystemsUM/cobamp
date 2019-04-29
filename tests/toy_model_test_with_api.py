@@ -36,6 +36,14 @@ mcs_iterate_enumeration_config_wrong = KShortestProperties()
 mcs_iterate_enumeration_config_wrong[K_SHORTEST_MPROPERTY_METHOD] = K_SHORTEST_METHOD_ITERATE
 mcs_iterate_enumeration_config_wrong[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = 9
 
+configs = [efm_populate_enumeration_config, mcs_populate_enumeration_config, efm_populate_enumeration_config_wrong, mcs_populate_enumeration_config_wrong,
+ efm_iterate_enumeration_config, mcs_iterate_enumeration_config, efm_iterate_enumeration_config_wrong, mcs_iterate_enumeration_config_wrong]
+
+for cfg in configs:
+	cfg[K_SHORTEST_BIG_M_VALUE] = 3.4200101010 * 1e4
+
+TEST_SOLVER = 'GLPK'
+
 class ToyMetabolicNetworkTests(unittest.TestCase):
 	def setUp(self):
 		self.S = np.array([[1, -1, 0, 0, -1, 0, -1, 0, 0],
@@ -50,8 +58,8 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		self.T = np.array([0] * self.S.shape[1]).reshape(1, self.S.shape[1])
 		self.T[0, 8] = -1
 		self.b = np.array([-1]).reshape(1, )
-		self.lsystem = IrreversibleLinearSystem(self.S, self.irrev)
-		self.dsystem = DualLinearSystem(self.S, self.irrev, self.T, self.b)
+		self.lsystem = IrreversibleLinearSystem(self.S, self.irrev, solver=TEST_SOLVER)
+		self.dsystem = DualLinearSystem(self.S, self.irrev, self.T, self.b, solver=TEST_SOLVER)
 
 
 	def enumerate_elementary_flux_modes(self):

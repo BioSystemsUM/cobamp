@@ -249,7 +249,26 @@ class LinearSystemOptimizer(object):
 		return solutions
 
 	def __populate_gurobi(self, limit=None):
-		pass
+		instance = self.model.problem
+		solutions = []
+		instance.params.PoolSearchMode = 2
+		instance.params.PoolSolutions = limit
+		instance.params.SolutionNumber = 0
+		try:
+			instance.optimize()
+			mnames = self.model._get_variables_names()
+			if instance.SolCount > 0:
+				for n in range(instance.SolCount):
+					instance.params.SolutionNumber = n
+					ord_vmap = OrderedDict([(k, instance.getVarByName(k).Xn) for k in mnames])
+					sol = Solution(ord_vmap, 'optimal', objective_value=instance.PoolObjVal)
+					solutions.append(sol)
+		except Exception as e:
+			print(e)
+		finally:
+			instance.params.SolutionNumber = 0
+
+		return solutions
 
 
 class CORSOSolution(Solution):
