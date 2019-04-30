@@ -380,7 +380,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		self.lb, self.ub = lb, ub
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver=solver)
 
-class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinearSystem):
+class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
 	All irreversible reactions are split into their forward and backward components so every lower bound is 0.
@@ -419,12 +419,15 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinea
 		self.__ivars = None
 		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for c in consumed]
 		Si = np.hstack([Si,np.zeros((Si.shape[0],1))])
-		super().__init__(Si, lbi, ubi, fwd_names+bwd_names+['C'], solver=solver)
+		b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 
-		#self.add_c_variable()
+		## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
 
+		for id, _, v in self.__ss_override:
+			b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
 
-		#self.add_variables_to_model(['C'],[1],[None],VAR_CONTINUOUS)
+		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names+bwd_names+['C'], solver = solver)
+
 		self.dvars = list(range(S.shape[1]+len(bwd_names)))
 		self.dvar_mapping = dict(rev_mapping)
 
