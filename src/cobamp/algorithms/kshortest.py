@@ -128,26 +128,40 @@ class KShortestEnumerator(object):
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 
 	def __set_model_parameters(self):
+		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
+		 'GUROBI': self.__set_model_parameters_gurobi}
+
+		if self.model.solver in parset_func.keys():
+			parset_func[self.model.solver]()
+
+	def __set_model_parameters_cplex(self):
 
 		"""
 		Internal method to set model parameters. This is based on the original MATLAB code by Von Kamp et al.
 
 		-------
 		"""
+		instance = self.model.model.problem
 
-		# self.model.parameters.mip.tolerances.integrality.set(1e-9)
-		# self.model.parameters.workmem.set(4096)
-		# self.model.parameters.clocktype.set(1)
-		# self.model.parameters.advance.set(0)
-		# self.model.parameters.mip.strategy.fpheur.set(1)
-		# self.model.parameters.emphasis.mip.set(2)
-		# self.model.set_results_stream(None)
-		# self.model.set_log_stream(None)
-		# self.model.parameters.mip.limits.populate.set(1000000)
-		# self.model.parameters.mip.pool.capacity.set(1000000)
-		# self.model.parameters.mip.pool.intensity.set(4)
-		# self.model.parameters.mip.pool.absgap.set(0)
-		# self.model.parameters.mip.pool.replace.set(2)
+		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		instance.parameters.clocktype.set(1)
+		instance.parameters.advance.set(0)
+		instance.parameters.mip.strategy.fpheur.set(1)
+		instance.parameters.emphasis.mip.set(2)
+		instance.parameters.mip.limits.populate.set(1000000)
+		instance.parameters.mip.pool.intensity.set(4)
+		instance.parameters.mip.pool.absgap.set(0)
+		instance.parameters.mip.pool.replace.set(2)
+		#instance.parameters.mip.tolerances.absmipgap.set(0)
+
+	def __set_model_parameters_gurobi(self):
+
+		instance = self.model.model.problem
+
+		instance.params.PoolGap = 0
+		instance.params.MIPFocus = 2
+		instance.params.MIPAbsGap = 0
+		instance.params.PoolSearchMode = 2
 
 	##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
@@ -608,7 +622,8 @@ class KShortestEFMAlgorithm(object):
 		sols = list(enumerator)
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_POPULATE:
 			sols = list(chain(*sols))
-		linear_system.write_to_lp('test.lp')
+		# DEBUG
+		#linear_system.write_to_lp('test.lp')
 		return sols
 
 	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
