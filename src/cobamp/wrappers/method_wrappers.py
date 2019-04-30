@@ -24,7 +24,7 @@ class KShortestEnumeratorWrapper(object):
 	}
 
 	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
-				 excluded_solutions=None):
+				 excluded_solutions=None, solver='CPLEX'):
 		"""
 
 		Parameters
@@ -63,6 +63,7 @@ class KShortestEnumeratorWrapper(object):
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
+		self.solver = solver
 		self.__setup_algorithm()
 		self.enumerated_sols = []
 
@@ -150,7 +151,8 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 			irrev=self.model_reader.irrev_index,
 			consumed=conv_cn,
 			non_consumed=conv_nc,
-			produced=conv_pr)
+			produced=conv_pr,
+			solver=self.solver)
 
 
 class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
@@ -176,7 +178,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 
 	def get_linear_system(self):
 		T, b = self.__materialize_intv_problem()
-		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b)
+		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b, solver=self.solver)
 
 
 class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
@@ -200,4 +202,5 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 			subset=conv_subsets,
 			consumed=conv_cn,
 			non_consumed=conv_nc,
-			produced=conv_pr)
+			produced=conv_pr,
+			solver=self.solver)
