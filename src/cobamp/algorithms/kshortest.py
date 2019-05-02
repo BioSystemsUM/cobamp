@@ -504,7 +504,7 @@ class KShortestEnumerator(object):
 
 		"""
 		for i in range(1, max_size + 1):
-			print('Starting size', str(i))
+			#print('Starting size', str(i))
 			try:
 				self.set_size_constraint(i, True)
 				sols = self.populate_current_size()
