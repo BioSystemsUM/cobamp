@@ -13,18 +13,14 @@ References:
 """
 import abc
 
-import cplex
-from copy import deepcopy
 from itertools import chain
 from numpy import concatenate, array, zeros, hstack, ones, identity
 
-from cobamp.core.models import ConstraintBasedModel
 from cobamp.core.optimization import LinearSystemOptimizer, KShortestSolution
 from cobamp.core.linear_systems import IrreversibleLinearPatternSystem, VAR_BINARY
 from ..utilities.property_management import PropertyDictionary
 import warnings
 
-CPLEX_INFINITY = cplex.infinity
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
 
 
@@ -39,13 +35,15 @@ K_SHORTEST_METHOD_POPULATE = "POPULATE"
 
 K_SHORTEST_OPROPERTY_MAXSIZE = 'MAXSIZE'
 K_SHORTEST_OPROPERTY_MAXSOLUTIONS = "MAXSOLUTIONS"
+K_SHORTEST_BIG_M_VALUE = "BIGMVALUE"
 
 kshortest_mandatory_properties = {
 	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE]}
 
 kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_MAXSIZE: lambda x: x > 0 and isinstance(x, int),
-	K_SHORTEST_OPROPERTY_MAXSOLUTIONS: lambda x: x > 0 and isinstance(x, int)
+	K_SHORTEST_OPROPERTY_MAXSOLUTIONS: lambda x: x > 0 and isinstance(x, int),
+	K_SHORTEST_BIG_M_VALUE: lambda x: isinstance(x, (float,int))
 }
 
 
@@ -70,9 +68,8 @@ class KShortestEnumerator(object):
 
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
-	SIZE_CONSTRAINT_NAME = 'KShortestSizeConstraint'
 
-	def __init__(self, linear_system):
+	def __init__(self, linear_system, m_value=None):
 
 		"""
 
@@ -84,10 +81,6 @@ class KShortestEnumerator(object):
 
 		"""
 
-		# Get linear system constraints and variables
-		if isinstance(linear_system, ConstraintBasedModel):
-			linear_system = deepcopy(linear_system.model)
-
 		linear_system.build_problem()
 		self.__dvar_mapping = linear_system.get_dvar_mapping()
 		self.__ls_shape = linear_system.get_stoich_matrix_shape()
@@ -96,6 +89,9 @@ class KShortestEnumerator(object):
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model._get_variables_names(), x)
 
+		# TODO: Find a way to estimate the best possible value for this
+		self.__m_value = 10e6 if m_value == None else m_value
+
 		# Open log files
 		# self.resf = open('results', 'w')
 		# self.logf = open('log', 'w')
@@ -103,18 +99,25 @@ class KShortestEnumerator(object):
 		# Setup CPLEX parameters
 		self.__set_model_parameters()
 		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
+
 		# Setup k-shortest constraints
-		self.__add_kshortest_indicators()
+		big_m = linear_system.solver != 'CPLEX'
+		if big_m:
+			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(self.__m_value)
+			warnings.warn(warnstr)
+			self.__add_kshortest_indicators_big_m()
+		else:
+			self.__add_kshortest_indicators()
+
+
 		if not self.is_efp_problem:
 			self.__add_exclusivity_constraints()
 		self.__size_constraint = None
-		# TODO: change this to cplex notation
 		self.__efp_auxiliary_map = None
 
 		if self.is_efp_problem:
 			self.__add_efp_auxiliary_constraints()
 
-		## TODO: OPTLANG REFACTORING - change this
 		self.__objective_expression = dict(zip(list(range(len(self.__dvars))), [1] * len(self.__dvars)))
 
 		self.__set_objective()
@@ -125,26 +128,40 @@ class KShortestEnumerator(object):
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 
 	def __set_model_parameters(self):
+		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
+		 'GUROBI': self.__set_model_parameters_gurobi}
+
+		if self.model.solver in parset_func.keys():
+			parset_func[self.model.solver]()
+
+	def __set_model_parameters_cplex(self):
 
 		"""
 		Internal method to set model parameters. This is based on the original MATLAB code by Von Kamp et al.
 
 		-------
 		"""
+		instance = self.model.model.problem
 
-		# self.model.parameters.mip.tolerances.integrality.set(1e-9)
-		# self.model.parameters.workmem.set(4096)
-		# self.model.parameters.clocktype.set(1)
-		# self.model.parameters.advance.set(0)
-		# self.model.parameters.mip.strategy.fpheur.set(1)
-		# self.model.parameters.emphasis.mip.set(2)
-		# self.model.set_results_stream(None)
-		# self.model.set_log_stream(None)
-		# self.model.parameters.mip.limits.populate.set(1000000)
-		# self.model.parameters.mip.pool.capacity.set(1000000)
-		# self.model.parameters.mip.pool.intensity.set(4)
-		# self.model.parameters.mip.pool.absgap.set(0)
-		# self.model.parameters.mip.pool.replace.set(2)
+		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		instance.parameters.clocktype.set(1)
+		instance.parameters.advance.set(0)
+		instance.parameters.mip.strategy.fpheur.set(1)
+		instance.parameters.emphasis.mip.set(2)
+		instance.parameters.mip.limits.populate.set(1000000)
+		instance.parameters.mip.pool.intensity.set(4)
+		instance.parameters.mip.pool.absgap.set(0)
+		instance.parameters.mip.pool.replace.set(2)
+		#instance.parameters.mip.tolerances.absmipgap.set(0)
+
+	def __set_model_parameters_gurobi(self):
+
+		instance = self.model.model.problem
+
+		instance.params.PoolGap = 0
+		instance.params.MIPFocus = 2
+		instance.params.MIPAbsGap = 0
+		instance.params.PoolSearchMode = 2
 
 	##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
@@ -246,8 +263,25 @@ class KShortestEnumerator(object):
 		self.indicator_map = dict(zip(dvars, self.__ivars))
 
 	def __add_kshortest_indicators_big_m(self):
-		## TODO: implement
-		pass
+		dvars = self.__dvars
+
+		M = self.__m_value
+		template_matrix = array([[1, -M],[-1, 1]])
+
+		nrowmat = zeros([len(dvars)*2]*2)
+		for i in range(len(dvars)):
+			nrowmat[i*2:i*2+2,i*2:i*2+2] = template_matrix
+
+		offset = len(self.model.model.variables)
+
+		ivar_instances = self.model.add_variables_to_model(['i'+str(i) for i in range(len(dvars))], lb=[0]*len(dvars), ub=[1]*len(dvars), var_types=VAR_BINARY)
+		dvar_instances = [self.model.model.variables[i] for i in dvars]
+		vlist = list(chain(*list(zip(dvar_instances, ivar_instances))))
+		self.__ivars = [i+offset for i in range(len(dvars))]
+
+		self.model.add_rows_to_model(nrowmat, [None]*(len(dvars)*2),  [0]*(len(dvars)*2), only_nonzero=True, vars=vlist)
+		self.indicator_map = dict(zip(dvars, self.__ivars))
+
 
 	def __add_efp_auxiliary_constraints(self):
 		self.__efp_auxiliary_map = {}
@@ -368,14 +402,15 @@ class KShortestEnumerator(object):
 
 		"""
 		# TODO: Find a way to add a single constraint with two bounds.
+		self.model.model.update()
 		if 'KSH_SizeConstraint_' in self.model.model.constraints:
 			cns = self.model.model.constraints['KSH_SizeConstraint_']
 			self.model.set_constraint_bounds([cns], [start_at], [start_at if equal else None])
 		else:
 			c = ones((1,len(self.__ivars)))
 			vars = [self.model.model.variables[i] for i in self.__ivars]
-			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars)[0]
-			constraint.name = 'KSH_SizeConstraint_'
+			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars, names=['KSH_SizeConstraint_'])[0]
+			self.model.model.update()
 
 
 	def get_model(self):
@@ -469,7 +504,7 @@ class KShortestEnumerator(object):
 
 		"""
 		for i in range(1, max_size + 1):
-			print('Starting size', str(i))
+			#print('Starting size', str(i))
 			try:
 				self.set_size_constraint(i, True)
 				sols = self.populate_current_size()
@@ -558,7 +593,7 @@ class KShortestEFMAlgorithm(object):
 
 		"""
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
-		self.ksh = KShortestEnumerator(linear_system)
+		self.ksh = KShortestEnumerator(linear_system, m_value=self.configuration[K_SHORTEST_BIG_M_VALUE])
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:
@@ -587,7 +622,8 @@ class KShortestEFMAlgorithm(object):
 		sols = list(enumerator)
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_POPULATE:
 			sols = list(chain(*sols))
-		linear_system.write_to_lp('test.lp')
+		# DEBUG
+		#linear_system.write_to_lp('test.lp')
 		return sols
 
 	def get_enumerator(self, linear_system, excluded_sets, forced_sets):

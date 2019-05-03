@@ -1,9 +1,7 @@
-import cplex, string, random, shutil
+import string, random, shutil
 from numpy import nan, array, int_, float_, abs, zeros, max
 import pandas as pd
 from collections import OrderedDict
-
-CPLEX_INFINITY = cplex.infinity
 
 
 def random_string_generator(N):
@@ -20,36 +18,6 @@ def random_string_generator(N):
 
 	"""
 	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
-
-
-def copy_cplex_model(model):
-	"""
-	Copies a Cplex model and returns a new object with the same contents in a separate object. Requires file creation
-	and reading permissions.
-
-	Parameters
-	----------
-		model : A cplex.Cplex instance
-
-	Returns a deep copy of the model as a separate object.
-	-------
-
-	"""
-	from os import mkdir, path
-	folder = "tmp_" + random_string_generator(12)
-	m_name, p_name = path.join(folder, random_string_generator(9) + ".lp"), path.join(folder, random_string_generator(
-		9) + ".lp")
-	mkdir(folder)
-
-	model.write(m_name)
-	model.parameters.write_file(p_name)
-
-	new_model = cplex.Cplex()
-	new_model.parameters.read_file(p_name)
-	new_model.read(m_name)
-
-	shutil.rmtree(folder)
-	return new_model
 
 class Solution(object):
 	"""
@@ -247,16 +215,6 @@ class LinearSystemOptimizer(object):
 
 	def __populate_cplex(self, limit=None):
 		instance = self.model.problem
-		
-		instance.parameters.mip.tolerances.integrality.set(1e-9)
-		instance.parameters.clocktype.set(1)
-		instance.parameters.advance.set(0)
-		instance.parameters.mip.strategy.fpheur.set(1)
-		instance.parameters.emphasis.mip.set(2)
-		instance.parameters.mip.limits.populate.set(1000000)
-		instance.parameters.mip.pool.intensity.set(4)
-		instance.parameters.mip.pool.absgap.set(0)
-		instance.parameters.mip.pool.replace.set(2)
 
 		if not limit:
 			instance.parameters.mip.pool.capacity = instance.parameters.mip.pool.capacity.max()
@@ -281,7 +239,28 @@ class LinearSystemOptimizer(object):
 		return solutions
 
 	def __populate_gurobi(self, limit=None):
-		pass
+
+
+		instance = self.model.problem
+
+		solutions = []
+		instance.params.PoolSolutions = limit
+		instance.params.SolutionNumber = 0
+		try:
+			instance.optimize()
+			mnames = self.model._get_variables_names()
+			if instance.SolCount > 0:
+				for n in range(instance.SolCount):
+					instance.params.SolutionNumber = n
+					ord_vmap = OrderedDict([(k, instance.getVarByName(k).Xn) for k in mnames])
+					sol = Solution(ord_vmap, 'optimal', objective_value=instance.PoolObjVal)
+					solutions.append(sol)
+		except Exception as e:
+			print(e)
+		finally:
+			instance.params.SolutionNumber = 0
+
+		return solutions
 
 
 class CORSOSolution(Solution):

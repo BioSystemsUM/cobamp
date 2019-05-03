@@ -1,6 +1,10 @@
 # Change log
 Major changes between versions will be documented on this file.
 
+## [0.1.0] - 2019-04-29
+### Added
+ - Big-M indicators for solvers without a dedicated indicator constraint abstraction
+
 ## [0.1.0rc1] - 2019-04-18
 ### Added
  - SCIPY MAT format model reader

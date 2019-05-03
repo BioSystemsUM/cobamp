@@ -4,19 +4,17 @@ import abc
 import numpy as np
 import warnings
 
-#from optlang import Model, Variable, Objective, Constraint
 import optlang
-from optlang.symbolics import Basic, Zero
+from optlang.symbolics import Zero
 
 CUSTOM_DEFAULT_SOLVER = None
-
+SOLVER_ORDER = ['CPLEX','GUROBI','GLPK','MOSEK','SCIPY']
 def get_default_solver():
 	if CUSTOM_DEFAULT_SOLVER:
 		return CUSTOM_DEFAULT_SOLVER
 	else:
-		for solver in ['CPLEX','GUROBI','GLPK','MOSEK','SCIPY']:
+		for solver in SOLVER_ORDER:
 			if optlang.list_available_solvers()[solver]:
-				#CUSTOM_DEFAULT_SOLVER = solver
 				return solver
 
 def get_solver_interfaces():
@@ -80,7 +78,7 @@ class LinearSystem():
 				self.interface = SOLVER_INTERFACES[solver]
 
 			else:
-				raise Exception(solver,'Solver not found. Choose from ',list(SOLVER_INTERFACES.keys()))
+				raise Exception(solver,'Solver not found. Choose from ',str(list(SOLVER_INTERFACES.keys())))
 		self.solver = solver
 
 	def get_configuration(self):
@@ -380,16 +378,16 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		"""
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
-		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver)
+		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver=solver)
 
-class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinearSystem):
+class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
 	All irreversible reactions are split into their forward and backward components so every lower bound is 0.
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=()):
+	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=(), solver=None):
 		"""
 
 		Parameters
@@ -406,6 +404,9 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinea
 
 			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
 		"""
+
+		self.select_solver(solver)
+
 		lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
 		ub = [1]*S.shape[1]
 		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
@@ -418,12 +419,15 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, SteadyStateLinea
 		self.__ivars = None
 		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for c in consumed]
 		Si = np.hstack([Si,np.zeros((Si.shape[0],1))])
-		super().__init__(Si, lbi, ubi, fwd_names+bwd_names+['C'])
+		b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 
-		#self.add_c_variable()
+		## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
 
+		for id, _, v in self.__ss_override:
+			b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
 
-		#self.add_variables_to_model(['C'],[1],[None],VAR_CONTINUOUS)
+		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names+bwd_names+['C'], solver = solver)
+
 		self.dvars = list(range(S.shape[1]+len(bwd_names)))
 		self.dvar_mapping = dict(rev_mapping)
 
@@ -465,6 +469,8 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 
 			b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
 		"""
+		self.select_solver(solver)
+
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
 		self.__c = "C"
