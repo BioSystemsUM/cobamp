@@ -8,13 +8,13 @@ from itertools import chain, product
 class ModelTransformer(abc.ABCMeta):
 	@abc.abstractmethod
 	def transform(self, S, lb, ub, properties):
-
 		## TODO: implement
 		# must return:
 		# - new S matrix
 		# - new lower/upper bounds
 		# - mapping between rows/cols from both matrices
 		pass
+
 
 class ReactionIndexMapping(object):
 	def __init__(self, otn, nto):
@@ -31,11 +31,8 @@ class ReactionIndexMapping(object):
 		return list(product(*[self.from_new(k) for k in set(new_ids)]))
 
 
-
-
 class SubsetReducerProperties(PropertyDictionary):
 	def __init__(self, keep=None, block=None, absolute_bounds=False):
-
 		def is_list(x):
 			return isinstance(x, (tuple, list, ndarray))
 
@@ -46,7 +43,7 @@ class SubsetReducerProperties(PropertyDictionary):
 		}
 
 		super().__init__(optional_properties=new_optional)
-		for name, value in zip(['keep','block','absolute_bounds'],[keep, block, absolute_bounds]):
+		for name, value in zip(['keep', 'block', 'absolute_bounds'], [keep, block, absolute_bounds]):
 			self.add_if_not_none(name, value)
 
 
@@ -59,7 +56,7 @@ class SubsetReducer(object):
 		pass
 
 	def reduce(self, S, lb, ub, keep=(), block=(), absolute_bounds=False):
-		lb, ub = list(map(array, [lb,ub]))
+		lb, ub = list(map(array, [lb, ub]))
 		to_keep, to_block = [], []
 		irrev = (lb >= 0) | (ub <= 0) & (lb <= 0)
 
@@ -83,20 +80,20 @@ class SubsetReducer(object):
 			alb, aub = list(zip(*[[fx([x[k] for k in mapping.from_new(i)]) for x, fx in zip([lb, ub], [max, min])]
 								  for i in range(rd.shape[1])]))
 
-			for func, pair in zip([max,min],[[nlb,alb],[nub,aub]]):
+			for func, pair in zip([max, min], [[nlb, alb], [nub, aub]]):
 				new, absolute = pair
-				for i,v in enumerate(absolute):
-					new[i] = func(new[i],absolute[i])
+				for i, v in enumerate(absolute):
+					new[i] = func(new[i], absolute[i])
 
 		return rd, nlb, nub, mapping
 
 	def transform(self, S, lb, ub, properties):
-		k,b,a = (properties[k] for k in ['keep','block','absolute_bounds'])
+		k, b, a = (properties[k] for k in ['keep', 'block', 'absolute_bounds'])
 
 		return self.reduce(S, lb, ub, k, b, a)
 
 	def get_transform_maps(self, sub):
-		new_to_orig = {i: list(nonzero(sub[i,:])[0]) for i in range(sub.shape[0])}
-		orig_to_new = dict(chain(*[[(i,k) for i in v] for k,v in new_to_orig.items()]))
+		new_to_orig = {i: list(nonzero(sub[i, :])[0]) for i in range(sub.shape[0])}
+		orig_to_new = dict(chain(*[[(i, k) for i in v] for k, v in new_to_orig.items()]))
 
 		return ReactionIndexMapping(orig_to_new, new_to_orig)

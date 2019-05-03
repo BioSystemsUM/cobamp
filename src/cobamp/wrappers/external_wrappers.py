@@ -135,9 +135,6 @@ class AbstractObjectReader(object):
 		"""
 		return self.m_ids.index(id)
 
-
-
-
 	def get_gene_protein_reaction_rule(self, id):
 		return self.gene_protein_reaction_rules[id]
 
@@ -188,7 +185,7 @@ class COBRAModelObjectReader(AbstractObjectReader):
 
 		return S
 
-	def get_model_bounds(self, as_dict = False, separate_list=False):
+	def get_model_bounds(self, as_dict=False, separate_list=False):
 		bounds = [r.bounds for r in self.rx_instances]
 		if as_dict:
 			return dict(zip(self.r_ids, bounds))
@@ -220,16 +217,18 @@ class COBRAModelObjectReader(AbstractObjectReader):
 			return [apply_fx(r.gene_reaction_rule) for r in self.model.reactions]
 
 	def convert_gprs_to_list(self, rx, apply_fx):
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''),
+							self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
+
 
 class MatFormatReader(AbstractObjectReader):
 	def get_stoichiometric_matrix(self):
 		return (self.model['S'][0][0]).toarray()
 
-	def get_model_bounds(self, as_dict = False, separate_list=False):
-		lb, ub = [(self.model[k][0][0]).ravel() for k in ('lb','ub')]
+	def get_model_bounds(self, as_dict=False, separate_list=False):
+		lb, ub = [(self.model[k][0][0]).ravel() for k in ('lb', 'ub')]
 		tuples = [(r, (l, u)) for r, l, u in zip(self.r_ids, lb, ub)]
 		if as_dict:
 			return dict(tuples)
@@ -238,7 +237,7 @@ class MatFormatReader(AbstractObjectReader):
 				return lb, ub
 			else:
 				return tuple(tuples)
-			
+
 	def get_irreversibilities(self, as_index):
 		bv = (self.model['rev'][0][0]).ravel().astype(bool)
 		if as_index:
@@ -248,13 +247,13 @@ class MatFormatReader(AbstractObjectReader):
 
 	def get_rx_instances(self):
 		pass
-	
+
 	def get_reaction_and_metabolite_ids(self):
-		return [[k[0][0] for k in self.model[t][0][0]] for t in ['rxns','mets']]
-	
+		return [[k[0][0] for k in self.model[t][0][0]] for t in ['rxns', 'mets']]
+
 	def get_model_genes(self):
 		return set([k[0][0] for k in self.model['genes'][0][0]])
-	
+
 	def get_model_gprs(self, apply_fx=None):
 		gprs = [k[0][0] if len(k[0]) > 0 else '' for k in self.model['grRules'][0][0]]
 		if apply_fx:
@@ -263,10 +262,12 @@ class MatFormatReader(AbstractObjectReader):
 			return gprs
 
 	def convert_gprs_to_list(self, rx, apply_fx):
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
+		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''),
+							self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
-	
+
+
 class FramedModelObjectReader(AbstractObjectReader):
 
 	def get_stoichiometric_matrix(self):
@@ -299,12 +300,13 @@ class FramedModelObjectReader(AbstractObjectReader):
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
 
+
 class CobampModelObjectReader(AbstractObjectReader):
 
 	def get_stoichiometric_matrix(self):
 		return self.model.get_stoichiometric_matrix()
 
-	def get_model_bounds(self, as_dict, separate_list = False):
+	def get_model_bounds(self, as_dict, separate_list=False):
 		if as_dict:
 			return dict(zip(self.r_ids, self.model.bounds))
 		else:

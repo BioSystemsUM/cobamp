@@ -8,7 +8,9 @@ import optlang
 from optlang.symbolics import Zero
 
 CUSTOM_DEFAULT_SOLVER = None
-SOLVER_ORDER = ['CPLEX','GUROBI','GLPK','MOSEK','SCIPY']
+SOLVER_ORDER = ['CPLEX', 'GUROBI', 'GLPK', 'MOSEK', 'SCIPY']
+
+
 def get_default_solver():
 	if CUSTOM_DEFAULT_SOLVER:
 		return CUSTOM_DEFAULT_SOLVER
@@ -17,19 +19,21 @@ def get_default_solver():
 			if optlang.list_available_solvers()[solver]:
 				return solver
 
+
 def get_solver_interfaces():
 	s = {}
 	for solver, status in optlang.list_available_solvers().items():
 		if status:
-			s[solver] = eval('optlang.'+solver.lower()+'_interface')
+			s[solver] = eval('optlang.' + solver.lower() + '_interface')
 	return s
+
 
 SOLVER_INTERFACES = get_solver_interfaces()
 DEFAULT_SOLVER = get_default_solver()
 
 VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY = ('continuous', 'integer', 'binary')
 VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
-VARIABLE, CONSTRAINT = 'var','const'
+VARIABLE, CONSTRAINT = 'var', 'const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 
@@ -41,7 +45,7 @@ def make_irreversible_model(S, lb, ub):
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
 	for i, rx in enumerate(rev):
 		rx_mapping[rx].append(offset + i)
-	rx_mapping = OrderedDict([(k,tuple(v)) if isinstance(v, list) else (k,v) for k, v in rx_mapping.items()])
+	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
 
 	S_new = np.hstack([S, -Sr])
 	nlb, nub = np.zeros(S_new.shape[1]), np.zeros(S_new.shape[1])
@@ -78,7 +82,7 @@ class LinearSystem():
 				self.interface = SOLVER_INTERFACES[solver]
 
 			else:
-				raise Exception(solver,'Solver not found. Choose from ',str(list(SOLVER_INTERFACES.keys())))
+				raise Exception(solver, 'Solver not found. Choose from ', str(list(SOLVER_INTERFACES.keys())))
 		self.solver = solver
 
 	def get_configuration(self):
@@ -95,7 +99,6 @@ class LinearSystem():
 
 		except:
 			print('Could not set parameters with this solver')
-
 
 	@abc.abstractmethod
 	def build_problem(self):
@@ -128,14 +131,15 @@ class LinearSystem():
 		"""
 		return self.S.shape
 
-	#def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
+	# def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
 	def empty_constraint(self, b_lb, b_ub, **kwargs):
 		return self.interface.Constraint(Zero, lb=b_lb, ub=b_ub, **kwargs)
 
 	def dummy_variable(self):
 		return self.interface.Variable(name='dummy', lb=0, ub=0)
 
-	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False, indicator_rows=None):
+	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False,
+								   indicator_rows=None):
 		'''
 
 		Args:
@@ -180,26 +184,26 @@ class LinearSystem():
 
 		self.model.update()
 
-
-
 	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
 		if not vars:
 			vars = self.model.variables
-		#dummy = self.dummy_variable()
+		# dummy = self.dummy_variable()
 		if names != None:
 			constraints = [self.empty_constraint(b_lb[i], b_ub[i], name=names[i]) for i in range(S_new.shape[0])]
 		else:
 			constraints = [self.empty_constraint(b_lb[i], b_ub[i]) for i in range(S_new.shape[0])]
 		if indicator_rows:
 			for row, var_idx, complement in indicator_rows:
-				constraints[row] = self.interface.Constraint(sum(S_new[row,i]*vars[i] for i in S_new[row,:].nonzero()[0]), lb=b_lb[row], ub=b_ub[row], indicator_variable=vars[var_idx], active_when=complement)
+				constraints[row] = self.interface.Constraint(
+					sum(S_new[row, i] * vars[i] for i in S_new[row, :].nonzero()[0]), lb=b_lb[row], ub=b_ub[row],
+					indicator_variable=vars[var_idx], active_when=complement)
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
 
 		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
-		#self.model.update()
-		#self.model.remove(dummy)
+		# self.model.update()
+		# self.model.remove(dummy)
 		self.model.update()
 		return constraints
 
@@ -220,7 +224,8 @@ class LinearSystem():
 		if isinstance(var_types, str):
 			var_types = [var_types] * len(lb)
 
-		vars = [self.interface.Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in zip(var_names, lb, ub, var_types)]
+		vars = [self.interface.Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in
+				zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
 		# debug lines - TODO: remove this
 		# for var in vars:
@@ -243,7 +248,7 @@ class LinearSystem():
 
 	def set_variable_bounds(self, vars, lb, ub):
 		for var, ulb, uub in zip(vars, lb, ub):
-			var.set_bounds(ulb,uub)
+			var.set_bounds(ulb, uub)
 		self.model.update()
 
 	def set_constraint_bounds(self, constraints, lb, ub):
@@ -266,16 +271,17 @@ class LinearSystem():
 			for var in vars:
 				var.type = types
 		else:
-			for var,typ in zip(vars,types):
+			for var, typ in zip(vars, types):
 				if typ in VAR_TYPES:
 					var.type = typ
 				else:
-					warnings.warn('Invalid variable type: '+typ)
+					warnings.warn('Invalid variable type: ' + typ)
 		self.model.update()
 
 	def write_to_lp(self, filename):
 		with open(filename, 'w') as f:
 			f.write(self.model.to_lp())
+
 
 class KShortestCompatibleLinearSystem(LinearSystem):
 	"""
@@ -312,7 +318,7 @@ class KShortestCompatibleLinearSystem(LinearSystem):
 		return self.dvars
 
 	def add_c_variable(self):
-		self.c = self.add_variables_to_model(['C'],[1],[None],VAR_CONTINUOUS)[0]
+		self.c = self.add_variables_to_model(['C'], [1], [None], VAR_CONTINUOUS)[0]
 
 	def get_c_variable(self):
 		return self.model.variables['C']
@@ -351,7 +357,8 @@ class GenericLinearSystem(LinearSystem):
 		self.names = var_names if var_names is not None else ['v' + str(i) for i in range(S.shape[1])]
 
 	def build_problem(self):
-		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names, True)
+		self.populate_model_from_matrix(self.S, self.var_types, self.lb, self.ub, self.b_lb, self.b_ub, self.names,
+										True)
 
 
 class SteadyStateLinearSystem(GenericLinearSystem):
@@ -379,6 +386,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver=solver)
+
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""
@@ -408,17 +416,18 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 		self.select_solver(solver)
 
 		lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
-		ub = [1]*S.shape[1]
+		ub = [1] * S.shape[1]
 		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
-		fwd_names = ['V'+str(i) if not isinstance(v, list) else 'V'+str(i)+'F' for i,v in rev_mapping.items()]
-		bwd_names = ['V'+str(i)+'R' for i,v in rev_mapping.items() if isinstance(v, (list,tuple))]
+		fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
+		bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
 
-		lbi = [0]*len(lbi) + [1]
-		ubi = [None]*len(ubi) + [None]
+		lbi = [0] * len(lbi) + [1]
+		ubi = [None] * len(ubi) + [None]
 
 		self.__ivars = None
-		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for c in consumed]
-		Si = np.hstack([Si,np.zeros((Si.shape[0],1))])
+		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
+																										c in consumed]
+		Si = np.hstack([Si, np.zeros((Si.shape[0], 1))])
 		b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 
 		## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
@@ -426,10 +435,11 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 		for id, _, v in self.__ss_override:
 			b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
 
-		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names+bwd_names+['C'], solver = solver)
+		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names + bwd_names + ['C'], solver=solver)
 
-		self.dvars = list(range(S.shape[1]+len(bwd_names)))
+		self.dvars = list(range(S.shape[1] + len(bwd_names)))
 		self.dvar_mapping = dict(rev_mapping)
+
 
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
@@ -437,11 +447,10 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 		super().__init__(S, irrev, **kwargs)
 		self.subset = subset
 		self.dvars = list(subset)
-		self.dvar_mapping = {k:v for k,v in self.dvar_mapping.items() if k in subset}
+		self.dvar_mapping = {k: v for k, v in self.dvar_mapping.items() if k in subset}
 
 	def build_problem(self):
 		super().build_problem()
-
 
 
 class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
@@ -476,11 +485,10 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		self.__c = "C"
 		super().__init__(*self.generate_dual_problem(S, irrev, T, b), solver=solver)
 
-
 		offset = S.shape[0]
-		self.dvars = list(range(offset, offset+(S.shape[1]*2)))
+		self.dvars = list(range(offset, offset + (S.shape[1] * 2)))
 
-		self.dvar_mapping = {i: (i, S.shape[1]+i) for i in range(S.shape[1])}
+		self.dvar_mapping = {i: (i, S.shape[1] + i) for i in range(S.shape[1])}
 
 	def generate_dual_problem(self, S, irrev, T, b):
 		m, n = S.shape
@@ -493,8 +501,8 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
 						pref, n in
 						veclens]
-		Sdi = np.hstack([Sxi, Ii, -Ii, Ti, np.zeros([Sxi.shape[0],1])])
-		Sdr = np.hstack([Sxr, Ir, -Ir, Tr, np.zeros([Sxr.shape[0],1])])
+		Sdi = np.hstack([Sxi, Ii, -Ii, Ti, np.zeros([Sxi.shape[0], 1])])
+		Sdr = np.hstack([Sxr, Ir, -Ir, Tr, np.zeros([Sxr.shape[0], 1])])
 		Sd = np.vstack([Sdi, Sdr, np.zeros([1, Sdi.shape[1]])])
 		names, v_lb, v_ub = list(zip(*list(chain(u, vp, vn, w))))
 
@@ -502,12 +510,12 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		v_lb = list(v_lb) + [1]
 		v_ub = list(v_ub) + [None]
 
-		w_idx = [m+n+n+i for i in range(len(b))]
-		Sd[-1,w_idx] = b
-		Sd[-1,-1] = 1
+		w_idx = [m + n + n + i for i in range(len(b))]
+		Sd[-1, w_idx] = b
+		Sd[-1, -1] = 1
 
-		b_ub = np.hstack([np.array([None]*Sdi.shape[0]), np.array([0]*Sdr.shape[0]), np.array([0])])
-		b_lb = np.array([0]*(Sd.shape[0]), dtype=object)
+		b_ub = np.hstack([np.array([None] * Sdi.shape[0]), np.array([0] * Sdr.shape[0]), np.array([0])])
+		b_lb = np.array([0] * (Sd.shape[0]), dtype=object)
 		b_ub[-1] = 0
 		b_lb[-1] = None
 

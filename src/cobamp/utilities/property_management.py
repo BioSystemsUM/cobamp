@@ -89,7 +89,7 @@ class PropertyDictionary():
 		"""
 		if key in self.__mandatory_properties.keys() or key in self.__optional_properties.keys():
 			expected_type = self.__mandatory_properties[key] if key in self.__mandatory_properties.keys() else \
-			self.__optional_properties[key]
+				self.__optional_properties[key]
 			if self.__check_key_value_pair(expected_type, value):
 				self.__properties[key] = value
 			else:

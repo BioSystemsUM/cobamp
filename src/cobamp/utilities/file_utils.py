@@ -31,6 +31,7 @@ def read_pickle(path):
 	with open(path, "rb") as f:
 		return pickle.load(f)
 
+
 def open_file(path, mode):
 	with open(path, mode) as f:
 		return f.read()

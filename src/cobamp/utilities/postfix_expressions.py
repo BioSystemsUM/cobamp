@@ -1,5 +1,6 @@
 from operator import add, sub, mul, truediv, pow
 
+
 class Stack(list):
 
 	def push(self, x):
@@ -89,6 +90,7 @@ def op_prec(op):
 
 def left_operator_association(op):
 	return False if op == '**' else True
+
 
 operators = {
 	'+': add,

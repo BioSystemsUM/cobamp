@@ -1,4 +1,5 @@
-from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, int32, int64
+from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
+	int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from ..utilities.test_utils import timeit
@@ -26,16 +27,17 @@ def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
 	for orig_rx, new_rx in rx_mapping.items():
 		if isinstance(new_rx, tuple):
-			nlb[new_rx[0]] = lb[orig_rx] if lb[orig_rx] >=0 else 0 # not necessary since they're already 0
-			nub[new_rx[0]] = ub[orig_rx] if ub[orig_rx] >=0 else 0 # not necessary since they're already 0
-			nlb[new_rx[1]] = ub[orig_rx] *-1 if (ub[orig_rx] *-1) >= 0 else 0
-			nub[new_rx[1]] = lb[orig_rx] *-1 if (lb[orig_rx] *-1) >= 0 else 0
+			nlb[new_rx[0]] = lb[orig_rx] if lb[orig_rx] >= 0 else 0  # not necessary since they're already 0
+			nub[new_rx[0]] = ub[orig_rx] if ub[orig_rx] >= 0 else 0  # not necessary since they're already 0
+			nlb[new_rx[1]] = ub[orig_rx] * -1 if (ub[orig_rx] * -1) >= 0 else 0
+			nub[new_rx[1]] = lb[orig_rx] * -1 if (lb[orig_rx] * -1) >= 0 else 0
 
 		else:
-			nlb[new_rx] =  lb[orig_rx]
+			nlb[new_rx] = lb[orig_rx]
 			nub[new_rx] = ub[orig_rx]
 
 	return S_new, nlb, nub, rx_mapping
+
 
 def make_irreversible_model(S, lb, ub):
 	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
@@ -45,7 +47,7 @@ def make_irreversible_model(S, lb, ub):
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
 	for i, rx in enumerate(rev):
 		rx_mapping[rx].append(offset + i)
-	rx_mapping = OrderedDict([(k,tuple(v)) if isinstance(v, list) else (k,v) for k, v in rx_mapping.items()])
+	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
 
 	S_new = hstack([S, -Sr])
 	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
@@ -71,34 +73,36 @@ def _invert_bounds(S, lb, ub):
 
 class ConstraintBasedModel(object):
 	@timeit
-	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True, solver=None):
+	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True,
+				 solver=None):
 
 		def __validate_args():
 
 			# stoichiometric matrix
 			if isinstance(S, ndarray):
-				m,n = S.shape
+				m, n = S.shape
 			elif isinstance(S, tuple) or isinstance(S, list):
-				m,n = len(S), len(S[0])
+				m, n = len(S), len(S[0])
 			else:
 				raise TypeError('S matrix is not an ndarray or list')
 
-			thermodynamic_types = set(map(type,thermodynamic_constraints))
+			thermodynamic_types = set(map(type, thermodynamic_constraints))
 			allowed_types = {list, tuple, bool}
 
 			assert len(thermodynamic_types & allowed_types) == len(thermodynamic_types), 'Invalid bound type found.'
 
 			reactions_ok = reaction_names is None or len(reaction_names) == n and isinstance(reaction_names, list)
-			metabolites_ok = metabolite_names is None or len(metabolite_names) == m and isinstance(metabolite_names, list)
+			metabolites_ok = metabolite_names is None or len(metabolite_names) == m and isinstance(metabolite_names,
+																								   list)
 
 			assert reactions_ok, 'Reaction name dimensions do not match the supplied stoichiometrix matrix'
 			assert metabolites_ok, 'Metabolite name dimensions do not match the supplied stoichiometrix matrix'
-			return m,n
-		self.solver = solver
-		m,n = __validate_args()
-		#self.__S = self.__parse_stoichiometric_matrix(S)
-		self.__S = array(S)
+			return m, n
 
+		self.solver = solver
+		m, n = __validate_args()
+		# self.__S = self.__parse_stoichiometric_matrix(S)
+		self.__S = array(S)
 
 		self.bounds = self.__interpret_bounds(thermodynamic_constraints)
 		self.original_bounds = deepcopy(self.bounds)
@@ -119,18 +123,17 @@ class ConstraintBasedModel(object):
 		self.reaction_decoder_map = self.metabolite_decoder_map = None
 
 		if self.reaction_names:
-			self.reaction_decoder_map = dict(zip(self.reaction_names,list(range(self.__S.shape[1]))))
+			self.reaction_decoder_map = dict(zip(self.reaction_names, list(range(self.__S.shape[1]))))
 		if self.metabolite_names:
 			self.metabolite_decoder_map = dict(zip(self.metabolite_names, list(range(self.__S.shape[0]))))
 
-		self.map_labels = {'reaction':self.reaction_decoder_map,
-							 'metabolite':self.metabolite_decoder_map}
-
+		self.map_labels = {'reaction': self.reaction_decoder_map,
+						   'metabolite': self.metabolite_decoder_map}
 
 	def __interpret_bounds(self, thermodynamic_constraints):
 		def interpret_bound(bound_obj):
 			i, bound = bound_obj
-#			value = [None, None]
+			#			value = [None, None]
 			if isinstance(bound, bool):
 				if bound:
 					value = 0, LARGE_NUMBER
@@ -144,14 +147,14 @@ class ConstraintBasedModel(object):
 					elif i == 1 and v is None:
 						value[i] = LARGE_NUMBER
 			if value[0] > value[1]:
-				warnings.warn('Lower bound is >= than upper bound for reaction '+str(i)+'. Reversing...')
+				warnings.warn('Lower bound is >= than upper bound for reaction ' + str(i) + '. Reversing...')
 				value = value[::-1]
 			return value
 
 		return list(map(interpret_bound, enumerate(thermodynamic_constraints)))
 
 	# TODO: Maybe find a cleaner way to import the stoich matrix
-	#def __parse_stoichiometric_matrix(self, S):
+	# def __parse_stoichiometric_matrix(self, S):
 	def initialize_optimizer(self):
 		lb, ub = self.get_bounds_as_list()
 		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names, solver=self.solver)
@@ -165,7 +168,7 @@ class ConstraintBasedModel(object):
 		elif labels is not None:
 			return self.map_labels[labels][index]
 		else:
-			raise IndexError('Could not find specified index "'+str(index)+'".')
+			raise IndexError('Could not find specified index "' + str(index) + '".')
 
 	def get_bounds_as_list(self):
 		return list(zip(*self.bounds))
@@ -191,7 +194,7 @@ class ConstraintBasedModel(object):
 		if rows and columns:
 			return self.__S[row_index, col_index]
 		elif rows:
-			return self.__S[row_index,:]
+			return self.__S[row_index, :]
 		elif columns:
 			return self.__S[:, col_index]
 		else:
@@ -204,7 +207,7 @@ class ConstraintBasedModel(object):
 		if rows and columns:
 			self.__S[row_index, col_index] = values
 		elif rows:
-			self.__S[row_index,:] = values
+			self.__S[row_index, :] = values
 		elif columns:
 			self.__S[:, col_index] = values
 		else:
@@ -214,25 +217,26 @@ class ConstraintBasedModel(object):
 		col_index = col_index if col_index is not None else range(self.__S.shape[1])
 
 		if self.model:
-			constraints = [self.model.model.constraints[i] for i in row_index] if row_index else self.model.model.constraints
+			constraints = [self.model.model.constraints[i] for i in
+						   row_index] if row_index else self.model.model.constraints
 			vars = [self.model.model.variables[i] for i in col_index] if row_index else self.model.model.variables
 
 			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
 
-
 	def add_metabolite(self, arg, name=None):
 		assert not name in self.metabolite_names, 'Duplicate metabolite name found!'
 		if isinstance(arg, dict):
-			row = zeros(1,self.__S.shape[1])
-			for k,v in arg.items():
+			row = zeros(1, self.__S.shape[1])
+			for k, v in arg.items():
 				row[self.decode_index(k, 'reaction')] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.reaction_names):
 				row = arg
 			else:
-				raise Exception('Numpy argument dimensions should be (',len(self.metabolite_names),',). Got',arg.shape,'instead')
+				raise Exception('Numpy argument dimensions should be (', len(self.metabolite_names), ',). Got',
+								arg.shape, 'instead')
 		else:
-			raise ValueError('Invalid argument type: ',type(arg),'. Please supply an ndarray or dict instead.')
+			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
 		self.__S = vstack([self.__S, row])
 		self.metabolite_names.append(name)
 
@@ -244,19 +248,18 @@ class ConstraintBasedModel(object):
 	def add_reaction(self, arg, bounds, name=None):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
-			col = zeros(1,self.__S.shape[0])
-			for k,v in arg.items():
+			col = zeros(1, self.__S.shape[0])
+			for k, v in arg.items():
 				col[self.decode_index(k, 'metabolite')] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.metabolite_names):
-				col = arg.reshape(self.__S.shape[0],1)
+				col = arg.reshape(self.__S.shape[0], 1)
 			else:
-				raise Exception('Numpy argument dimensions should be (',len(self.reaction_names),',). Got',arg.shape,'instead')
+				raise Exception('Numpy argument dimensions should be (', len(self.reaction_names), ',). Got', arg.shape,
+								'instead')
 		else:
-			raise ValueError('Invalid argument type: ',type(arg),'. Please supply an ndarray or dict instead.')
+			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
 		self.__S = hstack([self.__S, col])
-
-
 
 		self.reaction_names.append(name)
 		self.bounds.append(bounds)
@@ -290,10 +293,11 @@ class ConstraintBasedModel(object):
 	def make_irreversible(self):
 		lb, ub = self.get_bounds_as_list()
 		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
-		rev = array([int(v[0]) for k,v in rx_mapping.items() if isinstance(v, (list,tuple))])
-		revnames = ['_'.join([name,BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
+		rev = array([int(v[0]) for k, v in rx_mapping.items() if isinstance(v, (list, tuple))])
+		revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
 		rnames = self.reaction_names + revnames
-		model = ConstraintBasedModel(Sn, list(zip(nlb,nub)), rnames, self.metabolite_names, optimizer=self.model is not None, solver=self.solver)
+		model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
+									 optimizer=self.model is not None, solver=self.solver)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
@@ -306,7 +310,7 @@ class ConstraintBasedModel(object):
 			lb = kwargs['lb']
 		if 'ub' in kwargs:
 			ub = kwargs['ub']
-		bound = (lb,ub)
+		bound = (lb, ub)
 		self.bounds[true_idx] = bound
 
 		if 'temporary' in kwargs and kwargs['temporary'] == False:
@@ -314,14 +318,14 @@ class ConstraintBasedModel(object):
 
 		if self.model:
 			var = self.model.model.variables[true_idx]
-			self.model.set_variable_bounds([var],[lb],[ub])
+			self.model.set_variable_bounds([var], [lb], [ub])
 
 	def set_objective(self, coef_dict, minimize=False):
 		if self.model:
 			if isinstance(coef_dict, dict):
-				f = zeros(self.__S.shape[1],)
+				f = zeros(self.__S.shape[1], )
 				self.c = f
-				for k,v in coef_dict.items():
+				for k, v in coef_dict.items():
 					self.c[self.decode_index(k, 'reaction')] = v
 				self.model.set_objective(self.c, minimize)
 			elif isinstance(coef_dict, ndarray):
@@ -341,7 +345,6 @@ class ConstraintBasedModel(object):
 
 			if clb != lb or cub != ub:
 				self.set_reaction_bounds(rx, lb=lb, ub=ub)
-
 
 
 class CORSOModel(ConstraintBasedModel):
@@ -380,7 +383,7 @@ class CORSOModel(ConstraintBasedModel):
 
 	def set_costs(self, cost):
 		true_cost = cost[self.cost_index_mapping]
-		true_cost = append(true_cost,array([-1]))
+		true_cost = append(true_cost, array([-1]))
 		self.set_stoichiometric_matrix(true_cost.reshape(1, len(true_cost)), rows=[self.corso_mt])
 
 	# def set_reaction_bounds(self, index, **kwargs):
@@ -388,7 +391,7 @@ class CORSOModel(ConstraintBasedModel):
 	# 	self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
 
 	def set_corso_objective(self):
-		self.set_objective({self.corso_rx:1}, True)
+		self.set_objective({self.corso_rx: 1}, True)
 
 	def optimize_corso(self, cost, of_dict, minimize=False, constraint=1, constraintby='val', eps=1e-6, flux1=None):
 		if flux1 is None:
@@ -398,13 +401,14 @@ class CORSOModel(ConstraintBasedModel):
 			return flux1, flux1
 		f1_x = flux1.x()
 		if constraintby == 'perc':
-			#f1_f = flux1.x()[self.cbmodel.c != 0]
-			f1_f = {idx:f1_x[idx]*(constraint/100) for idx in of_dict.keys()}
+			# f1_f = flux1.x()[self.cbmodel.c != 0]
+			f1_f = {idx: f1_x[idx] * (constraint / 100) for idx in of_dict.keys()}
 		elif constraintby == 'val':
-			if (flux1.objective_value() < constraint and not minimize) or (flux1.objective_value() > constraint and minimize):
+			if (flux1.objective_value() < constraint and not minimize) or (
+					flux1.objective_value() > constraint and minimize):
 				raise Exception('Objective flux is not sufficient for the the set constraint value.')
 			else:
-				f1_f = {idx:constraint for idx in of_dict.keys()}
+				f1_f = {idx: constraint for idx in of_dict.keys()}
 		else:
 			raise Exception('Invalid constraint options.')
 
@@ -416,21 +420,22 @@ class CORSOModel(ConstraintBasedModel):
 		for rx in f1_f.keys():
 			true_idx = self.decode_index(rx, 'reaction')
 			involved = self.mapping[true_idx]
-			fluxval = f1_f[rx] #if isinstance(f1_f, ndarray) else f1_f
+			fluxval = f1_f[rx]  # if isinstance(f1_f, ndarray) else f1_f
 
-			if isinstance(involved, (int,int_)):
+			if isinstance(involved, (int, int_)):
 				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval, temporary=True)
 			else:
 				self.set_reaction_bounds(involved[0], lb=fluxval, ub=fluxval, temporary=True)
 				self.set_reaction_bounds(involved[1], lb=0, ub=0, temporary=True)
 
-		self.set_objective({self.corso_rx:1}, True)
-
+		self.set_objective({self.corso_rx: 1}, True)
 
 		sol = self.optimize()
 		self.revert_to_original_bounds()
 
-		return flux1, CORSOSolution(flux1, sol, sum([of_dict[k]*f1_f[k] for k in of_dict.keys()]), self.cost_index_mapping, self.cbmodel.reaction_names, eps = eps)
+		return flux1, CORSOSolution(flux1, sol, sum([of_dict[k] * f1_f[k] for k in of_dict.keys()]),
+									self.cost_index_mapping, self.cbmodel.reaction_names, eps=eps)
+
 
 class GIMMEModel(ConstraintBasedModel):
 	def __init__(self, cbmodel, solver=None):
@@ -442,13 +447,14 @@ class GIMMEModel(ConstraintBasedModel):
 
 		S = irrev_model.get_stoichiometric_matrix()
 		bounds = irrev_model.bounds
-		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver, optimizer=True)
+		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver,
+						 optimizer=True)
 
 	def __adjust_objective_to_irreversible(self, objective_dict):
 		obj_dict = {}
-		for k,v in objective_dict.items():
-			irrev_map = self.mapping[self.cbmodel.decode_index(k,'reaction')]
-			if isinstance(irrev_map, (list,tuple)):
+		for k, v in objective_dict.items():
+			irrev_map = self.mapping[self.cbmodel.decode_index(k, 'reaction')]
+			if isinstance(irrev_map, (list, tuple)):
 				for i in irrev_map:
 					obj_dict[i] = v
 			else:
@@ -480,8 +486,8 @@ class GIMMEModel(ConstraintBasedModel):
 			[flux_thres - exp_vector_irr[i] if -1 < exp_vector_irr[i] < flux_thres else 0 for i in range(N)])
 
 		objective_lbs = zeros(len(self.reaction_names))
-		for ov, obj in zip(objective_values,objectives_irr):
-			for rx,v in obj.items():
+		for ov, obj in zip(objective_values, objectives_irr):
+			for rx, v in obj.items():
 				objective_lbs[rx] = v * ov * obj_frac
 
 		objective_ids = nonzero(objective_lbs)[0]
@@ -492,5 +498,3 @@ class GIMMEModel(ConstraintBasedModel):
 		sol = self.optimize()
 		self.revert_to_original_bounds()
 		return GIMMESolution(sol, exp_vector, self.cbmodel.reaction_names, self.mapping)
-
-

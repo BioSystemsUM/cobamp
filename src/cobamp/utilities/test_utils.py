@@ -1,5 +1,6 @@
 import time
 
+
 def timeit(method):
 	'''
 	Timer decorator for methods. Courtesy of Fahim Sakri from PythonHive
