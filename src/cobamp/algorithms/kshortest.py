@@ -220,7 +220,12 @@ class KShortestEnumerator(object):
 		"""
 		self.__add_cuts(sols, length_override=0, equality=True)
 
-	def __add_kshortest_indicators(self):
+	def __add_kshortest_indicators(self, chunksize=500):
+		for i in range(0, len(self.__dvars), chunksize):
+			dvl = self.__dvars[i:i+chunksize]
+			self.__add_kshortest_indicators_from_dvar(dvl)
+
+	def __add_kshortest_indicators_from_dvar(self, dvars):
 		"""
 		Adds indicator variable to a copy of the supplied linear problem.
 		This uses the __dvars map to obtain a list of all variables and assigns an indicator to them.
@@ -235,8 +240,6 @@ class KShortestEnumerator(object):
 		)
 
 		template_blb, template_bub = [1, 0, 0, 0, 0, 0], [1, None, 0, None, 0, None]
-
-		dvars = self.__dvars
 
 		row_blb, row_bub = [t * len(dvars) for t in (template_blb, template_bub)]
 		helpers = [[k + r for r in [str(i) for i in dvars]] for k in ['i', 'a', 'b', 'c', 'd']]
