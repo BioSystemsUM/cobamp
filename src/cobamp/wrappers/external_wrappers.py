@@ -4,6 +4,7 @@ import abc
 import numpy as np
 from scipy.io import loadmat
 from numpy import where
+from ..core.models import ConstraintBasedModel
 
 MAX_PRECISION = 1e-10
 
@@ -174,6 +175,14 @@ class AbstractObjectReader(object):
 		else:
 			return exp_map
 
+	def to_cobamp_cbm(self, solver=None):
+		return ConstraintBasedModel(
+			S = self.get_stoichiometric_matrix(),
+			thermodynamic_constraints=[tuple(float(k) for k in l) for l in self.get_model_bounds()],
+			reaction_names=self.r_ids,
+			metabolite_names=self.m_ids,
+			optimizer= solver != None and solver,
+			solver=solver if solver not in (True, False) else None)
 
 class COBRAModelObjectReader(AbstractObjectReader):
 
@@ -338,5 +347,6 @@ class CobampModelObjectReader(AbstractObjectReader):
 model_readers = {
 	'cobra.core.model': COBRAModelObjectReader,
 	'framed.model.cbmodel': FramedModelObjectReader,
-	'cobamp.core.models': CobampModelObjectReader
+	'cobamp.core.models': CobampModelObjectReader,
+	'numpy': MatFormatReader
 }
