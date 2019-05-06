@@ -128,7 +128,7 @@ class KShortestEnumerator(object):
 		self.set_size_constraint(1)
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
-
+		self.indicator_map = {}
 	def __set_model_parameters(self):
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
 					   'GUROBI': self.__set_model_parameters_gurobi}
@@ -220,8 +220,9 @@ class KShortestEnumerator(object):
 		"""
 		self.__add_cuts(sols, length_override=0, equality=True)
 
-	def __add_kshortest_indicators(self, chunksize=500):
+	def __add_kshortest_indicators(self, chunksize=2000):
 		for i in range(0, len(self.__dvars), chunksize):
+			print('Adding chunk:',i,i+chunksize)
 			dvl = self.__dvars[i:i+chunksize]
 			self.__add_kshortest_indicators_from_dvar(dvl)
 
@@ -268,7 +269,7 @@ class KShortestEnumerator(object):
 		self.__ivars = [(i * 5) + offset for i in range(len(dvars))]
 		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators,
 									 vars=vlist)
-		self.indicator_map = dict(zip(dvars, self.__ivars))
+		self.indicator_map.update(dict(zip(dvars, self.__ivars)))
 
 	def __add_kshortest_indicators_big_m(self):
 		dvars = self.__dvars
