@@ -29,9 +29,9 @@ class AbstractObjectReader(object):
 		self.r_ids, self.m_ids = self.get_reaction_and_metabolite_ids()
 		self.rx_instances = self.get_rx_instances()
 		self.S = self.get_stoichiometric_matrix()
+		self.lb, self.ub = tuple(zip(*self.get_model_bounds(False)))
 		self.irrev_bool = self.get_irreversibilities(False)
 		self.irrev_index = self.get_irreversibilities(True)
-		self.lb, self.ub = tuple(zip(*self.get_model_bounds(False)))
 		self.bounds_dict = self.get_model_bounds(True)
 		self.genes = self.get_model_genes()
 		self.gene_protein_reaction_rules = self.get_model_gprs()
@@ -236,14 +236,18 @@ class MatFormatReader(AbstractObjectReader):
 			if separate_list:
 				return lb, ub
 			else:
-				return tuple(tuples)
+				return tuple([(l, u) for l, u in zip(lb, ub)])
 
 	def get_irreversibilities(self, as_index):
-		bv = (self.model['rev'][0][0]).ravel().astype(bool)
+		if 'rev' in self.model.dtype.names:
+			bv = (self.model['rev'][0][0]).ravel().astype(bool)
+		else:
+			bv = np.array([(l >= 0 and u >= 0) or (l <= 0 and u <= 0) for l,u in zip(self.lb, self.ub)]).astype(bool)
 		if as_index:
 			return where(bv)[0]
 		else:
 			return bv
+
 
 	def get_rx_instances(self):
 		pass
