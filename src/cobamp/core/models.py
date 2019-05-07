@@ -2,7 +2,6 @@ from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack
 	int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
-from ..utilities.test_utils import timeit
 from collections import OrderedDict
 import warnings
 from copy import deepcopy
@@ -72,7 +71,6 @@ def _invert_bounds(S, lb, ub):
 
 
 class ConstraintBasedModel(object):
-	@timeit
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True,
 				 solver=None):
 
@@ -153,8 +151,14 @@ class ConstraintBasedModel(object):
 
 		return list(map(interpret_bound, enumerate(thermodynamic_constraints)))
 
-	# TODO: Maybe find a cleaner way to import the stoich matrix
-	# def __parse_stoichiometric_matrix(self, S):
+	def flux_limits(self, reaction):
+		self.set_objective({reaction:1}, True)
+		min_flux = self.optimize().objective_value()
+		self.set_objective({reaction:1}, False)
+		max_flux = self.optimize().objective_value()
+
+		return min_flux, max_flux
+
 	def initialize_optimizer(self):
 		lb, ub = self.get_bounds_as_list()
 		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names, solver=self.solver)
@@ -176,16 +180,6 @@ class ConstraintBasedModel(object):
 	def is_reversible_reaction(self, index):
 		lb, ub = self.bounds[self.decode_index(index, 'reaction')]
 		return (lb < 0 and ub > 0)
-
-	# def get_reactions_from_metabolite(self, index):
-	# 	dec_index = self.decode_index(index, self.metabolite_names)
-	# 	ids = where(self.__S[dec_index,:])[0]
-	# 	return tuple(map(lambda x: (self.reaction_id_map[x],self.__S[dec_index,x]), ids))
-	#
-	# def get_metabolites_from_reaction(self, index):
-	# 	dec_index = self.decode_index(index, self.reaction_names)
-	# 	ids = where(self.__S[:,dec_index])[0]
-	# 	return tuple(map(lambda x: (self.metabolite_id_map[x],self.__S[x,dec_index]), ids))
 
 	def get_stoichiometric_matrix(self, rows=None, columns=None):
 		row_index = [self.decode_index(i, 'metabolite') for i in rows] if rows else None
@@ -335,8 +329,17 @@ class ConstraintBasedModel(object):
 		else:
 			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
 
-	def optimize(self):
-		return self.optimizer.optimize()
+	def optimize(self, coef_dict=None, minimize=False):
+		cur_obj = self.model.model.objective
+		if coef_dict != None:
+			self.set_objective(coef_dict, minimize)
+		sol = self.optimizer.optimize()
+
+		if coef_dict != None:
+			self.model.model.objective = cur_obj
+
+		return sol
+
 
 	def revert_to_original_bounds(self):
 		for rx, bounds in zip(self.reaction_names, self.original_bounds):
