@@ -103,6 +103,7 @@ class KShortestEnumerator(object):
 		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 
 		# Setup k-shortest constraints
+		self.indicator_map = {}
 		big_m = linear_system.solver != 'CPLEX'
 		if big_m:
 			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(
@@ -128,7 +129,7 @@ class KShortestEnumerator(object):
 		self.set_size_constraint(1)
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
-		self.indicator_map = {}
+
 	def __set_model_parameters(self):
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
 					   'GUROBI': self.__set_model_parameters_gurobi}
