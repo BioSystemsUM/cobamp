@@ -140,6 +140,9 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	"""
 	m, n = S.shape
 	in_subset = array([False] * n)
+	irrev_sub = array([])
+	sub = zeros([0, n])
+	irrev_violating_subsets = []
 
 	if (keepSingle is not None) and (len(keepSingle) > 0):
 		# keepSingle = array([])
