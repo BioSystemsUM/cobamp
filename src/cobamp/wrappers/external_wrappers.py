@@ -335,7 +335,7 @@ class CobampModelObjectReader(AbstractObjectReader):
 		return irrev
 
 	def get_reaction_and_metabolite_ids(self):
-		return tuple([[x.id for x in lst] for lst in (self.model.reactions, self.model.metabolites)])
+		return self.model.reaction_names, self.model.metabolite_names
 
 	def get_rx_instances(self):
 		return None
