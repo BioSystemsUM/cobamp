@@ -209,9 +209,16 @@ class LinearSystem():
 
 	def remove_from_model(self, index, what):
 		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
-		if type(index) in (list, tuple):
-			for i in index:
-				self.model.remove(container[i])
+		if type(index) not in (list, tuple):
+			index = [index]
+		for i in index:
+			self.model.remove(container[i])
+
+		if what == VARIABLE:
+			self.S = np.delete(self.S, index, 1)
+		elif what == CONSTRAINT:
+			self.S = np.delete(self.S, index, 0)
+
 		self.model.update()
 
 	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
