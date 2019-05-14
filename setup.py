@@ -9,7 +9,8 @@ setup(
                         "scipy",
                         "pandas",
                         "optlang",
-                        "matplotlib"],
+                        "matplotlib",
+                        "pathos"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
