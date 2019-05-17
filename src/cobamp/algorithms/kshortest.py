@@ -104,6 +104,7 @@ class KShortestEnumerator(object):
 
 		# Setup k-shortest constraints
 		self.indicator_map = {}
+		self.__ivars = []
 		big_m = linear_system.solver != 'CPLEX'
 		if big_m:
 			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(
@@ -267,7 +268,7 @@ class KShortestEnumerator(object):
 		nrowmat = hstack([diag, template_full, crow.reshape(-1, 1)])
 		vlist += [self.model.get_c_variable()]
 		vlist = [self.model.model.variables[i] for i in dvars] + vlist
-		self.__ivars = [(i * 5) + offset for i in range(len(dvars))]
+		self.__ivars.extend([(i * 5) + offset for i in range(len(dvars))])
 		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators,
 									 vars=vlist)
 		self.indicator_map.update(dict(zip(dvars, self.__ivars)))
