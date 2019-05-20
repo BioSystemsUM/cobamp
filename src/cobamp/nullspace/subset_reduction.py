@@ -147,7 +147,7 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	if (keepSingle is not None) and (len(keepSingle) > 0):
 		# keepSingle = array([])
 		irrev_violating_subsets = []
-		sub[:len(keepSingle),:len(keepSingle)] = eye(len(keepSingle))
+		sub[:len(keepSingle),keepSingle] = eye(len(keepSingle))
 		irrev_sub[:len(keepSingle)] = irrev[keepSingle]
 		in_subset[keepSingle] = True
 		sub_count = len(keepSingle)
@@ -159,7 +159,6 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 		if len(reactions) > 0:
 			in_subset[reactions] = True
 			irrev_sub[sub_count] = (irrev[reactions]).any()
-			#sub = append(sub, zeros([1, n]), 0)
 
 			if len(reactions) == 1:
 				sub[sub_count, reactions] = 1
