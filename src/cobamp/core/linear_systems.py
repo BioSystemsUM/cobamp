@@ -392,7 +392,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		"""
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
-		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * n, [0] * n, var_names, solver=solver)
+		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
