@@ -268,10 +268,11 @@ class KShortestEnumerator(object):
 		nrowmat = hstack([diag, template_full, crow.reshape(-1, 1)])
 		vlist += [self.model.get_c_variable()]
 		vlist = [self.model.model.variables[i] for i in dvars] + vlist
-		self.__ivars.extend([(i * 5) + offset for i in range(len(dvars))])
+		new_ivars = [(i * 5) + offset for i in range(len(dvars))]
+		self.__ivars.extend(new_ivars)
 		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators,
 									 vars=vlist)
-		self.indicator_map.update(dict(zip(dvars, self.__ivars)))
+		self.indicator_map.update(dict(zip(dvars, new_ivars)))
 
 	def __add_kshortest_indicators_big_m(self):
 		dvars = self.__dvars
