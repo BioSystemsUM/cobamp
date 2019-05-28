@@ -242,9 +242,9 @@ class ConstraintBasedModel(object):
 	def add_reaction(self, arg, bounds, name=None):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
-			col = zeros(1, self.__S.shape[0])
+			col = zeros([1, self.__S.shape[0]])
 			for k, v in arg.items():
-				col[self.decode_index(k, 'metabolite')] = v
+				col[0,self.decode_index(k, 'metabolite')] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.metabolite_names):
 				col = arg.reshape(self.__S.shape[0], 1)
