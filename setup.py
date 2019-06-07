@@ -2,14 +2,15 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'cobamp',
-    version = '0.1.0',
+    version = '0.1.1',
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["numpy",
                         "scipy",
                         "pandas",
                         "optlang",
-                        "matplotlib"],
+                        "matplotlib",
+                        "pathos"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',

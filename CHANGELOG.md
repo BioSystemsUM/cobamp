@@ -1,6 +1,12 @@
 # Change log
 Major changes between versions will be documented on this file.
 
+## [0.1.1] - 2019-06-07
+### Changed
+ - Several bug fixes
+ - KShortest algorithm now adds constraints iteratively to avoid memory errors
+ - Several improvements to the ConstraintBasedModel class 
+
 ## [0.1.0] - 2019-04-29
 ### Added
  - Big-M indicators for solvers without a dedicated indicator constraint abstraction

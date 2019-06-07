@@ -1,4 +1,4 @@
-from numpy import abs, where, compress, concatenate, ones, array
+from numpy import abs, where, compress, concatenate, ones, array, random, sign
 from numpy.linalg import svd
 
 EPSILON = 1e-10
@@ -46,9 +46,16 @@ def nullspace_blocked_reactions(K, tolerance):
 
 
 	"""
-	return where(sum(abs(K.T) > tolerance) == K.shape[0])[0]
+	return where(sum(abs(K.T) < tolerance) == K.shape[0])[0]
 
 
 if __name__ == '__main__':
-	A = array([[2, 3, 5], [-4, 2, 3], [0, 0, 0]])
-	nullspace = compute_nullspace(A, left=False)
+	import profile
+	#
+	# A = array([[2, 3, 5], [-4, 2, 3], [0, 0, 0]])
+	# nullspace = compute_nullspace(A, left=False)
+
+	Ar = random.rand(5000,10000) - 0.5
+	Ar[(-0.4 < Ar) & (0.4 > Ar)] = 0
+	A = sign(Ar)
+	profile.run('nullspace = compute_nullspace(A, left=False)')

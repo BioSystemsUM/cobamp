@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 
-
 def get_frequency_dataframe(pathway_dict, k_min=1, k_max=1):
 	def _get_possible_combinations(pathway):
 		return list(
@@ -33,7 +32,7 @@ if __name__ == '__main__':
 		def random_slightly_readable_string_generator(length):
 			s = ""
 			vwls = ['a', 'e', 'i', 'o', 'u']
-			vwl_flag = bool(randint(0,1))
+			vwl_flag = bool(randint(0, 1))
 			while len(s) < length:
 				some_char = chr(randint(97, 122))
 				if (some_char in vwls and vwl_flag) or (some_char not in vwls and not vwl_flag):
@@ -45,8 +44,9 @@ if __name__ == '__main__':
 		group_names = [random_slightly_readable_string_generator(randint(10, 15)) for _ in range(n_reactions)]
 
 		efm_groups = {
-		group_names[j]: [set([reaction_names[randint(0, n_reactions - 1)] for i in range(randint(*efm_size_range))]) for
-						 _ in range(efm_number)] for j in range(efm_group_number)}
+			group_names[j]: [set([reaction_names[randint(0, n_reactions - 1)] for i in range(randint(*efm_size_range))])
+							 for
+							 _ in range(efm_number)] for j in range(efm_group_number)}
 
 		return reaction_names, group_names, efm_groups
 

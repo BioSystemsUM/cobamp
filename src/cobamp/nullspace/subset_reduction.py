@@ -3,7 +3,7 @@ Inspired by Metatool's code
 """
 
 from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, \
-	array, dot
+	array, dot, eye
 from numpy.linalg import norm
 
 from ..nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
@@ -106,6 +106,7 @@ def subset_candidates(kernel, tol=None):
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
 		for j in range(i + 1, kernel.shape[0]):
+			
 			cr[i, j] = cr[i, j] / sqrt(cr[i, i] * cr[j, j])
 		cr[i, i] = 1
 	cr = triu(cr)
@@ -140,15 +141,17 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	"""
 	m, n = S.shape
 	in_subset = array([False] * n)
-
+	irrev_sub = array([False] * cr.shape[0])
+	sub = zeros([cr.shape[0], n])
+	irrev_violating_subsets = []
+	sub_count = 0
 	if (keepSingle is not None) and (len(keepSingle) > 0):
-		#keepSingle = array([])
+		# keepSingle = array([])
 		irrev_violating_subsets = []
-		sub = zeros([len(keepSingle), n])
-		sub[(array(range(len(keepSingle))), array(keepSingle))] = 1
-		irrev_sub = irrev[keepSingle]
+		sub[:len(keepSingle),keepSingle] = eye(len(keepSingle))
+		irrev_sub[:len(keepSingle)] = irrev[keepSingle]
 		in_subset[keepSingle] = True
-
+		sub_count = len(keepSingle)
 	for i in range(cr.shape[0] - 1, -1, -1):
 		reactions = where(cr[:, i] != 0)[0]
 		in_subset_indexes = where(in_subset)[0]
@@ -156,16 +159,19 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 		reactions = reactions[logical_not(in_subset_reactions)]
 		if len(reactions) > 0:
 			in_subset[reactions] = True
-			irrev_sub = append(irrev_sub, (irrev[reactions]).any())
-			sub = append(sub, zeros([1, n]), 0)
+			irrev_sub[sub_count] = (irrev[reactions]).any()
 
 			if len(reactions) == 1:
-				sub[sub.shape[0] - 1, reactions] = 1
+				sub[sub_count, reactions] = 1
 			else:
 				lengths = norm(kernel[reactions, :], axis=1)
 				min_ind = argmin(abs(lengths - mean(lengths)))
 				lengths /= lengths[min_ind]
-				sub[sub.shape[0] - 1, reactions] = lengths * cr[reactions, i]
+				sub[sub_count, reactions] = lengths * cr[reactions, i]
+			sub_count += 1
+
+	sub = sub[:sub_count,:]
+	irrev_sub = irrev_sub[:sub_count]
 
 	ind = where(sub[:, irrev] < 0)[0]
 	if len(ind) > 0:

@@ -51,8 +51,8 @@ class KShortestEnumeratorWrapper(object):
 		"""
 
 		self.__model = model
-		if model.__module__ in model_readers.keys():
-			self.model_reader = model_readers[model.__module__](model)
+		if type(model).__module__ in model_readers.keys():
+			self.model_reader = model_readers[type(model).__module__](model)
 		else:
 			raise TypeError(
 				"The `model` instance is not currently supported by cobamp. Currently available readers are: " + str(

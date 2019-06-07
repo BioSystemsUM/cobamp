@@ -29,6 +29,7 @@ def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 		pair_fx(varlist, value_map, **kwargs) if isinstance(varlist, tuple) else single_fx(varlist, value_map, **kwargs)
 		for varlist in value_map.keys()]
 
+
 K_SHORTEST_MPROPERTY_METHOD = 'METHOD'
 K_SHORTEST_METHOD_ITERATE = "ITERATE"
 K_SHORTEST_METHOD_POPULATE = "POPULATE"
@@ -43,7 +44,7 @@ kshortest_mandatory_properties = {
 kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_MAXSIZE: lambda x: x > 0 and isinstance(x, int),
 	K_SHORTEST_OPROPERTY_MAXSOLUTIONS: lambda x: x > 0 and isinstance(x, int),
-	K_SHORTEST_BIG_M_VALUE: lambda x: isinstance(x, (float,int))
+	K_SHORTEST_BIG_M_VALUE: lambda x: isinstance(x, (float, int))
 }
 
 
@@ -58,6 +59,7 @@ class KShortestProperties(PropertyDictionary):
 
 	def __init__(self):
 		super().__init__(kshortest_mandatory_properties, kshortest_optional_properties)
+
 
 class KShortestEnumerator(object):
 	"""
@@ -101,17 +103,20 @@ class KShortestEnumerator(object):
 		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 
 		# Setup k-shortest constraints
+		self.indicator_map = {}
+		self.__ivars = []
 		big_m = linear_system.solver != 'CPLEX'
 		if big_m:
-			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(self.__m_value)
+			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(
+				self.__m_value)
 			warnings.warn(warnstr)
 			self.__add_kshortest_indicators_big_m()
 		else:
 			self.__add_kshortest_indicators()
 
-
 		if not self.is_efp_problem:
 			self.__add_exclusivity_constraints()
+
 		self.__size_constraint = None
 		self.__efp_auxiliary_map = None
 
@@ -129,7 +134,7 @@ class KShortestEnumerator(object):
 
 	def __set_model_parameters(self):
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
-		 'GUROBI': self.__set_model_parameters_gurobi}
+					   'GUROBI': self.__set_model_parameters_gurobi}
 
 		if self.model.solver in parset_func.keys():
 			parset_func[self.model.solver]()
@@ -152,7 +157,8 @@ class KShortestEnumerator(object):
 		instance.parameters.mip.pool.intensity.set(4)
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
-		#instance.parameters.mip.tolerances.absmipgap.set(0)
+
+	# instance.parameters.mip.tolerances.absmipgap.set(0)
 
 	def __set_model_parameters_gurobi(self):
 
@@ -165,14 +171,14 @@ class KShortestEnumerator(object):
 
 	##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
-
 	def __add_cuts(self, sols, length_override, equality):
 
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
-				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem, equality=equality, length_override=length_override)
+				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem, equality=equality,
+									   length_override=length_override)
 			elif isinstance(sol, list) or isinstance(sol, tuple):
-				values = {i:0 for i in range(len(self.model.model.variables))}
+				values = {i: 0 for i in range(len(self.model.model.variables))}
 				for k in sol:
 					dvars = self.__dvar_mapping[k]
 					if isinstance(dvars, (list, tuple)):
@@ -181,7 +187,8 @@ class KShortestEnumerator(object):
 					else:
 						values[self.indicator_map[self.__dvars[dvars]]] = 1
 					values[k] = 1
-				self.__add_integer_cut(values, efp_cut=self.is_efp_problem, equality=equality, length_override=length_override)
+				self.__add_integer_cut(values, efp_cut=self.is_efp_problem, equality=equality,
+									   length_override=length_override)
 
 	def exclude_solutions(self, sols):
 
@@ -216,7 +223,13 @@ class KShortestEnumerator(object):
 		"""
 		self.__add_cuts(sols, length_override=0, equality=True)
 
-	def __add_kshortest_indicators(self):
+	def __add_kshortest_indicators(self, chunksize=2000):
+		for i in range(0, len(self.__dvars), chunksize):
+			print('Adding chunk:',i,i+chunksize)
+			dvl = self.__dvars[i:i+chunksize]
+			self.__add_kshortest_indicators_from_dvar(dvl)
+
+	def __add_kshortest_indicators_from_dvar(self, dvars):
 		"""
 		Adds indicator variable to a copy of the supplied linear problem.
 		This uses the __dvars map to obtain a list of all variables and assigns an indicator to them.
@@ -224,18 +237,16 @@ class KShortestEnumerator(object):
 		-------
 
 		"""
-		ilb, iub = [0]*5, [1]*5
+		ilb, iub = [0] * 5, [1] * 5
 		itype = VAR_BINARY
 		template_matrix = array(
-			[[1, 1, 0, 0, 0],[0, -1, 1, 0, 0],[-1, 0, 0, 1, 0],[0, 0, 0, -1, 1],[0, 0, 0, 0, 0],[0, 0, 0, 0, 0]]
+			[[1, 1, 0, 0, 0], [0, -1, 1, 0, 0], [-1, 0, 0, 1, 0], [0, 0, 0, -1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]]
 		)
 
-		template_blb, template_bub = [1,0,0,0,0,0], [1,None,0,None,0,None]
+		template_blb, template_bub = [1, 0, 0, 0, 0, 0], [1, None, 0, None, 0, None]
 
-		dvars = self.__dvars
-
-		row_blb, row_bub = [t*len(dvars) for t in (template_blb, template_bub)]
-		helpers = [[k + r for r in [str(i) for i in dvars]] for k in ['i','a','b','c','d']]
+		row_blb, row_bub = [t * len(dvars) for t in (template_blb, template_bub)]
+		helpers = [[k + r for r in [str(i) for i in dvars]] for k in ['i', 'a', 'b', 'c', 'd']]
 
 		vlist = []
 		offset = len(self.model.model.variables)
@@ -243,63 +254,72 @@ class KShortestEnumerator(object):
 		for vars in zip(*helpers):
 			vlist.extend(self.model.add_variables_to_model(vars, lb=ilb, ub=iub, var_types=itype))
 		trows, tcols = template_matrix.shape
-		template_full = zeros((trows*len(dvars), tcols*len(dvars)))
-		diag = zeros((trows*len(dvars), len(dvars)))
-		crow = zeros((trows*len(dvars),))
+		template_full = zeros((trows * len(dvars), tcols * len(dvars)))
+		diag = zeros((trows * len(dvars), len(dvars)))
+		crow = zeros((trows * len(dvars),))
 		indicators = []
 		for i in range(len(dvars)):
-			template_full[i*trows: (i+1)*trows, i*tcols:(i+1)*tcols] = template_matrix
-			diag[(i*trows)+4][i] = 1
-			diag[(i*trows)+5][i] = 1
-			crow[(i*trows)+5] = -1
-			indicators.append(tuple([(i*trows)+4, len(dvars)+(i*tcols)+2, 1]))
-			indicators.append(tuple([(i*trows)+5, len(dvars)+(i*tcols)+4, 1]))
+			template_full[i * trows: (i + 1) * trows, i * tcols:(i + 1) * tcols] = template_matrix
+			diag[(i * trows) + 4][i] = 1
+			diag[(i * trows) + 5][i] = 1
+			crow[(i * trows) + 5] = -1
+			indicators.append(tuple([(i * trows) + 4, len(dvars) + (i * tcols) + 2, 1]))
+			indicators.append(tuple([(i * trows) + 5, len(dvars) + (i * tcols) + 4, 1]))
 
-		nrowmat = hstack([diag, template_full, crow.reshape(-1,1)])
+		nrowmat = hstack([diag, template_full, crow.reshape(-1, 1)])
 		vlist += [self.model.get_c_variable()]
 		vlist = [self.model.model.variables[i] for i in dvars] + vlist
-		self.__ivars = [(i*5)+offset for i in range(len(dvars))]
-		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators, vars=vlist)
-		self.indicator_map = dict(zip(dvars, self.__ivars))
+		new_ivars = [(i * 5) + offset for i in range(len(dvars))]
+		self.__ivars.extend(new_ivars)
+		self.model.add_rows_to_model(nrowmat, row_blb, row_bub, only_nonzero=True, indicator_rows=indicators,
+									 vars=vlist)
+		self.indicator_map.update(dict(zip(dvars, new_ivars)))
 
 	def __add_kshortest_indicators_big_m(self):
 		dvars = self.__dvars
 
 		M = self.__m_value
-		template_matrix = array([[1, -M],[-1, 1]])
+		template_matrix = array([[1, -M], [-1, 1]])
 
-		nrowmat = zeros([len(dvars)*2]*2)
+		nrowmat = zeros([len(dvars) * 2] * 2)
 		for i in range(len(dvars)):
-			nrowmat[i*2:i*2+2,i*2:i*2+2] = template_matrix
+			nrowmat[i * 2:i * 2 + 2, i * 2:i * 2 + 2] = template_matrix
 
 		offset = len(self.model.model.variables)
 
-		ivar_instances = self.model.add_variables_to_model(['i'+str(i) for i in range(len(dvars))], lb=[0]*len(dvars), ub=[1]*len(dvars), var_types=VAR_BINARY)
+		ivar_instances = self.model.add_variables_to_model(['i' + str(i) for i in range(len(dvars))],
+														   lb=[0] * len(dvars), ub=[1] * len(dvars),
+														   var_types=VAR_BINARY)
 		dvar_instances = [self.model.model.variables[i] for i in dvars]
 		vlist = list(chain(*list(zip(dvar_instances, ivar_instances))))
-		self.__ivars = [i+offset for i in range(len(dvars))]
+		self.__ivars = [i + offset for i in range(len(dvars))]
 
-		self.model.add_rows_to_model(nrowmat, [None]*(len(dvars)*2),  [0]*(len(dvars)*2), only_nonzero=True, vars=vlist)
+		self.model.add_rows_to_model(nrowmat, [None] * (len(dvars) * 2), [0] * (len(dvars) * 2), only_nonzero=True,
+									 vars=vlist)
 		self.indicator_map = dict(zip(dvars, self.__ivars))
-
 
 	def __add_efp_auxiliary_constraints(self):
 		self.__efp_auxiliary_map = {}
 		itype = VAR_BINARY
-		indicator_vars = [self.model.model.variables[v] for v in self.indicator_map.values()]
-		ilb, iub = [0]*len(indicator_vars), [1]*len(indicator_vars)
-		helpers = self.model.add_variables_to_model(['efp_h'+str(i) for i in range(len(indicator_vars))], lb=ilb, ub=iub, var_types=itype)
+		indicator_vars = [self.model.model.variables[v] for v in self.__ivars]
+		ilb, iub = [0] * len(indicator_vars), [1] * len(indicator_vars)
+		offset = len(self.model.model.variables)
+		helpers = self.model.add_variables_to_model(['efp_h' + str(i) for i in range(len(indicator_vars))], lb=ilb,
+													ub=iub, var_types=itype)
 
+		self.__efp_auxiliary_map = dict(zip(self.__ivars, [offset+i for i in range(len(helpers))]))
 		vlist = indicator_vars + helpers
 		mat_template = identity(len(self.indicator_map))
 		mat = hstack([mat_template, -mat_template])
-		rhs_l = [0]*len(self.indicator_map)
-		rhs_u = [None]*len(self.indicator_map)
+		rhs_l = [0] * len(self.indicator_map)
+		rhs_u = [None] * len(self.indicator_map)
 
 		## Adding MILP2
-		self.model.add_rows_to_model(self, mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist, names=None)
+		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist,
+									 names=None)
 		## Adding MILP4
-		self.model.add_rows_to_model(self, ones(1, len(indicator_vars)), [1], [None], only_nonzero=False, indicator_rows=None, vars=helpers, names=None)
+		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=False,
+									 indicator_rows=None, vars=helpers, names=None)
 
 	def __add_exclusivity_constraints(self):
 		"""
@@ -309,18 +329,19 @@ class KShortestEnumerator(object):
 		-------
 
 		"""
-		exclusive_dvars = {k:v for k,v in self.__dvar_mapping.items() if isinstance(v, (tuple,list))}
-		M,N = len(exclusive_dvars), len(self.__dvars)
-		smat = zeros((M,N))
+		exclusive_dvars = {k: v for k, v in self.__dvar_mapping.items() if isinstance(v, (tuple, list))}
+		M, N = len(exclusive_dvars), len(self.__dvars)
+		smat = zeros((M, N))
 		for k, n in enumerate(exclusive_dvars.items()):
-			idx,v = n
-			if not isinstance(v, (tuple,list)):
+			idx, v = n
+			if not isinstance(v, (tuple, list)):
 				v = array([v])
 			else:
 				v = array(v)
 			smat[k][v] = 1
 
-		self.model.add_rows_to_model(smat, [None]*M, [1]*M, True, vars=[self.model.model.variables[self.indicator_map[k]] for k in self.__dvars])
+		self.model.add_rows_to_model(smat, [None] * M, [1] * M, True,
+									 vars=[self.model.model.variables[self.indicator_map[k]] for k in self.__dvars])
 
 	def __set_objective(self):
 		"""
@@ -330,7 +351,7 @@ class KShortestEnumerator(object):
 
 		"""
 		vars = [self.model.model.variables[i] for i in self.__ivars]
-		self.model.set_objective(ones(len(vars),), minimize=True, vars=vars)
+		self.model.set_objective(ones(len(vars), ), minimize=True, vars=vars)
 
 	def __integer_cut_count(self):
 		"""
@@ -376,15 +397,15 @@ class KShortestEnumerator(object):
 
 		rhs_value = cut_length - (length_override * int(not efp_cut))
 		cut = self.model.add_rows_to_model(
-			S_new= ones((1, len(cut_vars))),
-			b_lb = [rhs_value if equality else None],
-			b_ub = [rhs_value],
+			S_new=ones((1, len(cut_vars))),
+			b_lb=[rhs_value if equality else None],
+			b_ub=[rhs_value],
 			only_nonzero=True,
 			vars=cut_vars
 		)
-		cut[0].name = '_'.join([str(k) for k in ['IC_OV',length_override,'EQ' if equality else 'LE',len(self.__integer_cuts)]])
+		cut[0].name = '_'.join(
+			[str(k) for k in ['IC_OV', length_override, 'EQ' if equality else 'LE', len(self.__integer_cuts)]])
 		self.__integer_cuts.append(cut)
-
 
 	def set_size_constraint(self, start_at, equal=False):
 		"""
@@ -407,11 +428,12 @@ class KShortestEnumerator(object):
 			cns = self.model.model.constraints['KSH_SizeConstraint_']
 			self.model.set_constraint_bounds([cns], [start_at], [start_at if equal else None])
 		else:
-			c = ones((1,len(self.__ivars)))
+			c = ones((1, len(self.__ivars)))
 			vars = [self.model.model.variables[i] for i in self.__ivars]
-			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars, names=['KSH_SizeConstraint_'])[0]
+			constraint = \
+			self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
+										 names=['KSH_SizeConstraint_'])[0]
 			self.model.model.update()
-
 
 	def get_model(self):
 		"""
@@ -436,7 +458,7 @@ class KShortestEnumerator(object):
 			sol = self.optimizer.optimize()
 			status = sol.status()
 			if status == 'optimal':
-				var_values = dict(zip(list(range(len(sol.x()))),sol.x()))
+				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
 				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars)
 				return sol
 		except Exception as e:
@@ -456,7 +478,7 @@ class KShortestEnumerator(object):
 		try:
 			rawsols = self.optimizer.populate(999999)
 			for sol in rawsols:
-				var_values = dict(zip(list(range(len(sol.x()))),sol.x()))
+				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
 				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars))
 			for sol in sols:
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
@@ -504,7 +526,7 @@ class KShortestEnumerator(object):
 
 		"""
 		for i in range(1, max_size + 1):
-			#print('Starting size', str(i))
+			# print('Starting size', str(i))
 			try:
 				self.set_size_constraint(i, True)
 				sols = self.populate_current_size()
@@ -550,6 +572,7 @@ class KShortestEnumerator(object):
 		self.model.model.remove(self.__integer_cuts)
 		self.__integer_cuts = []
 		self.set_size_constraint(1)
+
 
 class KShortestEFMAlgorithm(object):
 	"""
@@ -623,7 +646,7 @@ class KShortestEFMAlgorithm(object):
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_POPULATE:
 			sols = list(chain(*sols))
 		# DEBUG
-		#linear_system.write_to_lp('test.lp')
+		# linear_system.write_to_lp('test.lp')
 		return sols
 
 	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
@@ -665,8 +688,6 @@ class KShortestEFMAlgorithm(object):
 
 
 ### Parameters
-
-
 
 
 class InterventionProblem(object):

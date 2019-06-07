@@ -19,6 +19,7 @@ def random_string_generator(N):
 	"""
 	return ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(N))
 
+
 class Solution(object):
 	"""
 	Class representing a solution to a given linear optimization problem. Includes an internal dictionary for additional
@@ -155,7 +156,6 @@ class LinearSystemOptimizer(object):
 		self.model = linear_system.get_model()
 		self.hard_fail = hard_fail
 
-
 	def optimize(self):
 		"""
 		Internal function to instantiate the solver and return a solution to the optimization problem
@@ -178,8 +178,8 @@ class LinearSystemOptimizer(object):
 		status = None
 		ov = nan
 
-		#self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
-		#self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
+		# self.model.configuration.tolerances.feasibility = 1e-9 # TODO this is for a test, to delete later
+		# self.model.configuration.tolerances.optimality = 1e-6 # TODO this is for a test, to delete later
 
 		# tINIT test parameters
 		# self.model.problem.Params.MIPGap = 1e-9
@@ -190,7 +190,7 @@ class LinearSystemOptimizer(object):
 		try:
 			self.model.optimize()
 			values = self.model._get_primal_values()
-			value_map = OrderedDict([(k,v) for k,v in zip(names, values)])
+			value_map = OrderedDict([(k, v) for k, v in zip(names, values)])
 			status = self.model.status
 			ov = self.model.objective.value
 
@@ -204,10 +204,10 @@ class LinearSystemOptimizer(object):
 
 	def populate(self, limit=None):
 		intf_dict = {
-			'CPLEX':self.__populate_cplex,
-		 	'GUROBI':self.__populate_gurobi
+			'CPLEX': self.__populate_cplex,
+			'GUROBI': self.__populate_gurobi
 		}
-		if self.solver in ['CPLEX','GUROBI']:
+		if self.solver in ['CPLEX', 'GUROBI']:
 			return intf_dict[self.solver](limit)
 		else:
 			raise ValueError('The provided solver does not have an implemented populate function. Choose from' +
@@ -228,7 +228,7 @@ class LinearSystemOptimizer(object):
 			pool_intf = instance.solution.pool
 			nsols = pool_intf.get_num()
 			for s in range(nsols):
-				vmap = {k:v for k,v in zip(vnames, pool_intf.get_values(s))}
+				vmap = {k: v for k, v in zip(vnames, pool_intf.get_values(s))}
 				ord_vmap = OrderedDict([(k, vmap[k]) for k in mnames])
 				sol = Solution(ord_vmap, 'optimal', objective_value=pool_intf.get_objective_value(s))
 				# TODO: get status dict from optlang and use it accordingly
@@ -239,7 +239,6 @@ class LinearSystemOptimizer(object):
 		return solutions
 
 	def __populate_gurobi(self, limit=None):
-
 
 		instance = self.model.problem
 
@@ -264,23 +263,25 @@ class LinearSystemOptimizer(object):
 
 
 class CORSOSolution(Solution):
-	def __init__(self, sol_max, sol_min, f, index_map, var_names, eps = 1e-8):
+	def __init__(self, sol_max, sol_min, f, index_map, var_names, eps=1e-8):
 		x = sol_min.x()
-		rev = index_map[max(index_map)+1:]
+		rev = index_map[max(index_map) + 1:]
 
-		nx = x[:max(index_map)+1]
-		nx[rev] = x[rev] - sol_min.x()[max(index_map)+1:-1]
+		nx = x[:max(index_map) + 1]
+		nx[rev] = x[rev] - sol_min.x()[max(index_map) + 1:-1]
 		nx[abs(nx) < eps] = 0
-		nvalmap = OrderedDict([(k,v) for k,v in zip(var_names, nx)])
+		nvalmap = OrderedDict([(k, v) for k, v in zip(var_names, nx)])
 		super().__init__(nvalmap, [sol_max.status(), sol_min.status()], objective_value=f)
+
 
 class GIMMESolution(Solution):
 	def __init__(self, sol, exp_vector, var_names, mapping=None):
 		self.exp_vector = exp_vector
 		gimme_solution = sol.x()
 		if mapping:
-			gimme_solution =[max(gimme_solution[array(new)]) if isinstance(new, (tuple,list)) else gimme_solution[new] for orig, new
-			 in mapping.items()]
+			gimme_solution = [max(gimme_solution[array(new)]) if isinstance(new, (tuple, list)) else gimme_solution[new]
+							  for orig, new
+							  in mapping.items()]
 		super().__init__(
 			value_map=OrderedDict([(k, v) for k, v in zip(var_names, gimme_solution)]),
 			status=sol.status(),
@@ -296,6 +297,7 @@ class GIMMESolution(Solution):
 		activity[twos & ~ones] = 2
 
 		return activity
+
 
 class KShortestSolution(Solution):
 	"""
@@ -324,11 +326,13 @@ class KShortestSolution(Solution):
 
 		"""
 		signed_value_map = {
-			i: value_map[dvars[varlist[0]]] - value_map[dvars[varlist[1]]] if isinstance(varlist, (tuple,list)) else value_map[dvars[varlist]] for
+			i: value_map[dvars[varlist[0]]] - value_map[dvars[varlist[1]]] if isinstance(varlist, (tuple, list)) else
+			value_map[dvars[varlist]] for
 			i, varlist in dvar_mapping.items()}
 		signed_indicator_map = {
-			i: value_map[indicator_map[dvars[varlist[0]]]] - value_map[indicator_map[dvars[varlist[1]]]] if isinstance(varlist,
-																										 (tuple,list)) else
+			i: value_map[indicator_map[dvars[varlist[0]]]] - value_map[indicator_map[dvars[varlist[1]]]] if isinstance(
+				varlist,
+				(tuple, list)) else
 			value_map[indicator_map[dvars[varlist]]] for
 			i, varlist in dvar_mapping.items()}
 		super().__init__(value_map, status, **kwargs)
@@ -343,4 +347,4 @@ class KShortestSolution(Solution):
 		-------
 
 		"""
-		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if v != 0]
+		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if abs(v) > 1e-10]
