@@ -453,8 +453,20 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	def __init__(self, S, irrev, subset, **kwargs):
 		super().__init__(S, irrev, **kwargs)
 		self.subset = subset
-		self.dvars = list(subset)
-		self.dvar_mapping = {k: v for k, v in self.dvar_mapping.items() if k in subset}
+		fwds, revs = [], []
+		dvm_new = {}
+		for r in self.subset:
+			if r not in irrev:
+				fid, rid = self.dvar_mapping[r]
+				dvm_new[r] = (len(fwds),len(subset)+len(revs))
+				fwds.append(fid)
+				revs.append(rid)
+			else:
+				dvm_new[r] = len(fwds)
+				fwds.append(self.dvar_mapping[r])
+
+		self.dvar_mapping = dvm_new
+		self.dvars = fwds + revs
 
 	def build_problem(self):
 		super().build_problem()
