@@ -116,6 +116,7 @@ class KShortestEnumerator(object):
 
 		if not self.is_efp_problem:
 			self.__add_exclusivity_constraints()
+
 		self.__size_constraint = None
 		self.__efp_auxiliary_map = None
 
@@ -300,11 +301,13 @@ class KShortestEnumerator(object):
 	def __add_efp_auxiliary_constraints(self):
 		self.__efp_auxiliary_map = {}
 		itype = VAR_BINARY
-		indicator_vars = [self.model.model.variables[v] for v in self.indicator_map.values()]
+		indicator_vars = [self.model.model.variables[v] for v in self.__ivars]
 		ilb, iub = [0] * len(indicator_vars), [1] * len(indicator_vars)
+		offset = len(self.model.model.variables)
 		helpers = self.model.add_variables_to_model(['efp_h' + str(i) for i in range(len(indicator_vars))], lb=ilb,
 													ub=iub, var_types=itype)
 
+		self.__efp_auxiliary_map = dict(zip(self.__ivars, [offset+i for i in range(len(helpers))]))
 		vlist = indicator_vars + helpers
 		mat_template = identity(len(self.indicator_map))
 		mat = hstack([mat_template, -mat_template])
@@ -312,10 +315,10 @@ class KShortestEnumerator(object):
 		rhs_u = [None] * len(self.indicator_map)
 
 		## Adding MILP2
-		self.model.add_rows_to_model(self, mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist,
+		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist,
 									 names=None)
 		## Adding MILP4
-		self.model.add_rows_to_model(self, ones(1, len(indicator_vars)), [1], [None], only_nonzero=False,
+		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=False,
 									 indicator_rows=None, vars=helpers, names=None)
 
 	def __add_exclusivity_constraints(self):

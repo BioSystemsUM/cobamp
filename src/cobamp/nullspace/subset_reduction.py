@@ -106,6 +106,7 @@ def subset_candidates(kernel, tol=None):
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
 		for j in range(i + 1, kernel.shape[0]):
+			
 			cr[i, j] = cr[i, j] / sqrt(cr[i, i] * cr[j, j])
 		cr[i, i] = 1
 	cr = triu(cr)
