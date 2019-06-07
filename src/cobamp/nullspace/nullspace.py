@@ -46,7 +46,7 @@ def nullspace_blocked_reactions(K, tolerance):
 
 
 	"""
-	return where(sum(abs(K.T) > tolerance) == K.shape[0])[0]
+	return where(sum(abs(K.T) < tolerance) == K.shape[0])[0]
 
 
 if __name__ == '__main__':
