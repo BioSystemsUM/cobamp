@@ -27,13 +27,13 @@ class ModelTransformer(object):
 
 			Sn, lbn, ubn, mapping, metabs = self.transform_array(S, lb, ub, properties)
 
-			reaction_names_new = [properties['reaction_id_sep'].join([i for i in mapping.from_new(i)]) for i in
+			reaction_names_new = [properties['reaction_id_sep'].join([args.reaction_names[i] for i in mapping.from_new(i)]) for i in
 								  range(len(lbn))]
 			modeln = ConstraintBasedModel(
-				S=S,
-				thermodynamic_constraints=list(zip(lbn, ubn)),
+				S=Sn,
+				thermodynamic_constraints=[list(k) for k in list(zip(lbn, ubn))],
 				reaction_names=reaction_names_new,
-				metabolite_names=args.metabolite_names if metabs == None else [args.metabolite_names[k] for k in metabs]
+				metabolite_names= [args.metabolite_names[k] for k in metabs]
 			)
 
 			return modeln, mapping, metabs
