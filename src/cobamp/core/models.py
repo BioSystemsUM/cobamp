@@ -1,4 +1,4 @@
-from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
+from numpy import ndarray, array, where, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
 	int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
@@ -268,7 +268,7 @@ class ConstraintBasedModel(object):
 		if not isinstance(index, int):
 			self.reaction_names.pop(j)
 		self.bounds.pop(j)
-
+		self.__S = delete(self.__S, [j], axis=1)
 		self.__update_decoder_map()
 
 		if self.model:
@@ -279,6 +279,7 @@ class ConstraintBasedModel(object):
 		if not isinstance(index, int):
 			self.metabolite_names.pop(i)
 
+		self.__S = delete(self.__S, [i], axis=0)
 		self.__update_decoder_map()
 
 		if self.model:
