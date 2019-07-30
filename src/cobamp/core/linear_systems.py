@@ -424,9 +424,15 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 
 		lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
 		ub = [1] * S.shape[1]
-		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
-		fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
-		bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
+		if -1 in lb:
+			Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
+			fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
+			bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
+		else:
+			Si, lbi, ubi = S, lb, ub
+			fwd_names = ['V' + str(i) for i in range(Si.shape[1])]
+			bwd_names = []
+			rev_mapping = {i:i for i in range(Si.shape[1])}
 
 		lbi = [0] * len(lbi) + [1]
 		ubi = [None] * len(ubi) + [None]

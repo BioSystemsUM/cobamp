@@ -131,6 +131,7 @@ class KShortestEnumerator(object):
 		self.set_size_constraint(1)
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
+		self.__vnames = self.model.model._get_variables_names()
 
 	def __set_model_parameters(self):
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
@@ -433,8 +434,7 @@ class KShortestEnumerator(object):
 		else:
 			c = ones((1, len(self.__ivars)))
 			vars = [self.model.model.variables[i] for i in self.__ivars]
-			constraint = \
-			self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
+			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
 										 names=['KSH_SizeConstraint_'])[0]
 			self.model.model.update()
 
@@ -462,7 +462,7 @@ class KShortestEnumerator(object):
 			status = sol.status()
 			if status == 'optimal':
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars)
+				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames)
 				return sol
 		except Exception as e:
 			print(e)
@@ -482,7 +482,7 @@ class KShortestEnumerator(object):
 			rawsols = self.optimizer.populate(999999)
 			for sol in rawsols:
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars))
+				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames))
 			for sol in sols:
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 			return sols
