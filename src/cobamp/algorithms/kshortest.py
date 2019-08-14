@@ -226,7 +226,7 @@ class KShortestEnumerator(object):
 
 	def __add_kshortest_indicators(self, chunksize=2000):
 		for i in range(0, len(self.__dvars), chunksize):
-			print('Adding chunk:',i,i+chunksize)
+			#print('Adding chunk:',i,i+chunksize)
 			dvl = self.__dvars[i:i+chunksize]
 			self.__add_kshortest_indicators_from_dvar(dvl)
 
@@ -317,12 +317,12 @@ class KShortestEnumerator(object):
 
 		print('MILP2')
 		## Adding MILP2
-		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist,
+		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=True, indicator_rows=None, vars=vlist,
 									 names=None)
 
 		print('MILP4')
 		## Adding MILP4
-		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=False,
+		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=True,
 									 indicator_rows=None, vars=helpers, names=None)
 
 	def __add_exclusivity_constraints(self):
