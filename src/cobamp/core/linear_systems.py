@@ -402,7 +402,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=(), solver=None):
+	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
 		"""
 
 		Parameters
@@ -436,6 +436,19 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 
 		lbi = [0] * len(lbi) + [1]
 		ubi = [None] * len(ubi) + [None]
+
+		for k,tup in force_bounds.items():
+			if isinstance(rev_mapping[k], (list,tuple)):
+				inds = rev_mapping[k]
+				trev = (abs(ub[k]) if ub[k] < 0 else 0, abs(lb[k]) if lb[k] < 0 else 0)
+				tfwd = (abs(lb[k]) if lb[k] > 0 else 0, abs(ub[k]) if ub[k] > 0 else 0)
+				assert sum([pair[0] < pair[1] for pair in (trev,tfwd)]) == 2, 'force_bounds contains invalid values'
+				for i, ntup in zip(inds,(tfwd,trev)):
+					lbi[i],ubi[i] = ntup
+			else:
+				assert tup[0] < tup[1], 'force_bounds contains invalid values'
+				lbi[k],ubi[k] = tup
+
 
 		self.__ivars = None
 		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
