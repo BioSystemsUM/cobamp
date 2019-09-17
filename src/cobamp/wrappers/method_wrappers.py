@@ -24,7 +24,7 @@ class KShortestEnumeratorWrapper(object):
 	}
 
 	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
-				 excluded_solutions=None, solver='CPLEX'):
+				 excluded_solutions=None, solver='CPLEX', force_bounds={}):
 		"""
 
 		Parameters
@@ -48,6 +48,9 @@ class KShortestEnumeratorWrapper(object):
 
 			excluded_solutions: A list of KShortestSolution or lists of reaction indexes that cannot show up in the
 			enumeration process. (experimental feature)
+
+			force_bounds: A dict mapping reaction indexes (int for now) with tuples containing lower and upper bounds
+			An experimental feature meant to force certain phenotypes on EFP/EFMs
 		"""
 
 		self.__model = model
@@ -63,6 +66,7 @@ class KShortestEnumeratorWrapper(object):
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
+		self.force_bounds = {self.model_reader.r_ids.index(k):v for k,v in force_bounds.items()}
 		self.solver = solver
 		self.__setup_algorithm()
 		self.enumerated_sols = []
@@ -152,7 +156,9 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 			consumed=conv_cn,
 			non_consumed=conv_nc,
 			produced=conv_pr,
-			solver=self.solver)
+			solver=self.solver,
+			force_bounds=self.force_bounds
+		)
 
 
 class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
@@ -203,4 +209,6 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 			consumed=conv_cn,
 			non_consumed=conv_nc,
 			produced=conv_pr,
-			solver=self.solver)
+			solver=self.solver,
+			force_bounds=self.force_bounds
+		)
