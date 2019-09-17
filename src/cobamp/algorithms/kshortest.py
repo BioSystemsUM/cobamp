@@ -64,8 +64,7 @@ class KShortestProperties(PropertyDictionary):
 class KShortestEnumerator(object):
 	"""
 	Class implementing the k-shortest elementary flux mode algorithms. This is a lower level class implemented using the
-	Cplex solver as base. Maybe in the future, this will be readapted for the optlang wrapper, if performance issues
-	do not arise.
+	optlang solver framework.
 	"""
 
 	ENUMERATION_METHOD_ITERATE = 'iterate'
