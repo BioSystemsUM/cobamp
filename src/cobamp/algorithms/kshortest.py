@@ -71,7 +71,7 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True):
 
 		"""
 
@@ -90,6 +90,7 @@ class KShortestEnumerator(object):
 		self.__dvars = linear_system.get_dvars()
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model._get_variables_names(), x)
+		self.__force_non_cancellation = force_non_cancellation
 
 		# TODO: Find a way to estimate the best possible value for this
 		self.__m_value = 10e6 if m_value == None else m_value
@@ -116,6 +117,11 @@ class KShortestEnumerator(object):
 
 		if not self.is_efp_problem:
 			self.__add_exclusivity_constraints()
+		else:
+			if self.__force_non_cancellation:
+				warnings.warn('The original elementary flux pattern formulation allows cancellation. If this option is'
+							  +' forced, results might differ.')
+				self.__add_exclusivity_constraints()
 
 		self.__size_constraint = None
 		self.__efp_auxiliary_map = None
