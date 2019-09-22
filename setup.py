@@ -10,7 +10,8 @@ setup(
                         "pandas",
                         "optlang",
                         "matplotlib",
-                        "pathos"],
+                        "pathos",
+                        "boolean.py"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
