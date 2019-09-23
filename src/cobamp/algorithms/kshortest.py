@@ -33,13 +33,16 @@ def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 K_SHORTEST_MPROPERTY_METHOD = 'METHOD'
 K_SHORTEST_METHOD_ITERATE = "ITERATE"
 K_SHORTEST_METHOD_POPULATE = "POPULATE"
+K_SHORTEST_TYPE_EFP = "EFP_PROBLEM"
 
 K_SHORTEST_OPROPERTY_MAXSIZE = 'MAXSIZE'
 K_SHORTEST_OPROPERTY_MAXSOLUTIONS = "MAXSOLUTIONS"
 K_SHORTEST_BIG_M_VALUE = "BIGMVALUE"
 
 kshortest_mandatory_properties = {
-	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE]}
+	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE],
+	K_SHORTEST_TYPE_EFP: bool
+}
 
 kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_MAXSIZE: lambda x: x > 0 and isinstance(x, int),
@@ -70,7 +73,7 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None, force_non_cancellation=True):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False):
 
 		"""
 
@@ -100,7 +103,9 @@ class KShortestEnumerator(object):
 
 		# Setup CPLEX parameters
 		self.__set_model_parameters()
-		self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
+		#self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
+		self.subset_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
+		self.is_efp_problem = is_efp_problem
 
 		# Setup k-shortest constraints
 		self.indicator_map = {}
@@ -624,7 +629,9 @@ class KShortestEFMAlgorithm(object):
 
 		"""
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
-		self.ksh = KShortestEnumerator(linear_system, m_value=self.configuration[K_SHORTEST_BIG_M_VALUE])
+
+		self.ksh = KShortestEnumerator(linear_system, m_value=self.configuration[K_SHORTEST_BIG_M_VALUE],
+									   is_efp_problem=self.configuration[K_SHORTEST_TYPE_EFP])
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:

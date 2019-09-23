@@ -63,6 +63,7 @@ class KShortestEnumeratorWrapper(object):
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
+		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.is_efp
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
@@ -125,7 +126,7 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 	elementary flux modes.
 	"""
 
-	def __init__(self, model, non_consumed, consumed, produced, **kwargs):
+	def __init__(self, model, non_consumed, consumed, produced, subset=None, **kwargs):
 		"""
 
 		Parameters
@@ -144,21 +145,34 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 
 
 		"""
+		self.__is_efp = True
 		super().__init__(model, **kwargs)
-		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
+		self.__consumed, self.__non_consumed, self.__produced, self.__subset = consumed, non_consumed, produced, subset
 
 	def get_linear_system(self):
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
-		return IrreversibleLinearSystem(
-			S=self.model_reader.S,
-			irrev=self.model_reader.irrev_index,
-			consumed=conv_cn,
-			non_consumed=conv_nc,
-			produced=conv_pr,
-			solver=self.solver,
-			force_bounds=self.force_bounds
-		)
+		if self.__subset == None:
+			return IrreversibleLinearSystem(
+				S=self.model_reader.S,
+				irrev=self.model_reader.irrev_index,
+				consumed=conv_cn,
+				non_consumed=conv_nc,
+				produced=conv_pr,
+				solver=self.solver,
+				force_bounds=self.force_bounds
+			)
+		else:
+			return IrreversibleLinearPatternSystem(
+				S=self.model_reader.S,
+				irrev=self.model_reader.irrev_index,
+				consumed=conv_cn,
+				non_consumed=conv_nc,
+				produced=conv_pr,
+				subset=	[self.model_reader.reaction_id_to_index(s) for s in self.__subset],
+				solver=self.solver,
+				force_bounds=self.force_bounds
+			)
 
 
 class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
@@ -169,6 +183,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
 
 	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, **kwargs):
+		self.__is_efp = False
 		super().__init__(model, **kwargs)
 
 		target_flux_space = [tuple([k]) + tuple(v) for k, v in target_flux_space_dict.items()]
@@ -178,6 +193,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		converted_ybs = [DefaultYieldbound.from_tuple(self.model_reader.convert_constraint_ids(t, True)) for t in
 						 target_yield_space]
 		self.__ip_constraints = converted_fbs + converted_ybs
+
 
 	def __materialize_intv_problem(self):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)
@@ -194,6 +210,7 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
 
 	def __init__(self, model, subset, non_consumed=[], consumed=[], produced=[], **kwargs):
+		self.__is_efp = True
 		super().__init__(model, **kwargs)
 		self.__subset = subset
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced

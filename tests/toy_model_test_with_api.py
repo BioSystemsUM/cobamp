@@ -42,7 +42,11 @@ configs = [efm_populate_enumeration_config, mcs_populate_enumeration_config, efm
 for cfg in configs:
 	cfg[K_SHORTEST_BIG_M_VALUE] = 3.4200101010 * 1e4
 
-TEST_SOLVER = 'GLPK'
+for cfg in configs:
+	cfg[K_SHORTEST_TYPE_EFP] = False
+
+
+TEST_SOLVER = 'CPLEX'
 
 class ToyMetabolicNetworkTests(unittest.TestCase):
 	def setUp(self):
