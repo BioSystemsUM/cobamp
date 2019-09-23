@@ -61,7 +61,6 @@ class FluxVariabilityAnalysis(object):
 		self.ls.add_rows_to_model(c.reshape([1, N]), [z0 * gamma], [None], only_nonzero=True,
 										 names=['FASTFVAINITIALCONSTRAINT'])
 
-		# self.ls.get_configuration().presolve = False
 		for sense in [True, False]:
 			rx_per_job = N // self.n_jobs
 			self.pool = _ProcessPool(
@@ -87,7 +86,6 @@ if __name__ == '__main__':
 	model =  read_sbml_model('/home/skapur/MEOCloud/Projectos/cobamp/examples/iAF1260_resources/original_model/Ec_iAF1260_flux2.xml')
 	mor = COBRAModelObjectReader(model)
 
-	# cbm = mor.to_cobamp_cbm('CPLEX')
 	cbm_mp = mor.to_cobamp_cbm('CPLEX')
 	cbm_fast = mor.to_cobamp_cbm('CPLEX')
 
@@ -95,10 +93,7 @@ if __name__ == '__main__':
 	Z0 = (1-1e-6) * init_sol.objective_value()
 	cbm_mp.set_reaction_bounds(1004, lb=Z0)
 
-	# start_time = time.time()
-	# limits = [cbm.flux_limits(i) for i in range(len(cbm.reaction_names))]
 	c1_time = time.time()
-	# print('Single-threaded:',c1_time-start_time,'seconds')
 
 	pp = _ProcessPool(cpu_count())
 
@@ -120,3 +115,5 @@ if __name__ == '__main__':
 		ld, ud = [mpr[i] - fr[i] for i in range(len(mpr))]
 		if (abs(ld) > error) | (abs(ud) > error):
 			error_rx.append([i, mpr, fr])
+
+	print('Valid:',len(error_rx) == 0)

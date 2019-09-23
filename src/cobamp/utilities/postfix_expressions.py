@@ -65,9 +65,12 @@ def tokenize_infix_expression(inf_exp_str):
 	return list(filter(lambda x: x != '', inf_exp_str.replace('(', ' ( ').replace(')', ' ) ').split(' ')))
 
 
-def tokenize_boolean_expression(inf_exp_str, default_value='1'):
-	return [tok if tok in ('0', '1', 'and', 'not', 'or', ')', '(') else default_value for tok in
-			tokenize_infix_expression(inf_exp_str)]
+# def tokenize_boolean_expression(inf_exp_str, default_value='1'):
+# 	return [tok if tok in ('0', '1', 'and', 'not', 'or', ')', '(') else default_value for tok in
+# 			tokenize_infix_expression(inf_exp_str)]
+
+def tokenize_boolean_expression(inf_exp_str):
+	return tokenize_infix_expression(inf_exp_str)
 
 
 def is_number_token(token):
@@ -77,6 +80,8 @@ def is_number_token(token):
 def is_operator_token(token):
 	return token in ['**', '/', '*', '+', '-']
 
+def is_string_token(token):
+	return isinstance(token, str) and not is_boolean_operator(token) and (('(' not in token) and (')' not in token))
 
 def op_prec(op):
 	precedence = {
@@ -154,7 +159,7 @@ if __name__ == '__main__':
 
 	def test_algebraic_expression():
 		op = tokenize_infix_expression('((15 / (7 - (1 + 1))) * 3) - (2 + (1 + 1)) ')
-		psfix = parse_infix_expression(op, is_number_token, is_operator_token)
+		psfix = parse_infix_expression(op, is_number_token, is_operator_token, op_prec)
 		res = evaluate_postfix_expression(psfix, eval_math_operator)
 		print(res)
 

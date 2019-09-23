@@ -64,14 +64,13 @@ class KShortestProperties(PropertyDictionary):
 class KShortestEnumerator(object):
 	"""
 	Class implementing the k-shortest elementary flux mode algorithms. This is a lower level class implemented using the
-	Cplex solver as base. Maybe in the future, this will be readapted for the optlang wrapper, if performance issues
-	do not arise.
+	optlang solver framework.
 	"""
 
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True):
 
 		"""
 
@@ -90,6 +89,7 @@ class KShortestEnumerator(object):
 		self.__dvars = linear_system.get_dvars()
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model._get_variables_names(), x)
+		self.__force_non_cancellation = force_non_cancellation
 
 		# TODO: Find a way to estimate the best possible value for this
 		self.__m_value = 10e6 if m_value == None else m_value
@@ -116,6 +116,11 @@ class KShortestEnumerator(object):
 
 		if not self.is_efp_problem:
 			self.__add_exclusivity_constraints()
+		else:
+			if self.__force_non_cancellation:
+				warnings.warn('The original elementary flux pattern formulation allows cancellation. If this option is'
+							  +' forced, results might differ.')
+				self.__add_exclusivity_constraints()
 
 		self.__size_constraint = None
 		self.__efp_auxiliary_map = None
@@ -131,6 +136,7 @@ class KShortestEnumerator(object):
 		self.set_size_constraint(1)
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
+		self.__vnames = self.model.model._get_variables_names()
 
 	def __set_model_parameters(self):
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
@@ -225,7 +231,7 @@ class KShortestEnumerator(object):
 
 	def __add_kshortest_indicators(self, chunksize=2000):
 		for i in range(0, len(self.__dvars), chunksize):
-			print('Adding chunk:',i,i+chunksize)
+			#print('Adding chunk:',i,i+chunksize)
 			dvl = self.__dvars[i:i+chunksize]
 			self.__add_kshortest_indicators_from_dvar(dvl)
 
@@ -314,11 +320,14 @@ class KShortestEnumerator(object):
 		rhs_l = [0] * len(self.indicator_map)
 		rhs_u = [None] * len(self.indicator_map)
 
+		print('MILP2')
 		## Adding MILP2
-		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=False, indicator_rows=None, vars=vlist,
+		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=True, indicator_rows=None, vars=vlist,
 									 names=None)
+
+		print('MILP4')
 		## Adding MILP4
-		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=False,
+		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=True,
 									 indicator_rows=None, vars=helpers, names=None)
 
 	def __add_exclusivity_constraints(self):
@@ -430,8 +439,7 @@ class KShortestEnumerator(object):
 		else:
 			c = ones((1, len(self.__ivars)))
 			vars = [self.model.model.variables[i] for i in self.__ivars]
-			constraint = \
-			self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
+			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
 										 names=['KSH_SizeConstraint_'])[0]
 			self.model.model.update()
 
@@ -459,7 +467,7 @@ class KShortestEnumerator(object):
 			status = sol.status()
 			if status == 'optimal':
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars)
+				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames)
 				return sol
 		except Exception as e:
 			print(e)
@@ -479,7 +487,7 @@ class KShortestEnumerator(object):
 			rawsols = self.optimizer.populate(999999)
 			for sol in rawsols:
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars))
+				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames))
 			for sol in sols:
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 			return sols

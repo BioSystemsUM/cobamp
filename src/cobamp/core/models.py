@@ -1,4 +1,4 @@
-from numpy import ndarray, array, where, apply_along_axis, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
+from numpy import ndarray, array, where, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
 	int32, int64
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
@@ -242,9 +242,9 @@ class ConstraintBasedModel(object):
 	def add_reaction(self, arg, bounds, name=None):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
-			col = zeros([1, self.__S.shape[0]])
+			col = zeros([self.__S.shape[0], 1])
 			for k, v in arg.items():
-				col[0,self.decode_index(k, 'metabolite')] = v
+				col[self.decode_index(k, 'metabolite'),0] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.metabolite_names):
 				col = arg.reshape(self.__S.shape[0], 1)
@@ -268,7 +268,7 @@ class ConstraintBasedModel(object):
 		if not isinstance(index, int):
 			self.reaction_names.pop(j)
 		self.bounds.pop(j)
-
+		self.__S = delete(self.__S, [j], axis=1)
 		self.__update_decoder_map()
 
 		if self.model:
@@ -279,6 +279,7 @@ class ConstraintBasedModel(object):
 		if not isinstance(index, int):
 			self.metabolite_names.pop(i)
 
+		self.__S = delete(self.__S, [i], axis=0)
 		self.__update_decoder_map()
 
 		if self.model:

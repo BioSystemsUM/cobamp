@@ -39,9 +39,12 @@ class Solution(object):
 			kwargs: Any additional information to be included in the attribute_dict variable that can be accessed by
 			the <self.attribute_value> function.
 		"""
+		self.__var_names = None
 		self.__value_map = value_map
 		self.__status = status
-		self.__attribute_dict = kwargs
+		self.__attribute_dict = {k:v for k,v in kwargs.items() if k != 'names'}
+		if 'names' in kwargs:
+			self.__var_names = kwargs['names']
 
 		if 'objective_value' in kwargs:
 			self.__obj_value = kwargs['objective_value']
@@ -55,8 +58,10 @@ class Solution(object):
 			raise TypeError('\'item\' is not a sequence or string.')
 
 	def to_series(self):
-
-		return pd.Series(self.var_values())
+		if self.__var_names != None:
+			return pd.Series({self.__var_names[i]:self.__value_map[i] for i in range(len(self.__var_names))})
+		else:
+			return pd.Series(self.var_values())
 
 	def set_attribute(self, key, value):
 		"""

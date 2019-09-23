@@ -4,6 +4,7 @@ from cobamp.utilities.property_management import PropertyDictionary
 from cobamp.core.models import ConstraintBasedModel
 from numpy import array, nonzero, ndarray
 from itertools import chain, product
+from copy import deepcopy
 
 
 class ModelTransformer(object):
@@ -24,10 +25,15 @@ class ModelTransformer(object):
 		elif isinstance(args, ConstraintBasedModel):
 			S = args.get_stoichiometric_matrix()
 			lb, ub = args.get_bounds_as_list()
+			new_properties = deepcopy(properties)
 
-			Sn, lbn, ubn, mapping, metabs = self.transform_array(S, lb, ub, properties)
+			for k in ['block','keep']:
+				if new_properties[k] != None:
+					new_properties[k] = [args.decode_index(r,'reaction') for r in properties[k]]
 
-			reaction_names_new = [properties['reaction_id_sep'].join([args.reaction_names[i] for i in mapping.from_new(i)]) for i in
+			Sn, lbn, ubn, mapping, metabs = self.transform_array(S, lb, ub, new_properties)
+
+			reaction_names_new = [new_properties['reaction_id_sep'].join([args.reaction_names[i] for i in mapping.from_new(i)]) for i in
 								  range(len(lbn))]
 			modeln = ConstraintBasedModel(
 				S=Sn,
@@ -94,7 +100,7 @@ class SubsetReducer(ModelTransformer):
 	def reduce(self, S, lb, ub, keep=(), block=(), absolute_bounds=False):
 		lb, ub = list(map(array, [lb, ub]))
 		to_keep, to_block = [], []
-		irrev = (lb >= 0) | (ub <= 0) & (lb <= 0)
+		irrev = (lb >= 0) | ((ub <= 0) & (lb <= 0))
 
 		if block:
 			to_block = array(block)

@@ -1,6 +1,18 @@
 # Change log
 Major changes between versions will be documented on this file.
 
+## [0.1.2] - 2019-09-23
+### Added
+ - Gene protein reaction rule evaluation module (cobamp.gpr.evaluators). Still a work in
+ progress but the aim is to eventually move all GPR code into this module
+ upon releasing a major revision
+ - New dependency (boolean.py)
+### Changed
+ - Fixed errors in the readthedocs quickstart example
+ - Corrected some assorted bugs on the ConstraintBasedModel and KShortest classes
+### Notice:
+ - This should be the last release without CI/CD
+
 ## [0.1.1] - 2019-06-07
 ### Changed
  - Several bug fixes

@@ -81,7 +81,7 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 			temp = zeros([len(irrv_subsets), n])
 			temp[:, kept_reactions] = irrv_subsets
 			irrv_subsets = temp
-	rd, rdind, dummy = reduce(S, sub, irrev_reduced)
+	rd, rdind, dummy, sub = reduce(S, sub, irrev_reduced)
 
 	return rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
 
@@ -219,7 +219,8 @@ def reduce(S, sub, irrev_reduced=None):
 		ind = unique(nonzero(reduced)[1])
 		reduced = reduced[:, ind]
 		irrev_reduced = irrev_reduced[ind]
+		sub = sub[ind,:]
 	else:
 		irrev_reduced = []
 
-	return reduced, reduced_indexes, irrev_reduced
+	return reduced, reduced_indexes, irrev_reduced, sub
