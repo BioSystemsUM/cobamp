@@ -63,7 +63,7 @@ class KShortestEnumeratorWrapper(object):
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
-		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.is_efp
+		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.__is_efp
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
