@@ -1,5 +1,6 @@
 # Change log
 Major changes between versions will be documented on this file.
+
 ## [0.1.2] - 2019-09-23
 ### Added
  - Gene protein reaction rule evaluation module (cobamp.gpr.evaluators). Still a work in
@@ -9,6 +10,8 @@ Major changes between versions will be documented on this file.
 ### Changed
  - Fixed errors in the readthedocs quickstart example
  - Corrected some assorted bugs on the ConstraintBasedModel and KShortest classes
+### Notice:
+ - This should be the last release without CI/CD
 
 ## [0.1.1] - 2019-06-07
 ### Changed
