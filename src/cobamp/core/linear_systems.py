@@ -38,8 +38,22 @@ SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 
 def make_irreversible_model(S, lb, ub):
-	irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+	lb, ub = np.array(lb), np.array(ub)
+	fwd_irrev = lambda lb, ub: (lb >= 0) and (ub >= 0)
+	bak_irrev = lambda lb, ub: (lb < 0) and (ub <= 0)
+
+	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
+	irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
+
+	# irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
 	rev = np.array([i for i in range(S.shape[1]) if i not in irrev])
+
+	if len(bak_irrev_index) > 0:
+		S[:, bak_irrev_index] = -S[:, bak_irrev_index]
+		ub_temp = ub[bak_irrev_index]
+		ub[bak_irrev_index] = -lb[bak_irrev_index]
+		lb[bak_irrev_index] = -ub_temp
+
 	Sr = S[:, rev]
 	offset = S.shape[1]
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}

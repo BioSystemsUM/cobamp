@@ -1,6 +1,6 @@
-from numpy import ndarray, array, where, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
+from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
 	int32, int64
-from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS
+from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from collections import OrderedDict
 import warnings
@@ -38,37 +38,33 @@ def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 	return S_new, nlb, nub, rx_mapping
 
 
-def make_irreversible_model(S, lb, ub):
-	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
-	rev = array([i for i in range(S.shape[1]) if i not in irrev])
-	Sr = S[:, rev]
-	offset = S.shape[1]
-	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
-	for i, rx in enumerate(rev):
-		rx_mapping[rx].append(offset + i)
-	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
-
-	S_new = hstack([S, -Sr])
-	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
-	for orig_rx, new_rx in rx_mapping.items():
-		if isinstance(new_rx, tuple):
-			nub[new_rx[0]] = abs(lb[orig_rx])
-			nub[new_rx[1]] = ub[orig_rx]
-		else:
-			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
-
-	return S_new, nlb, nub, rx_mapping
 
 
-def _invert_bounds(S, lb, ub):
-	irrev_reverse_idx = where((lb <= 0) & (ub <= 0))[0]
-	# S[:, irrev_reverse_idx] = -S[:, irrev_reverse_idx]
-	temp = ub[irrev_reverse_idx]
-	ub[irrev_reverse_idx] = -lb[irrev_reverse_idx]
-	lb[irrev_reverse_idx] = 0
+# def make_irreversible_model(S, lb, ub):
+# 	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+# 	rev = array([i for i in range(S.shape[1]) if i not in irrev])
+# 	Sr = S[:, rev]
+# 	offset = S.shape[1]
+# 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
+# 	for i, rx in enumerate(rev):
+# 		rx_mapping[rx].append(offset + i)
+# 	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
+#
+# 	S_new = hstack([S, -Sr])
+# 	nlb, nub = zeros(S_new.shape[1]), zeros(S_new.shape[1])
+# 	for orig_rx, new_rx in rx_mapping.items():
+# 		if isinstance(new_rx, tuple):
+# 			nub[new_rx[0]] = abs(lb[orig_rx])
+# 			nub[new_rx[1]] = ub[orig_rx]
+# 		else:
+# 			nlb[new_rx], nub[new_rx] = lb[orig_rx], ub[orig_rx]
+#
+# 	return S_new, nlb, nub, rx_mapping
 
-	return S, lb, ub
 
+# def test_irreversible_conversions():
+# 	S = zeros([3,3])
+# 	lb, ub = ([0,1000],[-1000, 1000],[-1000, 0])
 
 class ConstraintBasedModel(object):
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True,
