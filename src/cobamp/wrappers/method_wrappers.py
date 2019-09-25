@@ -63,7 +63,7 @@ class KShortestEnumeratorWrapper(object):
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
-		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.__is_efp
+		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.is_efp
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
@@ -145,7 +145,7 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 
 
 		"""
-		self.__is_efp = True
+		self.is_efp = False
 		super().__init__(model, **kwargs)
 		self.__consumed, self.__non_consumed, self.__produced, self.__subset = consumed, non_consumed, produced, subset
 
@@ -183,7 +183,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
 
 	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, **kwargs):
-		self.__is_efp = False
+		self.is_efp = False
 		super().__init__(model, **kwargs)
 
 		target_flux_space = [tuple([k]) + tuple(v) for k, v in target_flux_space_dict.items()]
@@ -210,7 +210,7 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
 
 	def __init__(self, model, subset, non_consumed=[], consumed=[], produced=[], **kwargs):
-		self.__is_efp = True
+		self.is_efp = True
 		super().__init__(model, **kwargs)
 		self.__subset = subset
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
