@@ -152,10 +152,12 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 	def get_linear_system(self):
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
+		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(as_dict=False, separate_list=True)]
 		if self.__subset == None:
+
 			return IrreversibleLinearSystem(
 				S=self.model_reader.S,
-				irrev=self.model_reader.irrev_index,
+				lb=lb, ub=ub,
 				consumed=conv_cn,
 				non_consumed=conv_nc,
 				produced=conv_pr,
@@ -165,7 +167,7 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 		else:
 			return IrreversibleLinearPatternSystem(
 				S=self.model_reader.S,
-				irrev=self.model_reader.irrev_index,
+				lb=lb, ub=ub,
 				consumed=conv_cn,
 				non_consumed=conv_nc,
 				produced=conv_pr,
@@ -199,8 +201,9 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)
 
 	def get_linear_system(self):
+		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(separate_list=True)]
 		T, b = self.__materialize_intv_problem()
-		return DualLinearSystem(self.model_reader.S, self.model_reader.irrev_index, T, b, solver=self.solver)
+		return DualLinearSystem(self.model_reader.S, lb, ub, T, b, solver=self.solver)
 
 
 class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):

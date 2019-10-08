@@ -36,23 +36,44 @@ VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
 VARIABLE, CONSTRAINT = 'var', 'const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
+def fwd_irrev(lb, ub):
+	return (lb >= 0) and (ub >= 0)
 
-def make_irreversible_model(S, lb, ub):
+def bak_irrev(lb, ub):
+	return (lb < 0) and (ub <= 0)
+
+
+def fix_backwards_irreversible_reactions(S, lb, ub):
 	lb, ub = np.array(lb), np.array(ub)
-	fwd_irrev = lambda lb, ub: (lb >= 0) and (ub >= 0)
-	bak_irrev = lambda lb, ub: (lb < 0) and (ub <= 0)
-
 	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
-	irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
-
-	# irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
-	rev = np.array([i for i in range(S.shape[1]) if i not in irrev])
+	# irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
 
 	if len(bak_irrev_index) > 0:
 		S[:, bak_irrev_index] = -S[:, bak_irrev_index]
 		ub_temp = ub[bak_irrev_index]
 		ub[bak_irrev_index] = -lb[bak_irrev_index]
 		lb[bak_irrev_index] = -ub_temp
+
+	return S, lb, ub, fwd_irrev_index, bak_irrev_index
+
+def make_irreversible_model(S, lb, ub):
+	# lb, ub = np.array(lb), np.array(ub)
+	# # fwd_irrev = lambda lb, ub: (lb >= 0) and (ub >= 0)
+	# # bak_irrev = lambda lb, ub: (lb < 0) and (ub <= 0)
+	#
+	# fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
+	S, lb, ub, fwd_irrev_index, bak_irrev_index = fix_backwards_irreversible_reactions(S, lb, ub)
+
+	irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
+
+	# irrev = np.array([i for i in range(S.shape[1]) if not (lb[i] < 0 and ub[i] > 0)])
+	rev = np.array([i for i in range(S.shape[1]) if i not in irrev])
+
+	# if len(bak_irrev_index) > 0:
+	# 	S[:, bak_irrev_index] = -S[:, bak_irrev_index]
+	# 	ub_temp = ub[bak_irrev_index]
+	# 	ub[bak_irrev_index] = -lb[bak_irrev_index]
+	# 	lb[bak_irrev_index] = -ub_temp
 
 	Sr = S[:, rev]
 	offset = S.shape[1]
@@ -416,7 +437,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 	Used as arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, irrev, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
+	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
 		"""
 
 		Parameters
@@ -436,17 +457,20 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 
 		self.select_solver(solver)
 
-		lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
-		ub = [1] * S.shape[1]
-		if -1 in lb:
-			Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
-			fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
-			bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
-		else:
-			Si, lbi, ubi = S, lb, ub
-			fwd_names = ['V' + str(i) for i in range(Si.shape[1])]
-			bwd_names = []
-			rev_mapping = {i:i for i in range(Si.shape[1])}
+		# lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
+		# ub = [1] * S.shape[1]
+		# if -1 in lb:
+		S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
+
+		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
+		fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
+		bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
+
+		# else:
+		# 	Si, lbi, ubi = S, lb, ub
+		# 	fwd_names = ['V' + str(i) for i in range(Si.shape[1])]
+		# 	bwd_names = []
+		# 	rev_mapping = {i:i for i in range(Si.shape[1])}
 
 		lbi = [0] * len(lbi) + [1]
 		ubi = [None] * len(ubi) + [None]
@@ -463,7 +487,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 				assert tup[0] < tup[1], 'force_bounds contains invalid values'
 				lbi[k],ubi[k] = tup
 
-
+		self.rev_mapping = rev_mapping
 		self.__ivars = None
 		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
 																										c in consumed]
@@ -483,13 +507,13 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
-	def __init__(self, S, irrev, subset, **kwargs):
-		super().__init__(S, irrev, **kwargs)
+	def __init__(self, S, lb, ub, subset, **kwargs):
+		super().__init__(S, lb, ub, **kwargs)
 		self.subset = subset
 		fwds, revs = [], []
 		dvm_new = {}
 		for r in self.subset:
-			if r not in irrev:
+			if not isinstance(self.rev_mapping[r], int):
 				fid, rid = self.dvar_mapping[r]
 				dvm_new[r] = (len(fwds),len(subset)+len(revs))
 				fwds.append(fid)
@@ -516,7 +540,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	elementary modes in a dual network. Bioinformatics, 28(3), 381-387.
 	"""
 
-	def __init__(self, S, irrev, T, b, solver=None):
+	def __init__(self, S, lb, ub, T, b, solver=None):
 		"""
 
 		Parameters
@@ -531,6 +555,10 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 			b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
 		"""
 		self.select_solver(solver)
+
+		S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
+
+		irrev = np.union1d(fwd_irrev, bak_irrev)
 
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
