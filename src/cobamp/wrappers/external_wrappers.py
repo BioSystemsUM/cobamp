@@ -1,13 +1,11 @@
-from cobamp.algorithms.kshortest import InterventionProblem
-from boolean.boolean import BooleanAlgebra, Expression
+from boolean.boolean import BooleanAlgebra
 
 import abc
 import warnings
 import numpy as np
-from scipy.io import loadmat
 from numpy import where
 from ..core.models import ConstraintBasedModel
-from re import compile, findall, sub
+from re import compile
 
 MAX_PRECISION = 1e-10
 GPR_GENE_RE = compile("\\b(?!and\\b|or\\b|AND\\b|OR\\b)[([A-z0-9\.]*")
@@ -255,19 +253,26 @@ class COBRAModelObjectReader(AbstractObjectReader):
 			for offset,match_obj in enumerate(matches):
 				final_pos = match_obj.span()[0] + offset
 				gpr_string = gpr_string[:final_pos] + '_' + gpr_string[final_pos:]
-			return gpr_string, len(matches), len(unique_tokens)
+			return gpr_string, len(matches), len(unique_tokens), unique_tokens
 
 		gpr_list = []
 		for r in self.model.reactions:
-			rule, num_matches, num_unique_tokens = fix_name(r.gene_reaction_rule)
+			rule, num_matches, num_unique_tokens, unique_tokens = fix_name(r.gene_reaction_rule)
 			if apply_fx:
 				rule = apply_fx(rule)
-			if (num_unique_tokens > 0) and (num_matches//num_unique_tokens) < token_to_gene_ratio:
+			if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
 				rule = normalize_boolean_expression(rule)
 			else:
 				warnings.warn('Will not normalize rules with more than '+str(token_to_gene_ratio)+' average tokens per gene')
-			gpr_list.append(rule)
 
+			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if (k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
+			for offsetp, matchp_obj in enumerate(matches_post):
+				final_pos = matchp_obj.span()[0] - offsetp
+				rule = rule[:final_pos] + rule[final_pos+1:]
+
+			gpr_list.append(rule)
+			# for tok in unique_tokens:
+			# 	rule = rule.replace('_'+tok, tok)
 		return gpr_list
 		#
 		# if not apply_fx:
@@ -277,8 +282,10 @@ class COBRAModelObjectReader(AbstractObjectReader):
 
 
 	def convert_gprs_to_list(self, rx, apply_fx):
+		if apply_fx == None:
+			apply_fx = lambda x: x
 		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''),
-							self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
+							apply_fx(self.gene_protein_reaction_rules[self.r_ids.index(rx)]).split('or')))
 		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
 		return rules
 
