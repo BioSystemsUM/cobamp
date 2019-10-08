@@ -25,6 +25,18 @@ decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, 
 
 
 def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
+	"""
+	Applies functions to the elements of an ordered dictionary, using one of two functions that process, respectively,
+	a single item or a tuple of items.
+
+	Functions must receive the dictionary key, the dictionary itself and optional arguments
+
+	:param single_fx: A function that receives a single object as argument
+	:param pair_fx: A function that receives a tuple as argument
+	:param value_map: An ordered dictionary mapping keys with values
+	:param kwargs: Optional function arguments
+	:return: An iterable containing the results of the applied functions
+	"""
 	return [
 		pair_fx(varlist, value_map, **kwargs) if isinstance(varlist, tuple) else single_fx(varlist, value_map, **kwargs)
 		for varlist in value_map.keys()]
@@ -144,6 +156,9 @@ class KShortestEnumerator(object):
 		self.__vnames = self.model.model._get_variables_names()
 
 	def __set_model_parameters(self):
+		"""
+		Sets the optlang Model instance's parameters with appropriate values for k-shortest enumeration
+		"""
 		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
 					   'GUROBI': self.__set_model_parameters_gurobi}
 
@@ -153,7 +168,8 @@ class KShortestEnumerator(object):
 	def __set_model_parameters_cplex(self):
 
 		"""
-		Internal method to set model parameters. This is based on the original MATLAB code by Von Kamp et al.
+		Internal method to set model parameters for the CPLEX solver. This is based on the original MATLAB code by Von
+		Kamp et al.
 
 		-------
 		"""
@@ -169,10 +185,13 @@ class KShortestEnumerator(object):
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
 
-	# instance.parameters.mip.tolerances.absmipgap.set(0)
 
 	def __set_model_parameters_gurobi(self):
+		"""
+		Internal method to set model parameters for the GUROBI solver. This is based on the original MATLAB code by Von
+		Kamp et al.
 
+		"""
 		instance = self.model.model.problem
 
 		instance.params.PoolGap = 0
@@ -183,7 +202,18 @@ class KShortestEnumerator(object):
 	##TODO: Make this more flexible in the future. 4GB of RAM should be enough but some problems might require more.
 
 	def __add_cuts(self, sols, length_override, equality):
+		"""
+		Internal method that adds an integer cut based on a previous solution. Used to constrain the solution space
+		in the optlang Model so that the solutions in sols are not enumerated repeatedly.
 
+		This constraint is formulated so that the amount of reactions in a given previously determined solution
+		must be lower than an integer value specified as length_override
+
+		:param sols: A list with either lists of variable indices or KShortestSolution instances
+		:param length_override: Right-hand side integer value for the constraint
+		:param equality: Boolean flag specifying whether the constraint is an equality
+		:return:
+		"""
 		for sol in sols:
 			if isinstance(sol, KShortestSolution):
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem, equality=equality,
@@ -235,6 +265,10 @@ class KShortestEnumerator(object):
 		self.__add_cuts(sols, length_override=0, equality=True)
 
 	def __add_kshortest_indicators(self, chunksize=2000):
+		"""
+		Adds the constraints and indicator variables that correspond to each manipulated variable
+		:param chunksize: Integer value determining how many constraints are added per iteration (performance issues)
+		"""
 		for i in range(0, len(self.__dvars), chunksize):
 			#print('Adding chunk:',i,i+chunksize)
 			dvl = self.__dvars[i:i+chunksize]
@@ -244,7 +278,7 @@ class KShortestEnumerator(object):
 		"""
 		Adds indicator variable to a copy of the supplied linear problem.
 		This uses the __dvars map to obtain a list of all variables and assigns an indicator to them.
-
+		:param dvars: An iterable with the variables to add the indicators to
 		-------
 
 		"""
@@ -287,6 +321,10 @@ class KShortestEnumerator(object):
 		self.indicator_map.update(dict(zip(dvars, new_ivars)))
 
 	def __add_kshortest_indicators_big_m(self):
+		"""
+		Adds the constraints and indicator variables that correspond to each manipulated variable using a big-M
+		formulation. Performance and numerical stability issues may arise with complex problems.
+		"""
 		dvars = self.__dvars
 
 		M = self.__m_value
@@ -310,6 +348,9 @@ class KShortestEnumerator(object):
 		self.indicator_map = dict(zip(dvars, self.__ivars))
 
 	def __add_efp_auxiliary_constraints(self):
+		"""
+		Adds indicator constraints according to the EFP formulation by Kaleta et al.
+		"""
 		self.__efp_auxiliary_map = {}
 		itype = VAR_BINARY
 		indicator_vars = [self.model.model.variables[v] for v in self.__ivars]
