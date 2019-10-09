@@ -37,10 +37,10 @@ VARIABLE, CONSTRAINT = 'var', 'const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 def fwd_irrev(lb, ub):
-	return (lb >= 0) and (ub >= 0)
+	return ((lb >= 0) and (ub >= 0)).astype(int)
 
 def bak_irrev(lb, ub):
-	return (lb < 0) and (ub <= 0)
+	return ((lb < 0) and (ub <= 0)).astype(int)
 
 
 def fix_backwards_irreversible_reactions(S, lb, ub):
@@ -558,7 +558,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 
 		S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
 
-		irrev = np.union1d(fwd_irrev, bak_irrev)
+		irrev = np.union1d(fwd_irrev, bak_irrev).astype(int)
 
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
