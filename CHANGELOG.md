@@ -1,6 +1,11 @@
 # Change log
 Major changes between versions will be documented on this file.
-
+## [0.1.3] - 2019-10-09
+### Changed
+ - Bugfixes concerning GPR reading (Gene names had an additional underscore character)
+ - Normalized LinearSystem class argument signature
+ - Linear systems with lower and upper bounds now properly check for irreversible reactions in the opposite direction
+ 
 ## [0.1.2] - 2019-09-23
 ### Added
  - Gene protein reaction rule evaluation module (cobamp.gpr.evaluators). Still a work in
