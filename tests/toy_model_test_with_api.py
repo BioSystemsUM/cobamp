@@ -57,13 +57,13 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		                   [0, 0, 0, 0, 0, 0, 1, -1, 0],
 		                   [0, 0, 0, 0, 1, 0, 0, 1, -1]])
 		self.rx_names = ["R" + str(i) for i in range(1, 10)]
-		self.irrev = [0, 1, 2, 4, 5, 6, 7, 8]
-
+		self.lb, self.ub = [0]*len(self.rx_names), [1000]*len(self.rx_names)
+		self.lb[3] = -1000
 		self.T = np.array([0] * self.S.shape[1]).reshape(1, self.S.shape[1])
 		self.T[0, 8] = -1
 		self.b = np.array([-1]).reshape(1, )
-		self.lsystem = IrreversibleLinearSystem(self.S, self.irrev, solver=TEST_SOLVER)
-		self.dsystem = DualLinearSystem(self.S, self.irrev, self.T, self.b, solver=TEST_SOLVER)
+		self.lsystem = IrreversibleLinearSystem(self.S, self.lb, self.ub, solver=TEST_SOLVER)
+		self.dsystem = DualLinearSystem(self.S, self.lb, self.ub, self.T, self.b, solver=TEST_SOLVER)
 
 
 	def enumerate_elementary_flux_modes(self):
