@@ -6,6 +6,7 @@ import warnings
 
 import optlang
 from optlang.symbolics import Zero
+from multiprocessing import cpu_count
 
 CUSTOM_DEFAULT_SOLVER = None
 SOLVER_ORDER = ['CPLEX', 'GUROBI', 'GLPK', 'MOSEK', 'SCIPY']
@@ -125,6 +126,7 @@ class LinearSystem():
 
 	def set_default_configuration(self):
 		cfg = self.model.configuration
+
 		try:
 			cfg.tolerances.feasibility = 1e-9
 			cfg.tolerances.optimality = 1e-9
@@ -134,6 +136,51 @@ class LinearSystem():
 
 		except:
 			print('Could not set parameters with this solver')
+
+	def set_number_of_threads(self, n_threads=0):
+		'''
+		Defines the amount of threads available for the solver to use.
+		:param n_threads: Number of threads available to the solver. Set to 0 if default parameters are needed
+		:return:
+		'''
+		cpu_c = cpu_count()
+		is_positive = n_threads >= 0
+		actual_threads = n_threads
+
+		if not is_positive:
+			warnings.warn('Threads cannot be set to negative values. Using default values')
+			actual_threads = 0
+
+		if n_threads > cpu_c:
+			warnings.warn('User-defined number of threads exceeds the amount of physical threads')
+
+
+		if self.solver == 'CPLEX':
+			self.model.problem.parameters.threads.set(actual_threads)
+		elif self.solver == 'GUROBI':
+			self.model.problem.Params.Threads = actual_threads
+		else:
+			warnings.warn('Could not set threads for '+str(self.solver)+' instance. Not yet implemented!')
+
+	def set_working_memory_limit(self, workmem):
+		'''
+		Defines the amount of memory available for the solver to use. Use this at your own peril!
+		:param n_threads: Memory in MegaBytes available to the solver
+		:return:
+		'''
+		is_positive = workmem >= 0
+		actual_mem = workmem
+
+		if not is_positive:
+			warnings.warn('Threads cannot be set to negative values. Using default values')
+
+		else:
+			if self.solver == 'CPLEX':
+				self.model.problem.parameters.workmem.set(actual_mem)
+			elif self.solver == 'GUROBI':
+				self.model.problem.Params.NodefileStart = actual_mem / 1024
+			else:
+				warnings.warn('Could not set threads for '+str(self.solver)+' instance. Not yet implemented!')
 
 	@abc.abstractmethod
 	def build_problem(self):

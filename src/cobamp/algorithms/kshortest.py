@@ -45,21 +45,28 @@ def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 K_SHORTEST_MPROPERTY_METHOD = 'METHOD'
 K_SHORTEST_METHOD_ITERATE = "ITERATE"
 K_SHORTEST_METHOD_POPULATE = "POPULATE"
-K_SHORTEST_TYPE_EFP = "EFP_PROBLEM"
+
+K_SHORTEST_MPROPERTY_TYPE_EFP = "EFP_PROBLEM"
 
 K_SHORTEST_OPROPERTY_MAXSIZE = 'MAXSIZE'
 K_SHORTEST_OPROPERTY_MAXSOLUTIONS = "MAXSOLUTIONS"
-K_SHORTEST_BIG_M_VALUE = "BIGMVALUE"
+K_SHORTEST_OPROPERTY_N_THREADS = 'N_THREADS'
+K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION = 'FORCE_NON_CANCEL'
+K_SHORTEST_OPROPERTY_BIG_M_VALUE = "BIGMVALUE"
+K_SHORTEST_OPROPERTY_WORKMEMORY = 'WORKMEM'
 
 kshortest_mandatory_properties = {
 	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE],
-	K_SHORTEST_TYPE_EFP: bool
+	K_SHORTEST_MPROPERTY_TYPE_EFP: bool
 }
 
 kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_MAXSIZE: lambda x: x > 0 and isinstance(x, int),
 	K_SHORTEST_OPROPERTY_MAXSOLUTIONS: lambda x: x > 0 and isinstance(x, int),
-	K_SHORTEST_BIG_M_VALUE: lambda x: isinstance(x, (float, int))
+	K_SHORTEST_OPROPERTY_BIG_M_VALUE: lambda x: isinstance(x, (float, int)),
+	K_SHORTEST_OPROPERTY_N_THREADS: lambda x: isinstance(x, int),
+	K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION: bool,
+	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None
 }
 
 
@@ -70,10 +77,16 @@ class KShortestProperties(PropertyDictionary):
 	K_SHORTEST_MPROPERTY_METHOD:
 		- K_SHORTEST_METHOD_ITERATE : Iterative enumeration (one EFM at a time)
 		- K_SHORTEST_METHOD_POPULATE : Enumeration by size (EFMs of a certain size at a time)
+
 	"""
 
 	def __init__(self):
 		super().__init__(kshortest_mandatory_properties, kshortest_optional_properties)
+
+		# set optional properties by default
+		self[K_SHORTEST_OPROPERTY_N_THREADS] = 0
+		self[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION] = True
+		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e9
 
 
 class KShortestEnumerator(object):
@@ -85,7 +98,7 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0, workmem=None):
 
 		"""
 
@@ -154,6 +167,9 @@ class KShortestEnumerator(object):
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.__vnames = self.model.model._get_variables_names()
+		self.model.set_number_of_threads(n_threads)
+		if workmem != None:
+			self.model.set_working_memory_limit(workmem)
 
 	def __set_model_parameters(self):
 		"""
@@ -671,8 +687,14 @@ class KShortestEFMAlgorithm(object):
 		"""
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
 
-		self.ksh = KShortestEnumerator(linear_system, m_value=self.configuration[K_SHORTEST_BIG_M_VALUE],
-									   is_efp_problem=self.configuration[K_SHORTEST_TYPE_EFP])
+
+		self.ksh = KShortestEnumerator(
+			linear_system=linear_system,
+			m_value=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_VALUE],
+			is_efp_problem=self.configuration[K_SHORTEST_MPROPERTY_TYPE_EFP],
+			force_non_cancellation=self.configuration[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION],
+			n_threads=self.configuration[K_SHORTEST_OPROPERTY_N_THREADS],
+			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY])
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:

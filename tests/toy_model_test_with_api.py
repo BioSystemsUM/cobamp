@@ -40,11 +40,10 @@ configs = [efm_populate_enumeration_config, mcs_populate_enumeration_config, efm
  efm_iterate_enumeration_config, mcs_iterate_enumeration_config, efm_iterate_enumeration_config_wrong, mcs_iterate_enumeration_config_wrong]
 
 for cfg in configs:
-	cfg[K_SHORTEST_BIG_M_VALUE] = 3.4200101010 * 1e4
-
-for cfg in configs:
-	cfg[K_SHORTEST_TYPE_EFP] = False
-
+	cfg[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 3.4200101010 * 1e4
+	cfg[K_SHORTEST_MPROPERTY_TYPE_EFP] = False
+	cfg[K_SHORTEST_OPROPERTY_N_THREADS] = 1
+	cfg[K_SHORTEST_OPROPERTY_WORKMEMORY] = None
 
 TEST_SOLVER = 'CPLEX'
 
@@ -66,38 +65,55 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		self.dsystem = DualLinearSystem(self.S, self.lb, self.ub, self.T, self.b, solver=TEST_SOLVER)
 
 
+
 	def enumerate_elementary_flux_modes(self):
 		ks = KShortestEFMAlgorithm(efm_populate_enumeration_config)
-		return ks.enumerate(self.lsystem)
+		r =  ks.enumerate(self.lsystem)
+		print('Thread_parameter',ks.ksh.model.model.problem.parameters.workmem.get())
+		return r
 
 	def enumerate_some_elementary_flux_modes(self):
 		ks = KShortestEFMAlgorithm(efm_populate_enumeration_config_wrong)
-		return ks.enumerate(self.lsystem)
+		r =  ks.enumerate(self.lsystem)
+		print('Thread_parameter',ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_minimal_cut_sets(self):
 		ks = KShortestEFMAlgorithm(mcs_populate_enumeration_config)
-		return ks.enumerate(self.dsystem)
+		r = ks.enumerate(self.dsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_some_minimal_cut_sets(self):
 		ks = KShortestEFMAlgorithm(mcs_populate_enumeration_config_wrong)
-		return ks.enumerate(self.dsystem)
+		r = ks.enumerate(self.dsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_elementary_flux_modes_iter(self):
 		ks = KShortestEFMAlgorithm(efm_iterate_enumeration_config)
-		return ks.enumerate(self.lsystem)
+		r = ks.enumerate(self.lsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_some_elementary_flux_modes_iter(self):
 		ks = KShortestEFMAlgorithm(efm_iterate_enumeration_config_wrong)
-		return ks.enumerate(self.lsystem)
+		r = ks.enumerate(self.lsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_minimal_cut_sets_iter(self):
 		ks = KShortestEFMAlgorithm(mcs_iterate_enumeration_config)
-		return ks.enumerate(self.dsystem)
+		r = ks.enumerate(self.dsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
 
 	def enumerate_some_minimal_cut_sets_iter(self):
 		ks = KShortestEFMAlgorithm(mcs_iterate_enumeration_config_wrong)
-		return ks.enumerate(self.dsystem)
-	
+		r = ks.enumerate(self.dsystem)
+		print('Thread_parameter', ks.ksh.model.model.problem.parameters.threads.get())
+		return r
+
 	def test_elementary_flux_modes_support(self):
 		basic_answer = {"R1, R2, R3, R4", "R1, R4, R5, R9", "R1, R2, R3, R5, R9", "R1, R6, R7, R8, R9"}
 		test = {self.convert_solution_to_string(sol) for sol in self.enumerate_elementary_flux_modes()}
