@@ -1,5 +1,8 @@
 # Change log
 Major changes between versions will be documented on this file.
+## [0.1.4b1] - 2019-10-10
+### Added
+ - Memory and thread setting parameters on LinearSystem / algorithm classes 
 ## [0.1.3] - 2019-10-09
 ### Changed
  - Bugfixes concerning GPR reading (Gene names had an additional underscore character)
