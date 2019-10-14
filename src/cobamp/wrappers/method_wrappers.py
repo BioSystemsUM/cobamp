@@ -24,7 +24,7 @@ class KShortestEnumeratorWrapper(object):
 	}
 
 	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
-				 excluded_solutions=None, solver='CPLEX', force_bounds={}):
+				 excluded_solutions=None, solver='CPLEX', force_bounds={}, n_threads=0, workmem=None):
 		"""
 
 		Parameters
@@ -51,6 +51,10 @@ class KShortestEnumeratorWrapper(object):
 
 			force_bounds: A dict mapping reaction indexes (int for now) with tuples containing lower and upper bounds
 			An experimental feature meant to force certain phenotypes on EFP/EFMs
+
+			n_threads: An integer value defining the amount of threads available to the solver
+
+			n_threads: An integer value defining the amount of memory in MegaBytes available to the solver
 		"""
 
 		self.__model = model
@@ -63,7 +67,9 @@ class KShortestEnumeratorWrapper(object):
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
-		self.__algo_properties[K_SHORTEST_TYPE_EFP] = self.is_efp
+		self.__algo_properties[K_SHORTEST_MPROPERTY_TYPE_EFP] = self.is_efp
+		self.__algo_properties[K_SHORTEST_OPROPERTY_N_THREADS] = n_threads
+		self.__algo_properties[K_SHORTEST_OPROPERTY_WORKMEMORY] = workmem
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
