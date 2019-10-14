@@ -1,7 +1,7 @@
 # Change log
 Major changes between versions will be documented on this file.
 ## [0.1.4] - 2019-10-14
-## Changed
+### Changed
  - Version revision 
 
 ## [0.1.4b1] - 2019-10-10
