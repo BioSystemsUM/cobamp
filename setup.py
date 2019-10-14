@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'cobamp',
-    version = '0.1.4b1',
+    version = '0.1.4',
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["numpy",
