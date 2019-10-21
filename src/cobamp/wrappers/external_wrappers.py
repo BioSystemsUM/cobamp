@@ -49,6 +49,8 @@ class AbstractObjectReader(object):
 		self.bounds_dict = self.get_model_bounds(True)
 		self.genes = self.get_model_genes()
 		self.gene_protein_reaction_rules = self.get_model_gprs()
+		self.gpr_map = None
+
 
 	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
@@ -171,7 +173,9 @@ class AbstractObjectReader(object):
 				abs(v) > MAX_PRECISION}
 
 	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False, apply_fx=None):
-		gpr_map = {rx: self.convert_gprs_to_list(rx, apply_fx) for rx in self.r_ids}
+		if self.gpr_map == None:
+			self.gpr_map = {rx: self.convert_gprs_to_list(rx, apply_fx) for rx in self.r_ids}
+		gpr_map = self.gpr_map
 
 		def aux_apply(fx, it):
 			args = [k for k in it if k is not None]
