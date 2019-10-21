@@ -323,6 +323,13 @@ class LinearSystem():
 
 		return vars
 
+	def get_stuff(self, what, index):
+		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
+		if container == None:
+			raise ValueError('`what` parameter requires a string (either `var` or `const`)')
+
+		return [container[k] for k in index]
+
 	def set_objective(self, coefficients, minimize, vars=None):
 		if not vars:
 			vars = self.model.variables
