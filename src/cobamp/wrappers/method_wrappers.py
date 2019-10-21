@@ -225,12 +225,14 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
 
 	def get_linear_system(self):
+		## TODO:  change irrev to lb/ub structure
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
+		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(as_dict=False, separate_list=True)]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
 		conv_subsets = [self.model_reader.reaction_id_to_index(s) for s in self.__subset]
 		return IrreversibleLinearPatternSystem(
 			S=self.model_reader.S,
-			irrev=self.model_reader.irrev_index,
+			lb=lb, ub=ub,
 			subset=conv_subsets,
 			consumed=conv_cn,
 			non_consumed=conv_nc,
