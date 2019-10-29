@@ -48,6 +48,7 @@ K_SHORTEST_METHOD_POPULATE = "POPULATE"
 
 K_SHORTEST_MPROPERTY_TYPE_EFP = "EFP_PROBLEM"
 
+K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS = "BIGM_CONSTS"
 K_SHORTEST_OPROPERTY_MAXSIZE = 'MAXSIZE'
 K_SHORTEST_OPROPERTY_MAXSOLUTIONS = "MAXSOLUTIONS"
 K_SHORTEST_OPROPERTY_N_THREADS = 'N_THREADS'
@@ -66,7 +67,8 @@ kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_BIG_M_VALUE: lambda x: isinstance(x, (float, int)),
 	K_SHORTEST_OPROPERTY_N_THREADS: lambda x: isinstance(x, int),
 	K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION: bool,
-	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None
+	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None,
+	K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS: bool
 }
 
 
@@ -86,7 +88,9 @@ class KShortestProperties(PropertyDictionary):
 		# set optional properties by default
 		self[K_SHORTEST_OPROPERTY_N_THREADS] = 0
 		self[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION] = True
-		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e9
+		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e12
+		self[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS] = False
+
 
 
 class KShortestEnumerator(object):
@@ -98,7 +102,7 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0, workmem=None):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0, workmem=None, force_big_m=False):
 
 		"""
 
@@ -111,6 +115,7 @@ class KShortestEnumerator(object):
 		"""
 
 		linear_system.build_problem()
+		#linear_system.model.configuration.verbosity = 3
 		self.__dvar_mapping = linear_system.get_dvar_mapping()
 		self.__ls_shape = linear_system.get_stoich_matrix_shape()
 		self.model = linear_system
@@ -135,9 +140,10 @@ class KShortestEnumerator(object):
 		# Setup k-shortest constraints
 		self.indicator_map = {}
 		self.__ivars = []
-		big_m = linear_system.solver != 'CPLEX'
-		if big_m:
-			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(
+		no_indicators = (force_big_m) or linear_system.solver != 'CPLEX'
+		# big_m = force_big_m and (no_indicators)
+		if no_indicators:
+			warnstr = 'Using Big-M constraints with M= ' + str(
 				self.__m_value)
 			warnings.warn(warnstr)
 			self.__add_kshortest_indicators_big_m()
@@ -168,6 +174,7 @@ class KShortestEnumerator(object):
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.__vnames = self.model.model._get_variables_names()
 		self.model.set_number_of_threads(n_threads)
+
 		if workmem != None:
 			self.model.set_working_memory_limit(workmem)
 
@@ -192,15 +199,19 @@ class KShortestEnumerator(object):
 		instance = self.model.model.problem
 
 		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		#instance.parameters.mip.tolerances.mipgap.set(1e-2)
+
 		instance.parameters.clocktype.set(1)
 		instance.parameters.advance.set(0)
 		instance.parameters.mip.strategy.fpheur.set(1)
 		instance.parameters.emphasis.mip.set(2)
-		instance.parameters.mip.limits.populate.set(1000000)
+		instance.parameters.mip.limits.populate.set(21000000)
 		instance.parameters.mip.pool.intensity.set(4)
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
-
+		#instance.parameters.lpmethod.set(6)
+#		instance.parameters.tune_problem()
+		#instance.parameters.timelimit.set(60)
 
 	def __set_model_parameters_gurobi(self):
 		"""
@@ -527,6 +538,7 @@ class KShortestEnumerator(object):
 		try:
 			sol = self.optimizer.optimize()
 			status = sol.status()
+			#print('Solution status: ',self.model.model.problem.solution.get_status())
 			if status == 'optimal':
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
 				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames)
@@ -694,7 +706,9 @@ class KShortestEFMAlgorithm(object):
 			is_efp_problem=self.configuration[K_SHORTEST_MPROPERTY_TYPE_EFP],
 			force_non_cancellation=self.configuration[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION],
 			n_threads=self.configuration[K_SHORTEST_OPROPERTY_N_THREADS],
-			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY])
+			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY],
+			force_big_m=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS]
+		)
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:
