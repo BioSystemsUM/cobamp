@@ -45,6 +45,7 @@ def bak_irrev(lb, ub):
 
 
 def fix_backwards_irreversible_reactions(S, lb, ub):
+	S = np.array(S)
 	lb, ub = np.array(lb), np.array(ub)
 	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
 	# irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
