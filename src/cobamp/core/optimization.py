@@ -2,7 +2,11 @@ import string, random, shutil
 from numpy import nan, array, int_, float_, abs, zeros, max
 import pandas as pd
 from collections import OrderedDict
+from cobamp.core.linear_systems import LinearSystem
+from pathos.pools import _ProcessPool
 
+from pathos.multiprocessing import cpu_count
+MP_THREADS = cpu_count()
 
 def random_string_generator(N):
 	"""
@@ -265,6 +269,63 @@ class LinearSystemOptimizer(object):
 			instance.params.SolutionNumber = 0
 
 		return solutions
+
+def optimization_pool(lsystem, bound_change_list, objective_coef_list, objective_sense_list, threads=MP_THREADS):
+	res_map = [None for _ in range(len(bound_change_list))]
+	true_threads = min((len(bound_change_list) // 2) + 1, threads)
+	it_per_job = len(bound_change_list) // threads
+	pool = _ProcessPool(
+		processes=true_threads,
+		initializer=_pool_initializer,
+		initargs=(lsystem, bound_change_list, objective_coef_list, objective_sense_list)
+	)
+	for i, value in pool.imap_unordered(_optimize_function, list(range(len(bound_change_list))),
+										chunksize=it_per_job):
+		res_map[i] = value
+
+	pool.close()
+	pool.join()
+	return res_map
+
+def _pool_initializer(linear_system: LinearSystem, bound_change_list, objective_coef_list, objective_sense_list):
+	global _linear_system, _optimizer, _bound_change_list, _vars, _orig_lb, _orig_ub, _objective_coef_list, _objective_sense_list
+
+	_linear_system, _bound_change_list, _objective_coef_list, _objective_sense_list = \
+		linear_system, bound_change_list, objective_coef_list, objective_sense_list
+	_vars = _linear_system.get_model().variables
+	_orig_lb, _orig_ub = list(zip(*[(var.lb, var.ub) for var in _vars]))
+	_optimizer = LinearSystemOptimizer(_linear_system, build=not _linear_system.was_built())
+
+def _optimize_function(change_index):
+	global _linear_system, _optimizer, _bound_change_list, _vars, _orig_lb, _orig_ub, _objective_coef_list, _objective_sense_list
+	var_ids, bounds = list(zip(*list(_bound_change_list[change_index].items())))
+	chg_vars = _linear_system.get_stuff(index=var_ids, what='var')
+	lb, ub = list(zip(*bounds))
+	olb, oub = [[l[k] for k in var_ids] for l in [_orig_lb, _orig_ub]]
+
+	obj_var_ids, obj_coefs = list(zip(*list(_objective_coef_list[change_index].items())))
+
+	obj_sense = _objective_sense_list[change_index]
+	obj_vars = _linear_system.get_stuff(index=obj_var_ids, what='var')
+
+	_linear_system.set_objective(coefficients=obj_coefs, minimize=obj_sense, vars=obj_vars)
+	_linear_system.set_variable_bounds(chg_vars, lb, ub)
+	sol = _optimizer.optimize()
+	_linear_system.set_variable_bounds(chg_vars, olb, oub)
+
+	return change_index, sol
+
+
+class BatchOptimizer(object):
+	def __init__(self, linear_system: LinearSystem, threads=MP_THREADS):
+		self.__linear_system = linear_system
+		self.__threads = threads
+
+	def batch_optimize(self, bounds, objective_coefs, objective_senses):
+		assert len(bounds) == len(objective_coefs) == len(objective_senses)
+		return optimization_pool(self.__linear_system, bounds, objective_coefs, objective_senses, threads=self.__threads)
+
+
 
 
 class CORSOSolution(Solution):
