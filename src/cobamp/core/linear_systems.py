@@ -110,6 +110,11 @@ class LinearSystem():
 	__metaclass__ = abc.ABCMeta
 	model = None
 
+	def was_built(self):
+		if self.model != None:
+			return (len(self.model.variables) != 0) or (len(self.model.constraints) != 0)
+		else:
+			return False
 	def select_solver(self, solver=None):
 		if not solver:
 			solver = get_default_solver()
@@ -239,7 +244,6 @@ class LinearSystem():
 			var_names: string identifiers for the variables
 
 		'''
-
 		self.add_variables_to_model(var_names, lb, ub, var_types)
 		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
