@@ -23,6 +23,7 @@ import warnings
 
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
 
+MAX_POPULATE_SOLS_DEFAULT = 2100000000
 
 def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
 	"""
@@ -55,6 +56,7 @@ K_SHORTEST_OPROPERTY_N_THREADS = 'N_THREADS'
 K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION = 'FORCE_NON_CANCEL'
 K_SHORTEST_OPROPERTY_BIG_M_VALUE = "BIGMVALUE"
 K_SHORTEST_OPROPERTY_WORKMEMORY = 'WORKMEM'
+K_SHORTEST_OPROPERTY_TIMELIMIT = 'TIMELIMIT'
 
 kshortest_mandatory_properties = {
 	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE],
@@ -68,7 +70,8 @@ kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_N_THREADS: lambda x: isinstance(x, int),
 	K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION: bool,
 	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None,
-	K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS: bool
+	K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS: bool,
+	K_SHORTEST_OPROPERTY_TIMELIMIT: lambda x: isinstance(x, (float, int))
 }
 
 
@@ -88,10 +91,10 @@ class KShortestProperties(PropertyDictionary):
 		# set optional properties by default
 		self[K_SHORTEST_OPROPERTY_N_THREADS] = 0
 		self[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION] = True
-		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e12
+		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e8
 		self[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS] = False
-
-
+		self[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = MAX_POPULATE_SOLS_DEFAULT
+		self[K_SHORTEST_OPROPERTY_TIMELIMIT] = 0
 
 class KShortestEnumerator(object):
 	"""
@@ -102,7 +105,8 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0, workmem=None, force_big_m=False):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0,
+				 workmem=None, force_big_m=False, max_populate_sols=MAX_POPULATE_SOLS_DEFAULT, max_time=0):
 
 		"""
 
@@ -123,9 +127,10 @@ class KShortestEnumerator(object):
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model._get_variables_names(), x)
 		self.__force_non_cancellation = force_non_cancellation
-
+		self.__max_populate_dflt = max_populate_sols
 		# TODO: Find a way to estimate the best possible value for this
 		self.__m_value = 10e6 if m_value == None else m_value
+		self.__max_time = max_time
 
 		# Open log files
 		# self.resf = open('results', 'w')
@@ -174,7 +179,6 @@ class KShortestEnumerator(object):
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.__vnames = self.model.model._get_variables_names()
 		self.model.set_number_of_threads(n_threads)
-
 		if workmem != None:
 			self.model.set_working_memory_limit(workmem)
 
@@ -205,13 +209,14 @@ class KShortestEnumerator(object):
 		instance.parameters.advance.set(0)
 		instance.parameters.mip.strategy.fpheur.set(1)
 		instance.parameters.emphasis.mip.set(2)
-		instance.parameters.mip.limits.populate.set(21000000)
+		instance.parameters.mip.limits.populate.set(self.__max_populate_dflt)
 		instance.parameters.mip.pool.intensity.set(4)
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
 		#instance.parameters.lpmethod.set(6)
 #		instance.parameters.tune_problem()
-		#instance.parameters.timelimit.set(60)
+		if self.__max_time != 0:
+			instance.parameters.timelimit.set(self.__max_time)
 
 	def __set_model_parameters_gurobi(self):
 		"""
@@ -543,6 +548,8 @@ class KShortestEnumerator(object):
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
 				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames)
 				return sol
+			else:
+				print('Non-optimal solution status:',sol.status())
 		except Exception as e:
 			print(e)
 
@@ -614,7 +621,7 @@ class KShortestEnumerator(object):
 				sols = self.populate_current_size()
 				yield sols if sols is not None else []
 			except Exception as e:
-				print('No solutions or error occurred at size ', i)
+				print('No solutions or error occurred at size ',i,e.args)
 				raise e
 
 	def populate_current_size(self):
@@ -707,7 +714,9 @@ class KShortestEFMAlgorithm(object):
 			force_non_cancellation=self.configuration[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION],
 			n_threads=self.configuration[K_SHORTEST_OPROPERTY_N_THREADS],
 			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY],
-			force_big_m=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS]
+			force_big_m=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS],
+			max_populate_sols=self.configuration[K_SHORTEST_OPROPERTY_MAXSOLUTIONS],
+			max_time=self.configuration[K_SHORTEST_OPROPERTY_TIMELIMIT]
 		)
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
