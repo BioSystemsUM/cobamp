@@ -143,6 +143,33 @@ class LinearSystem():
 		except:
 			print('Could not set parameters with this solver')
 
+	def get_constraint_bounds(self, constraints=None):
+		return [(c.lb, c.ub) for c in (self.model.constraints if constraints == None else constraints)]
+
+	def get_constraint_matrices(self, constraints=None, vars=None):
+		return [self.get_system_matrix(constraints, vars)] + list(zip(*self.get_constraint_bounds(constraints)))
+
+	def get_system_matrix(self, constraints=None, vars=None):
+		var_list = self.model.variables if vars == None else vars
+		cons_list = self.model.constraints if constraints == None else constraints
+		var_dict = dict(list(zip(*list(zip(*enumerate(var_list)))[::-1])))
+		cnst = cons_list
+
+		def row_factory(mask, values):
+			row =  np.zeros([1, len(var_list)])
+			# print(len(mask), len(values), row.shape)
+			row[:,mask] = values
+			return row
+
+		def get_mask_value_list(constraint):
+			if constraint.indicator_variable == None:
+				return list(zip(*[(var_dict[var],value) for var,value in constraint.get_linear_coefficients(var_list).items()]))
+			else:
+				return [(0,1),(0,0)]
+		A = np.vstack([row_factory(*get_mask_value_list(c)) for c in cnst])
+		return A
+
+
 	def set_number_of_threads(self, n_threads=0):
 		'''
 		Defines the amount of threads available for the solver to use.
@@ -489,6 +516,56 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
+def prepare_irreversible_system(self ,S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
+	self.select_solver(solver)
+
+	# lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
+	# ub = [1] * S.shape[1]
+	# if -1 in lb:
+	S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
+
+	Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
+	fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
+	bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
+
+	# else:
+	# 	Si, lbi, ubi = S, lb, ub
+	# 	fwd_names = ['V' + str(i) for i in range(Si.shape[1])]
+	# 	bwd_names = []
+	# 	rev_mapping = {i:i for i in range(Si.shape[1])}
+
+	lbi = [0] * len(lbi) + [1]
+	ubi = [None] * len(ubi) + [None]
+
+	for k, tup in force_bounds.items():
+		if isinstance(rev_mapping[k], (list, tuple)):
+			inds = rev_mapping[k]
+			trev = (abs(ub[k]) if ub[k] < 0 else 0, abs(lb[k]) if lb[k] < 0 else 0)
+			tfwd = (abs(lb[k]) if lb[k] > 0 else 0, abs(ub[k]) if ub[k] > 0 else 0)
+			assert sum([pair[0] < pair[1] for pair in (trev, tfwd)]) == 2, 'force_bounds contains invalid values'
+			for i, ntup in zip(inds, (tfwd, trev)):
+				lbi[i], ubi[i] = ntup
+		else:
+			assert tup[0] < tup[1], 'force_bounds contains invalid values'
+			lbi[k], ubi[k] = tup
+
+	## TODO: remove this line - added for debugging
+	#ubi = [10000 if ((k == None) or (k >= 10000)) else k for k in ubi]
+
+	self.rev_mapping = rev_mapping
+	self.__ivars = None
+	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
+																									c in consumed]
+	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))])
+	b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
+	## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
+
+	for id, _, v in self.__ss_override:
+		b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
+
+	return Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping
+
+
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""
 	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
@@ -512,56 +589,21 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 			consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
 
 			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
+
+			solver: String specifying the LP solver to be used
+
+			force_bounds: Dictionary mapping indexes with 2-tuples with lower and upper bounds
+
+			binary: Make this system binary (coerce S matrix and bounds to -1, 0 and 1)
 		"""
-
-		self.select_solver(solver)
-
-		# lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
-		# ub = [1] * S.shape[1]
-		# if -1 in lb:
-		S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
-
-		Si, lbi, ubi, rev_mapping = make_irreversible_model(S, lb, ub)
-		fwd_names = ['V' + str(i) if not isinstance(v, list) else 'V' + str(i) + 'F' for i, v in rev_mapping.items()]
-		bwd_names = ['V' + str(i) + 'R' for i, v in rev_mapping.items() if isinstance(v, (list, tuple))]
-
-		# else:
-		# 	Si, lbi, ubi = S, lb, ub
-		# 	fwd_names = ['V' + str(i) for i in range(Si.shape[1])]
-		# 	bwd_names = []
-		# 	rev_mapping = {i:i for i in range(Si.shape[1])}
-
-		lbi = [0] * len(lbi) + [1]
-		ubi = [None] * len(ubi) + [None]
-
-		for k,tup in force_bounds.items():
-			if isinstance(rev_mapping[k], (list,tuple)):
-				inds = rev_mapping[k]
-				trev = (abs(ub[k]) if ub[k] < 0 else 0, abs(lb[k]) if lb[k] < 0 else 0)
-				tfwd = (abs(lb[k]) if lb[k] > 0 else 0, abs(ub[k]) if ub[k] > 0 else 0)
-				assert sum([pair[0] < pair[1] for pair in (trev,tfwd)]) == 2, 'force_bounds contains invalid values'
-				for i, ntup in zip(inds,(tfwd,trev)):
-					lbi[i],ubi[i] = ntup
-			else:
-				assert tup[0] < tup[1], 'force_bounds contains invalid values'
-				lbi[k],ubi[k] = tup
-
-		self.rev_mapping = rev_mapping
-		self.__ivars = None
-		self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
-																										c in consumed]
-		Si = np.hstack([Si, np.zeros((Si.shape[0], 1))])
-		b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
-
-		## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
-
-		for id, _, v in self.__ss_override:
-			b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
+		Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping = \
+			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds)
 
 		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names + bwd_names + ['C'], solver=solver)
 
 		self.dvars = list(range(S.shape[1] + len(bwd_names)))
 		self.dvar_mapping = dict(rev_mapping)
+
 
 
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
@@ -659,3 +701,62 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		b_lb[-1] = None
 
 		return Sd, VAR_CONTINUOUS, v_lb, v_ub, b_lb, b_ub, names
+
+class BendersMasterSystem(GenericLinearSystem):
+	def __init__(self, F, c, g, lb, ub, solver):
+		var_names = ['x'+str(i) for i in range(F.shape[1])]
+		super().__init__(S=F, var_types=VAR_INTEGER, lb=lb, ub=ub, b_lb=np.array([None]*F.shape[1]),
+						 b_ub=g, var_names=var_names, solver=solver)
+		self.c = c
+		self.cuts = []
+
+	def build_problem(self):
+		super().build_problem()
+		self.set_objective(self.c, True)
+
+	def add_combinatorial_benders_cut(self, x_sol):
+		cut_coefs = x_sol.copy()
+		pos_mask = cut_coefs > 1e-6
+		cut_coefs[pos_mask] = -1
+		cut_coefs[~pos_mask] = 1
+		rhs = pos_mask.sum()
+		self.cuts.extend(self.add_rows_to_model(cut_coefs.reshape(1,-1), [1-rhs], [None]))
+
+	def remove_cuts(self):
+		self.remove_from_model(index=[c.name for c in self.cuts], what='const')
+
+class BendersSlaveSystem(GenericLinearSystem):
+	def __init__(self, A, M, D, b, e, lb_y, ub_y, solver=None):
+		self.slack_vars = ['slack'+str(i) for i in range(A.shape[0])]
+		self.y_var_names = ['y'+str(i) for i in range(A.shape[1])]
+		var_names = self.y_var_names + self.slack_vars
+		self.b_ub_fixed = np.array([None]*(A.shape[0]+D.shape[0]))
+		self.lby, self.uby = np.array(lb_y), np.array(ub_y)
+		Af = np.hstack([A,np.eye(A.shape[0])])
+		Df = np.hstack([D,np.zeros([D.shape[0],A.shape[0]])])
+		slack_bounds = np.zeros(A.shape[0])
+
+		super().__init__(S=np.vstack([Af,Df]), var_types=VAR_CONTINUOUS,
+						 lb=np.concatenate([self.lby, slack_bounds]),
+						 ub=np.concatenate([self.uby, slack_bounds]),
+						 b_lb=np.array([0]*(A.shape[0]+D.shape[0])), b_ub=self.b_ub_fixed,
+						 var_names=var_names, solver=solver)
+
+		self.e, self.M, self.b = e, M, b
+		self.constraints = self.model.constraints
+		self.y_var_mask = np.arange(0, A.shape[0])
+		self.previous_changes = []
+
+	def parametrize(self, x_sol):
+		if len(self.previous_changes) > 0:
+			chgmap = zip(self.previous_changes, np.zeros(len(self.previous_changes)))
+			self.model._set_variable_bounds_on_problem(chgmap, chgmap)
+
+		rhs = np.concatenate([self.b - np.dot(self.M, x_sol.reshape(-1,1)).ravel(), self.e.copy()], axis=0)
+		nzi = np.nonzero(rhs)[0]
+		self.previous_changes = [self.model.variables[self.slack_vars[k]] for k in nzi]
+		values_to_change = rhs[nzi]
+		nchgmap = zip(self.previous_changes, values_to_change)
+		# self.set_constraint_bounds(self.constraints, lb=rhs, ub=self.b_ub_fixed)
+		#lb_n, ub_n = np.concatenate([self.lby, -rhs]), np.concatenate([self.uby, -rhs])
+		self.model._set_variable_bounds_on_problem(nchgmap, nchgmap)

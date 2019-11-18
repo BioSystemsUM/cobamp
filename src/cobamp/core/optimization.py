@@ -2,8 +2,9 @@ import string, random, shutil
 from numpy import nan, array, int_, float_, abs, zeros, max
 import pandas as pd
 from collections import OrderedDict
-from cobamp.core.linear_systems import LinearSystem
+from cobamp.core.linear_systems import LinearSystem, BendersSlaveSystem
 from pathos.pools import _ProcessPool
+from time import time
 
 from pathos.multiprocessing import cpu_count
 MP_THREADS = cpu_count()
@@ -159,6 +160,7 @@ class LinearSystemOptimizer(object):
 			linear_system: A <LinearSystem> instance.
 			hard_fail: A boolean flag indicating whether an Exception is raised when the optimization fails
 		"""
+		self.linear_system = linear_system
 		if build:
 			linear_system.build_problem()
 		self.solver = linear_system.solver
@@ -270,6 +272,112 @@ class LinearSystemOptimizer(object):
 
 		return solutions
 
+class BendersSlaveOptimizer(LinearSystemOptimizer):
+	def __init__(self, slave_system, hard_fail, build):
+		super().__init__(slave_system, hard_fail, build)
+
+	def optimize(self):
+		normal_sol = super().optimize()
+		vmap = OrderedDict(zip(self.linear_system.y_var_names,normal_sol.x()[self.linear_system.y_var_mask]))
+		return Solution(value_map=vmap, status=normal_sol.status())
+
+
+
+class BendersDecompositionOptimizer(object):
+	def __init__(self, master_system, slave_system, hard_fail=False, build=True):
+		self.master, self.slave = master_system, slave_system
+		t0 = time()
+		self.opt_master, self.opt_slave = [opti(system, hard_fail, build) for opti, system in zip([LinearSystemOptimizer, BendersSlaveOptimizer],[self.master, self.slave])]
+		t1 = time()
+		print(t1 - t0, 'spent building the linear problems.')
+		self.__set_model_parameters()
+		self.master.remove_cuts()
+		self.previous_cut = 0
+
+	def _benders_iteration(self, master_sol):
+		if master_sol.status() != 'infeasible':
+			t2 = time()
+			self.slave.parametrize(master_sol.x())
+			t3 = time()
+			print(t3 - t2, 'seconds spent applying parameters to the slave problem.')
+
+			t4 = time()
+			slave_sol = self.opt_slave.optimize()
+			t5 = time()
+			print(t5 - t4, 'seconds spent optimizing the slave problem.')
+			# print('\tSlave has solution with status',slave_sol.status())
+			print('Cutting at length = ', master_sol.x().astype(bool).sum())
+			if slave_sol.status() == 'optimal':
+				self.master.add_combinatorial_benders_cut(master_sol.x())
+				return slave_sol
+			else:
+				# print('\tAdding cut with dimension =',master_sol.x().sum())
+				self.master.add_combinatorial_benders_cut(master_sol.x())
+				return None
+		else:
+			raise Exception('Master problem is infeasible. No further solutions.')
+
+	def optimize(self, max_iterations=10000, slave_pool=20):
+		i = 0
+		r = None
+		sol_stack = []
+		while (i < max_iterations) and r == None:
+			if len(sol_stack) > 1:
+				master_sol = sol_stack.pop(0)
+				r = self._benders_iteration(master_sol)
+			else:
+				t0 = time()
+				sol_stack.extend(self.opt_master.populate(slave_pool))
+				t1 = time()
+				print(t1-t0,'spent populating the solution stack. Current length =',len(sol_stack))
+			i += 1
+		return r
+
+	def __set_model_parameters(self):
+		"""
+		Sets the optlang Model instance's parameters with appropriate values for k-shortest enumeration
+		"""
+		parset_func = {'CPLEX': self.__set_model_parameters_cplex,
+					   'GUROBI': self.__set_model_parameters_gurobi}
+
+		if self.master.solver in parset_func.keys():
+			parset_func[self.master.solver]()
+
+	def __set_model_parameters_cplex(self):
+
+		"""
+		Internal method to set model parameters for the CPLEX solver. This is based on the original MATLAB code by Von
+		Kamp et al.
+
+		-------
+		"""
+		instance = self.master.model.problem
+
+		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		#instance.parameters.mip.tolerances.mipgap.set(1e-2)
+		# instance.parameters.mip.strategy.probe.set(3)
+		instance.parameters.clocktype.set(1)
+		instance.parameters.advance.set(1)
+		instance.parameters.mip.strategy.fpheur.set(1)
+		instance.parameters.emphasis.mip.set(2)
+		instance.parameters.mip.pool.intensity.set(4)
+		instance.parameters.mip.pool.absgap.set(0)
+		instance.parameters.mip.pool.replace.set(2)
+
+
+	def __set_model_parameters_gurobi(self):
+		"""
+		Internal method to set model parameters for the GUROBI solver. This is based on the original MATLAB code by Von
+		Kamp et al.
+
+		"""
+		instance = self.master.model.problem
+
+		instance.params.PoolGap = 0
+		instance.params.MIPFocus = 2
+		instance.params.MIPAbsGap = 0
+		instance.params.PoolSearchMode = 2
+
 def optimization_pool(lsystem, bound_change_list, objective_coef_list, objective_sense_list, threads=MP_THREADS):
 	res_map = [None for _ in range(len(bound_change_list))]
 	true_threads = min((len(bound_change_list) // 2) + 1, threads)
@@ -324,7 +432,6 @@ class BatchOptimizer(object):
 	def batch_optimize(self, bounds, objective_coefs, objective_senses):
 		assert len(bounds) == len(objective_coefs) == len(objective_senses)
 		return optimization_pool(self.__linear_system, bounds, objective_coefs, objective_senses, threads=self.__threads)
-
 
 
 
