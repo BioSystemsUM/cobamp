@@ -25,7 +25,7 @@ class KShortestEnumeratorWrapper(object):
 
 	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
 				 excluded_solutions=None, solver='CPLEX', force_bounds={}, n_threads=0, workmem=None, big_m=False,
-				 max_populate_sols_override=None, time_limit=None):
+				 max_populate_sols_override=None, time_limit=None, big_m_value=None):
 		"""
 
 		Parameters
@@ -74,6 +74,8 @@ class KShortestEnumeratorWrapper(object):
 		self.__algo_properties[K_SHORTEST_OPROPERTY_TIMELIMIT] = 0 if time_limit == None else time_limit
 		self.__algo_properties[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS] = big_m
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
+		if big_m_value != None:
+			self.__algo_properties[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = big_m_value
 		if (max_populate_sols_override != None) and algorithm_type == self.ALGORITHM_TYPE_POPULATE:
 			self.__algo_properties[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = max_populate_sols_override
 		self.__forced_solutions = forced_solutions
