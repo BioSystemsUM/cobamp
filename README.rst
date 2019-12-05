@@ -37,6 +37,10 @@ Credits and License
 
 Developed at the Centre of Biological Engineering, University of Minho
 
+Please refer to this work through this `publication <https://doi.org/10.1093/bioinformatics/btz598>`__ by Vieira and Rocha (2019):
+
+- CoBAMP: a Python framework for metabolic pathway analysis in constraint-based models, *Bioinformatics*, btz598
+
 Released under the GNU Public License (version 3.0).
 
 
