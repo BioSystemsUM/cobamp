@@ -38,13 +38,29 @@ VARIABLE, CONSTRAINT = 'var', 'const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
 def fwd_irrev(lb, ub):
+	"""
+	Args:
+	 lb:
+	 ub:
+	"""
 	return ((lb >= 0) and (ub >= 0)).astype(int)
 
 def bak_irrev(lb, ub):
+	"""
+	Args:
+	 lb:
+	 ub:
+	"""
 	return ((lb < 0) and (ub <= 0)).astype(int)
 
 
 def fix_backwards_irreversible_reactions(S, lb, ub):
+	"""
+	Args:
+	 S:
+	 lb:
+	 ub:
+	"""
 	S = np.array(S)
 	lb, ub = np.array(lb), np.array(ub)
 	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
@@ -64,6 +80,12 @@ def make_irreversible_model(S, lb, ub):
 	# # bak_irrev = lambda lb, ub: (lb < 0) and (ub <= 0)
 	#
 	# fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
+	"""
+	Args:
+	 S:
+	 lb:
+	 ub:
+	"""
 	S, lb, ub, fwd_irrev_index, bak_irrev_index = fix_backwards_irreversible_reactions(S, lb, ub)
 
 	irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
@@ -97,15 +119,16 @@ def make_irreversible_model(S, lb, ub):
 
 
 class LinearSystem():
-	"""
-	An abstract class defining the template for subclasses implementing linear systems that can be used with optimizers
-	such as CPLEX and passed onto other algorithms supplied with the package.
+	"""An abstract class defining the template for subclasses implementing linear
+	systems that can be used with optimizers such as CPLEX and passed onto other
+	algorithms supplied with the package.
 
 	Must instantiate the following variables:
 
-		S: System of linear equations represented as a n-by-m ndarray, preferrably with dtype as float or int
+	 S: System of linear equations represented as a n-by-m ndarray, preferrably
+	 with dtype as float or int
 
-		__model: Linear model as an instance of the solver.
+	 __model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
 	model = None
@@ -116,6 +139,10 @@ class LinearSystem():
 		else:
 			return False
 	def select_solver(self, solver=None):
+		"""
+		Args:
+		solver:
+		"""
 		if not solver:
 			solver = get_default_solver()
 			self.interface = SOLVER_INTERFACES[solver]
@@ -144,12 +171,26 @@ class LinearSystem():
 			print('Could not set parameters with this solver')
 
 	def get_constraint_bounds(self, constraints=None):
+		"""
+		Args:
+		  constraints:
+		"""
 		return [(c.lb, c.ub) for c in (self.model.constraints if constraints == None else constraints)]
 
 	def get_constraint_matrices(self, constraints=None, vars=None):
+		"""
+		Args:
+		  constraints:
+		  vars:
+		"""
 		return [self.get_system_matrix(constraints, vars)] + list(zip(*self.get_constraint_bounds(constraints)))
 
 	def get_system_matrix(self, constraints=None, vars=None):
+		"""
+		Args:
+		  constraints:
+		  vars:
+		"""
 		var_list = self.model.variables if vars == None else vars
 		cons_list = self.model.constraints if constraints == None else constraints
 		var_dict = dict(list(zip(*list(zip(*enumerate(var_list)))[::-1])))
@@ -171,11 +212,13 @@ class LinearSystem():
 
 
 	def set_number_of_threads(self, n_threads=0):
-		'''
-		Defines the amount of threads available for the solver to use.
-		:param n_threads: Number of threads available to the solver. Set to 0 if default parameters are needed
-		:return:
-		'''
+		"""Defines the amount of threads available for the solver to use. :param
+		n_threads: Number of threads available to the solver. Set to 0 if default
+		parameters are needed :return:
+
+		Args:
+		  n_threads:
+		"""
 		cpu_c = cpu_count()
 		is_positive = n_threads >= 0
 		actual_threads = n_threads
@@ -196,11 +239,13 @@ class LinearSystem():
 			warnings.warn('Could not set threads for '+str(self.solver)+' instance. Not yet implemented!')
 
 	def set_working_memory_limit(self, workmem):
-		'''
-		Defines the amount of memory available for the solver to use. Use this at your own peril!
-		:param n_threads: Memory in MegaBytes available to the solver
+		"""Defines the amount of memory available for the solver to use. Use this at
+		your own peril! :param n_threads: Memory in MegaBytes available to the solver
 		:return:
-		'''
+
+		Args:
+		  workmem:
+		"""
 		is_positive = workmem >= 0
 		actual_mem = workmem
 
@@ -217,37 +262,36 @@ class LinearSystem():
 
 	@abc.abstractmethod
 	def build_problem(self):
-		"""
-		Builds a CPLEX model with the constraints specified in the constructor arguments.
-		This method must be implemented by any <LinearSystem>.
-		Refer to the :ref:`constructor <self.__init__>`
-		-------
-
+		"""Builds a CPLEX model with the constraints specified in the constructor
+		arguments. This method must be implemented by any <LinearSystem>. Refer to the
+		:ref:`constructor <self.__init__>` -------
 		"""
 		pass
 
 	def get_model(self):
-		"""
-
-		Returns the model instance. Must call <self.build_problem()> to return a CPLEX model.
+		"""Returns the model instance. Must call <self.build_problem()> to return a
+		CPLEX model.
 
 		-------
-
 		"""
 		return self.model
 
 	def get_stoich_matrix_shape(self):
-		"""
-
-		Returns a tuple with the shape (rows, columns) of the supplied stoichiometric matrix.
+		"""Returns a tuple with the shape (rows, columns) of the supplied
+		stoichiometric matrix.
 
 		-------
-
 		"""
 		return self.S.shape
 
 	# def empty_constraint(self, b_lb, b_ub, dummy_var=Variable(name='dummy', lb=0, ub=0)):
 	def empty_constraint(self, b_lb, b_ub, **kwargs):
+		"""
+		Args:
+		  b_lb:
+		  b_ub:
+		  **kwargs:
+		"""
 		return self.interface.Constraint(Zero, lb=b_lb, ub=b_ub, **kwargs)
 
 	def dummy_variable(self):
@@ -255,38 +299,34 @@ class LinearSystem():
 
 	def populate_model_from_matrix(self, S, var_types, lb, ub, b_lb, b_ub, var_names, only_nonzero=False,
 								   indicator_rows=None):
-		'''
-
+		"""
 		Args:
-			model: Optlang model
-			S: Two-dimensional np.ndarray instance
-			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
-			VAR_CONTINUOUS)
-			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
-			ub: list or tuple with length equal to the amount of columns of S containing the upper bounds for all variables
-			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
-			side of all constraints
-			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
-			side of all constraints
-			var_names: string identifiers for the variables
-
-		'''
+		  S: Two-dimensional np.ndarray instance
+		  var_types: list or tuple with length equal to the amount of columns of S
+			  containing variable types (e.g.
+		  lb: list or tuple with length equal to the amount of columns of S
+			  containing the lower bounds for all variables
+		  ub: list or tuple with length equal to the amount of columns of S
+			  containing the upper bounds for all variables
+		  b_lb: list or tuple with length equal to the amount of rows of S
+			  containing the lower bound for the right hand
+		  b_ub: list or tuple with length equal to the amount of rows of S
+			  containing the upper bound for the right hand
+		  var_names: string identifiers for the variables
+		  only_nonzero:
+		  indicator_rows:
+		"""
 		self.add_variables_to_model(var_names, lb, ub, var_types)
 		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
 	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
-		'''
-
+		"""
 		Args:
-			S: Two-dimensional np.ndarray instance
-			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
-			side of all constraints
-			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
-			side of all constraints
-
-			vars: list of variable instances
-
-		'''
+		  S: Two-dimensional np.ndarray instance
+		  constraints (side of all):
+		  vars: list of variable instances
+		  only_nonzero:
+		"""
 		if not only_nonzero:
 			coef_list = [{vars[j]: S[i, j] for j in range(S.shape[1])} for i in range(S.shape[0])]
 		else:
@@ -296,9 +336,24 @@ class LinearSystem():
 			if constraint.indicator_variable is None:
 				constraint.set_linear_coefficients(coefs)
 
+		for coefs, constraint in zip(coef_list, constraints):
+			if constraint.indicator_variable is None:
+				if len(coefs) > 0:
+					constraint.set_linear_coefficients(coefs)
+
 		self.model.update()
 
 	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
+		"""
+		Args:
+		  S_new:
+		  b_lb:
+		  b_ub:
+		  only_nonzero:
+		  indicator_rows:
+		  vars:
+		  names:
+		"""
 		if not vars:
 			vars = self.model.variables
 		# dummy = self.dummy_variable()
@@ -322,6 +377,11 @@ class LinearSystem():
 		return constraints
 
 	def remove_from_model(self, index, what):
+		"""
+		Args:
+		  index:
+		  what:
+		"""
 		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
 		if type(index) not in (list, tuple):
 			index = [index]
@@ -336,12 +396,27 @@ class LinearSystem():
 		self.model.update()
 
 	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
+		"""
+		Args:
+		  S_new:
+		  var_names:
+		  lb:
+		  ub:
+		  var_types:
+		"""
 		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
 
 		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars)
 
 	def add_variables_to_model(self, var_names, lb, ub, var_types):
 
+		"""
+		Args:
+		  var_names:
+		  lb:
+		  ub:
+		  var_types:
+		"""
 		if isinstance(var_types, str):
 			var_types = [var_types] * len(lb)
 
@@ -356,6 +431,11 @@ class LinearSystem():
 		return vars
 
 	def get_stuff(self, what, index):
+		"""
+		Args:
+		  what:
+		  index:
+		"""
 		container = self.model.variables if what == VARIABLE else self.model.constraints if what == CONSTRAINT else None
 		if container == None:
 			raise ValueError('`what` parameter requires a string (either `var` or `const`)')
@@ -363,23 +443,47 @@ class LinearSystem():
 		return [container[k] for k in index]
 
 	def set_objective(self, coefficients, minimize, vars=None):
+		"""
+		Args:
+		  coefficients:
+		  minimize:
+		  vars:
+		"""
 		if not vars:
 			vars = self.model.variables
 		lcoefs = {k: v for k, v in zip(vars, coefficients) if v != 0}
-		dummy = self.dummy_variable()
-		new_obj = self.interface.Objective(dummy)
-		self.model.objective = new_obj
-		new_obj.set_linear_coefficients(lcoefs)
-		self.model.remove(dummy)
-		self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
-		self.model.update()
+		if len(lcoefs) == 0:
+			lcoefs = {k: 0 for k in vars}
+		try:
+			dummy = self.dummy_variable()
+			new_obj = self.interface.Objective(dummy)
+			self.model.objective = new_obj
+			new_obj.set_linear_coefficients(lcoefs)
+		except Exception as e:
+			raise e
+		finally:
+			self.model.remove(dummy)
+			self.model.objective.direction = SENSE_MINIMIZE if minimize else SENSE_MAXIMIZE
+			self.model.update()
 
 	def set_variable_bounds(self, vars, lb, ub):
+		"""
+		Args:
+		  vars:
+		  lb:
+		  ub:
+		"""
 		for var, ulb, uub in zip(vars, lb, ub):
 			var.set_bounds(ulb, uub)
 		self.model.update()
 
 	def set_constraint_bounds(self, constraints, lb, ub):
+		"""
+		Args:
+		  constraints:
+		  lb:
+		  ub:
+		"""
 		for c, ulb, uub in zip(constraints, lb, ub):
 			b = ulb, uub
 			lb_is_greater = b[0] > c.ub if ((c.ub is not None) and (b[0] is not None)) else False
@@ -395,6 +499,11 @@ class LinearSystem():
 		self.model.update()
 
 	def set_variable_types(self, vars, types):
+		"""
+		Args:
+		  vars:
+		  types:
+		"""
 		if isinstance(types, str):
 			for var in vars:
 				var.type = types
@@ -407,41 +516,41 @@ class LinearSystem():
 		self.model.update()
 
 	def write_to_lp(self, filename):
+		"""
+		Args:
+		  filename:
+		"""
 		with open(filename, 'w') as f:
 			f.write(self.model.to_lp())
 
 
 class KShortestCompatibleLinearSystem(LinearSystem):
-	"""
-	Abstract class representing a linear system that can be passed as an argument for the KShortestAlgorithm class.
-	Subclasses must instantiate the following variables:
+	"""Abstract class representing a linear system that can be passed as an
+	argument for the KShortestAlgorithm class. Subclasses must instantiate the
+	following variables:
 
-		__dvar_mapping: A dictionary mapping reaction indexes with variable names
+	 __dvar_mapping: A dictionary mapping reaction indexes with variable names
 
-		__dvars: A list of variable names (str) or Tuple[str] if two linear system variables represent a single flux.
-		Should be kept as type `list` to maintain order.
+	 __dvars: A list of variable names (str) or Tuple[str] if two linear system
+	 variables represent a single flux. Should be kept as type `list` to
+	 maintain order.
 
-		__c: str representing the variable to be used as constant for indicator constraints
+	 __c: str representing the variable to be used as constant for indicator
+	 constraints
 	"""
 	dvar_mapping = None
 	dvars = None
 	c = None
 
 	def get_dvar_mapping(self):
-		"""
-
-		Returns a dictionary mapping flux indices with variable(s) on the optimization problem
+		"""Returns a dictionary mapping flux indices with variable(s) on the optimization problem
 		-------
-
 		"""
 		return self.dvar_mapping
 
 	def get_dvars(self):
-		"""
-
-		Returns a list of variables (str or Tuple[str]) with similar order to that of the fluxes passed to the system.
+		"""Returns a list of variables (str or Tuple[str]) with similar order to that of the fluxes passed to the system.
 		-------
-
 		"""
 		return self.dvars
 
@@ -453,29 +562,35 @@ class KShortestCompatibleLinearSystem(LinearSystem):
 
 
 class GenericLinearSystem(LinearSystem):
-	"""
-	Class representing a generic system of linear (in)equations
-	Used as arguments for various algorithms implemented in the package.
+	"""Class representing a generic system of linear (in)equations Used as
+	arguments for various algorithms implemented in the package.
 	"""
 
 	def __init__(self, S, var_types, lb, ub, b_lb, b_ub, var_names, solver=None):
-		"""
-		Constructor for GenericLinearSystem
+		"""Constructor for GenericLinearSystem
 
 		Parameters
 
-			model: Optlang model
-			S: Two-dimensional np.ndarray instance
-			var_types: list or tuple with length equal to the amount of columns of S containing variable types (e.g.
-			VAR_CONTINUOUS)
-			lb: list or tuple with length equal to the amount of columns of S containing the lower bounds for all variables
-			ub: list or tuple with length equal to the amount of columns of S containing the upper bounds for all variables
-			b_lb: list or tuple with length equal to the amount of rows of S containing the lower bound for the right hand
-			side of all constraints
-			b_ub: list or tuple with length equal to the amount of rows of S containing the upper bound for the right hand
-			side of all constraints
-			var_names: string identifiers for the variables
+		  model: Optlang model S: Two-dimensional np.ndarray instance var_types:
+		  list or tuple with length equal to the amount of columns of S containing
+		  variable types (e.g. VAR_CONTINUOUS) lb: list or tuple with length equal
+		  to the amount of columns of S containing the lower bounds for all
+		  variables ub: list or tuple with length equal to the amount of columns of
+		  S containing the upper bounds for all variables b_lb: list or tuple with
+		  length equal to the amount of rows of S containing the lower bound for the
+		  right hand side of all constraints b_ub: list or tuple with length equal
+		  to the amount of rows of S containing the upper bound for the right hand
+		  side of all constraints var_names: string identifiers for the variables
 
+		Args:
+		  S:
+		  var_types:
+		  lb:
+		  ub:
+		  b_lb:
+		  b_ub:
+		  var_names:
+		  solver:
 		"""
 		self.select_solver(solver)
 		self.model = self.interface.Model()
@@ -490,26 +605,33 @@ class GenericLinearSystem(LinearSystem):
 
 
 class SteadyStateLinearSystem(GenericLinearSystem):
-	"""
-	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters
-	Used as arguments for various algorithms implemented in the package.
+	"""Class representing a steady-state biological system of metabolites and
+	reactions without dynamic parameters Used as arguments for various algorithms
+	implemented in the package.
 	"""
 
 	def __init__(self, S, lb, ub, var_names, solver=None):
-		"""
-		Constructor for SimpleLinearSystem
+		"""Constructor for SimpleLinearSystem
 
 		Parameters
 
 		----------
 
-			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
+		  S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with
+		  dtype as float or int
 
-			lb: ndarray or list containing the lower bounds for all n fluxes
+		  lb: ndarray or list containing the lower bounds for all n fluxes
 
-			ub: ndarray or list containing the lower bounds for all n fluxes
+		  ub: ndarray or list containing the lower bounds for all n fluxes
 
-			var_names: - optional - ndarray or list containing the names for each flux
+		  var_names: - optional - ndarray or list containing the names for each flux
+
+		Args:
+		  S:
+		  lb:
+		  ub:
+		  var_names:
+		  solver:
 		"""
 		m, n = S.shape
 		self.lb, self.ub = lb, ub
@@ -517,6 +639,18 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 
 
 def prepare_irreversible_system(self ,S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
+	"""
+	Args:
+	 self:
+	 S:
+	 lb:
+	 ub:
+	 non_consumed:
+	 consumed:
+	 produced:
+	 solver:
+	 force_bounds:
+	"""
 	self.select_solver(solver)
 
 	# lb = [0 if i in irrev else -1 for i in range(S.shape[1])]
@@ -567,34 +701,23 @@ def prepare_irreversible_system(self ,S, lb, ub, non_consumed, consumed, produce
 
 
 class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
-	"""
-	Class representing a steady-state biological system of metabolites and reactions without dynamic parameters.
-	All irreversible reactions are split into their forward and backward components so every lower bound is 0.
-	Used as arguments for various algorithms implemented in the package.
+	"""Class representing a steady-state biological system of metabolites and
+	reactions without dynamic parameters. All irreversible reactions are split into
+	their forward and backward components so every lower bound is 0. Used as
+	arguments for various algorithms implemented in the package.
 	"""
 
 	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
 		"""
-
-		Parameters
-		----------
-
-			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-
-			irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
-
-			non_consumed: An Iterable[int] or ndarray containing the indices of external metabolites not consumed in the
-			model.
-
-			consumed: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.
-
-			produced: An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.
-
-			solver: String specifying the LP solver to be used
-
-			force_bounds: Dictionary mapping indexes with 2-tuples with lower and upper bounds
-
-			binary: Make this system binary (coerce S matrix and bounds to -1, 0 and 1)
+		Args:
+		  S (Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int):
+		  lb:
+		  ub:
+		  non_consumed (An Iterable[int] or ndarray containing the indices of external metabolites not consumed in the):
+		  consumed (An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be produced.):
+		  produced (An Iterable[int] or ndarray containing the indices of external metabolites guaranteed to be consumed.):
+		  solver (String specifying the LP solver to be used):
+		  force_bounds (Dictionary mapping indexes with 2-tuples with lower and upper bounds):
 		"""
 		Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping = \
 			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds)
@@ -609,6 +732,14 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
 	def __init__(self, S, lb, ub, subset, **kwargs):
+		"""
+		Args:
+		  S:
+		  lb:
+		  ub:
+		  subset:
+		  **kwargs:
+		"""
 		super().__init__(S, lb, ub, **kwargs)
 		self.subset = subset
 		fwds, revs = [], []
@@ -631,29 +762,38 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 
 
 class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
-	"""
-	Class representing a dual system based on a steady-state metabolic network whose elementary flux modes are minimal
-	cut sets for use with the KShortest algorithms. Based on previous work by Ballerstein et al. and Von Kamp et al.
-	References:
-	[1] von Kamp, A., & Klamt, S. (2014). Enumeration of smallest intervention strategies in genome-scale metabolic
-	networks. PLoS computational biology, 10(1), e1003378.
-	[2] Ballerstein, K., von Kamp, A., Klamt, S., & Haus, U. U. (2011). Minimal cut sets in a metabolic network are
-	elementary modes in a dual network. Bioinformatics, 28(3), 381-387.
+	"""Class representing a dual system based on a steady-state metabolic network
+	whose elementary flux modes are minimal cut sets for use with the KShortest
+	algorithms. Based on previous work by Ballerstein et al. and Von Kamp et al.
+
+	[1] von Kamp, A., & Klamt, S. (2014). Enumeration of smallest intervention
+	strategies in genome-scale metabolic networks. PLoS computational biology,
+	10(1), e1003378. [2] Ballerstein, K., von Kamp, A., Klamt, S., & Haus, U. U.
+	(2011). Minimal cut sets in a metabolic network are elementary modes in a dual
+	network. Bioinformatics, 28(3), 381-387.
 	"""
 
 	def __init__(self, S, lb, ub, T, b, solver=None):
-		"""
-
-		Parameters
+		"""Parameters
 
 		----------
 
-			S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int
-			irrev: An Iterable[int] or ndarray containing the indices of irreversible reactions
+		  S: Stoichiometric matrix represented as a n-by-m ndarray, preferrably with
+		  dtype as float or int irrev: An Iterable[int] or ndarray containing the
+		  indices of irreversible reactions
 
-			T: Target matrix as an ndarray. Should have c-by-n dimensions (c - #constraints; n - #fluxes)
+		  T: Target matrix as an ndarray. Should have c-by-n dimensions (c -
+		  #constraints; n - #fluxes)
 
-			b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
+		  b: Inhomogeneous bound values as a list or 1D ndarray of c size n.
+
+		Args:
+		  S:
+		  lb:
+		  ub:
+		  T:
+		  b:
+		  solver:
 		"""
 		self.select_solver(solver)
 
@@ -672,6 +812,13 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		self.dvar_mapping = {i: (i, S.shape[1] + i) for i in range(S.shape[1])}
 
 	def generate_dual_problem(self, S, irrev, T, b):
+		"""
+		Args:
+		  S:
+		  irrev:
+		  T:
+		  b:
+		"""
 		m, n = S.shape
 		veclens = [("u", m), ("vp", n), ("vn", n), ("w", self.T.shape[0])]
 		I = np.identity(n)
@@ -704,6 +851,15 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 
 class BendersMasterSystem(GenericLinearSystem):
 	def __init__(self, F, c, g, lb, ub, solver):
+		"""
+		Args:
+		  F:
+		  c:
+		  g:
+		  lb:
+		  ub:
+		  solver:
+		"""
 		var_names = ['x'+str(i) for i in range(F.shape[1])]
 		super().__init__(S=F, var_types=VAR_INTEGER, lb=lb, ub=ub, b_lb=np.array([None]*F.shape[1]),
 						 b_ub=g, var_names=var_names, solver=solver)
@@ -715,6 +871,10 @@ class BendersMasterSystem(GenericLinearSystem):
 		self.set_objective(self.c, True)
 
 	def add_combinatorial_benders_cut(self, x_sol):
+		"""
+		Args:
+		  x_sol:
+		"""
 		cut_coefs = x_sol.copy()
 		pos_mask = cut_coefs > 1e-6
 		cut_coefs[pos_mask] = -1
@@ -727,6 +887,17 @@ class BendersMasterSystem(GenericLinearSystem):
 
 class BendersSlaveSystem(GenericLinearSystem):
 	def __init__(self, A, M, D, b, e, lb_y, ub_y, solver=None):
+		"""
+		Args:
+		  A:
+		  M:
+		  D:
+		  b:
+		  e:
+		  lb_y:
+		  ub_y:
+		  solver:
+		"""
 		self.slack_vars = ['slack'+str(i) for i in range(A.shape[0])]
 		self.y_var_names = ['y'+str(i) for i in range(A.shape[1])]
 		var_names = self.y_var_names + self.slack_vars
@@ -748,6 +919,10 @@ class BendersSlaveSystem(GenericLinearSystem):
 		self.previous_changes = []
 
 	def parametrize(self, x_sol):
+		"""
+		Args:
+		  x_sol:
+		"""
 		if len(self.previous_changes) > 0:
 			chgmap = zip(self.previous_changes, np.zeros(len(self.previous_changes)))
 			self.model._set_variable_bounds_on_problem(chgmap, chgmap)
