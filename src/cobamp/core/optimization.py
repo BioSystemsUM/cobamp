@@ -1,13 +1,17 @@
-import string, random, shutil
-from numpy import nan, array, int_, float_, abs, zeros, max
-import pandas as pd
+import random
+import string
 from collections import OrderedDict
-from cobamp.core.linear_systems import LinearSystem, BendersSlaveSystem
-from pathos.pools import _ProcessPool
 from time import time
 
+import pandas as pd
+from numpy import nan, array, abs, zeros, max
 from pathos.multiprocessing import cpu_count
+from pathos.pools import _ProcessPool
+
+from cobamp.core.linear_systems import LinearSystem
+
 MP_THREADS = cpu_count()
+
 
 def random_string_generator(N):
 	"""
@@ -47,7 +51,7 @@ class Solution(object):
 		self.__var_names = None
 		self.__value_map = value_map
 		self.__status = status
-		self.__attribute_dict = {k:v for k,v in kwargs.items() if k != 'names'}
+		self.__attribute_dict = {k: v for k, v in kwargs.items() if k != 'names'}
 		if 'names' in kwargs:
 			self.__var_names = kwargs['names']
 
@@ -64,7 +68,7 @@ class Solution(object):
 
 	def to_series(self):
 		if self.__var_names != None:
-			return pd.Series({self.__var_names[i]:self.__value_map[i] for i in range(len(self.__var_names))})
+			return pd.Series({self.__var_names[i]: self.__value_map[i] for i in range(len(self.__var_names))})
 		else:
 			return pd.Series(self.var_values())
 
@@ -272,22 +276,24 @@ class LinearSystemOptimizer(object):
 
 		return solutions
 
+
 class BendersSlaveOptimizer(LinearSystemOptimizer):
 	def __init__(self, slave_system, hard_fail, build):
 		super().__init__(slave_system, hard_fail, build)
 
 	def optimize(self):
 		normal_sol = super().optimize()
-		vmap = OrderedDict(zip(self.linear_system.y_var_names,normal_sol.x()[self.linear_system.y_var_mask]))
+		vmap = OrderedDict(zip(self.linear_system.y_var_names, normal_sol.x()[self.linear_system.y_var_mask]))
 		return Solution(value_map=vmap, status=normal_sol.status())
-
 
 
 class BendersDecompositionOptimizer(object):
 	def __init__(self, master_system, slave_system, hard_fail=False, build=True):
 		self.master, self.slave = master_system, slave_system
 		t0 = time()
-		self.opt_master, self.opt_slave = [opti(system, hard_fail, build) for opti, system in zip([LinearSystemOptimizer, BendersSlaveOptimizer],[self.master, self.slave])]
+		self.opt_master, self.opt_slave = [opti(system, hard_fail, build) for opti, system in
+										   zip([LinearSystemOptimizer, BendersSlaveOptimizer],
+											   [self.master, self.slave])]
 		t1 = time()
 		print(t1 - t0, 'spent building the linear problems.')
 		self.__set_model_parameters()
@@ -329,7 +335,7 @@ class BendersDecompositionOptimizer(object):
 				t0 = time()
 				sol_stack.extend(self.opt_master.populate(slave_pool))
 				t1 = time()
-				print(t1-t0,'spent populating the solution stack. Current length =',len(sol_stack))
+				print(t1 - t0, 'spent populating the solution stack. Current length =', len(sol_stack))
 			i += 1
 		return r
 
@@ -354,7 +360,7 @@ class BendersDecompositionOptimizer(object):
 		instance = self.master.model.problem
 
 		instance.parameters.mip.tolerances.integrality.set(1e-9)
-		#instance.parameters.mip.tolerances.mipgap.set(1e-2)
+		# instance.parameters.mip.tolerances.mipgap.set(1e-2)
 		# instance.parameters.mip.strategy.probe.set(3)
 		instance.parameters.clocktype.set(1)
 		instance.parameters.advance.set(1)
@@ -363,7 +369,6 @@ class BendersDecompositionOptimizer(object):
 		instance.parameters.mip.pool.intensity.set(4)
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
-
 
 	def __set_model_parameters_gurobi(self):
 		"""
@@ -377,6 +382,7 @@ class BendersDecompositionOptimizer(object):
 		instance.params.MIPFocus = 2
 		instance.params.MIPAbsGap = 0
 		instance.params.PoolSearchMode = 2
+
 
 def optimization_pool(lsystem, bound_change_list, objective_coef_list, objective_sense_list, threads=MP_THREADS):
 	res_map = [None for _ in range(len(bound_change_list))]
@@ -395,6 +401,7 @@ def optimization_pool(lsystem, bound_change_list, objective_coef_list, objective
 	pool.join()
 	return res_map
 
+
 def _pool_initializer(linear_system: LinearSystem, bound_change_list, objective_coef_list, objective_sense_list):
 	global _linear_system, _optimizer, _bound_change_list, _vars, _orig_lb, _orig_ub, _objective_coef_list, _objective_sense_list
 
@@ -403,6 +410,7 @@ def _pool_initializer(linear_system: LinearSystem, bound_change_list, objective_
 	_vars = _linear_system.get_model().variables
 	_orig_lb, _orig_ub = list(zip(*[(var.lb, var.ub) for var in _vars]))
 	_optimizer = LinearSystemOptimizer(_linear_system, build=not _linear_system.was_built())
+
 
 def _optimize_function(change_index):
 	global _linear_system, _optimizer, _bound_change_list, _vars, _orig_lb, _orig_ub, _objective_coef_list, _objective_sense_list
@@ -431,8 +439,8 @@ class BatchOptimizer(object):
 
 	def batch_optimize(self, bounds, objective_coefs, objective_senses):
 		assert len(bounds) == len(objective_coefs) == len(objective_senses)
-		return optimization_pool(self.__linear_system, bounds, objective_coefs, objective_senses, threads=self.__threads)
-
+		return optimization_pool(self.__linear_system, bounds, objective_coefs, objective_senses,
+								 threads=self.__threads)
 
 
 class CORSOSolution(Solution):

@@ -3,14 +3,13 @@ Inspired by Metatool's code
 """
 from itertools import chain
 
-from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, append, delete, unique, where, \
-	array, dot, eye
+from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, delete, unique, where, \
+	dot, eye
 from numpy.core._multiarray_umath import ndarray, array
 from numpy.linalg import norm
 
 from cobamp.core.transformer import ModelTransformer, ReactionIndexMapping
 from cobamp.utilities.property_management import PropertyDictionary
-
 from ..nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
@@ -111,7 +110,6 @@ def subset_candidates(kernel, tol=None):
 	cr = dot(kernel, kernel.T)
 	for i in range(kernel.shape[0]):
 		for j in range(i + 1, kernel.shape[0]):
-			
 			cr[i, j] = cr[i, j] / sqrt(cr[i, i] * cr[j, j])
 		cr[i, i] = 1
 	cr = triu(cr)
@@ -153,7 +151,7 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	if (keepSingle is not None) and (len(keepSingle) > 0):
 		# keepSingle = array([])
 		irrev_violating_subsets = []
-		sub[:len(keepSingle),keepSingle] = eye(len(keepSingle))
+		sub[:len(keepSingle), keepSingle] = eye(len(keepSingle))
 		irrev_sub[:len(keepSingle)] = irrev[keepSingle]
 		in_subset[keepSingle] = True
 		sub_count = len(keepSingle)
@@ -175,7 +173,7 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 				sub[sub_count, reactions] = lengths * cr[reactions, i]
 			sub_count += 1
 
-	sub = sub[:sub_count,:]
+	sub = sub[:sub_count, :]
 	irrev_sub = irrev_sub[:sub_count]
 
 	ind = where(sub[:, irrev] < 0)[0]
@@ -224,7 +222,7 @@ def reduce(S, sub, irrev_reduced=None):
 		ind = unique(nonzero(reduced)[1])
 		reduced = reduced[:, ind]
 		irrev_reduced = irrev_reduced[ind]
-		sub = sub[ind,:]
+		sub = sub[ind, :]
 	else:
 		irrev_reduced = []
 
@@ -233,7 +231,6 @@ def reduce(S, sub, irrev_reduced=None):
 
 class SubsetReducerProperties(PropertyDictionary):
 	def __init__(self, keep=None, block=None, absolute_bounds=False, reaction_id_sep='_+_'):
-
 		def is_list(x):
 			return isinstance(x, (tuple, list, ndarray))
 

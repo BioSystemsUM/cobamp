@@ -6,10 +6,12 @@
 
 '''
 
-from cobamp.core.optimization import LinearSystemOptimizer
 from numpy import zeros
-from pathos.pools import _ProcessPool
 from pathos.multiprocessing import cpu_count
+from pathos.pools import _ProcessPool
+
+from cobamp.core.optimization import LinearSystemOptimizer
+
 
 def _fva_initializer(linear_system, sense, gamma):
 	global _linear_system
@@ -30,26 +32,25 @@ def _fva_iteration(i):
 	global _sense
 	global _gamma
 	global _lenrx
-	#print('Iterating for ',i)
-	w = zeros( _lenrx).ravel()
+	# print('Iterating for ',i)
+	w = zeros(_lenrx).ravel()
 	w[i] = 1
 	_linear_system.set_objective(w, _sense)
 	sol = _opt.optimize()
-	#_linear_system.add_rows_to_model(w, [sol.objective_value()* _gamma], [None], only_nonzero=True)
+	# _linear_system.add_rows_to_model(w, [sol.objective_value()* _gamma], [None], only_nonzero=True)
 	# print(w, _sense, i, sol.x()[i], sol.objective_value())
 	return i, sol.objective_value()
-
 
 
 class FluxVariabilityAnalysis(object):
 	def __init__(self, linear_system, workers=None):
 		self.ls = linear_system
-		self.n_jobs = min(cpu_count() if workers ==	None else workers, linear_system.get_stoich_matrix_shape()[1])
+		self.n_jobs = min(cpu_count() if workers == None else workers, linear_system.get_stoich_matrix_shape()[1])
 
-	def run(self, initial_objective, minimize_initial, gamma=1-1e-6):
+	def run(self, initial_objective, minimize_initial, gamma=1 - 1e-6):
 
-		M,N = self.ls.get_stoich_matrix_shape()
-		result = {i:[0,0] for i in range(N)}
+		M, N = self.ls.get_stoich_matrix_shape()
+		result = {i: [0, 0] for i in range(N)}
 		opt = LinearSystemOptimizer(self.ls, build=False)
 		c = zeros(N)
 		c[initial_objective] = 1
@@ -59,7 +60,7 @@ class FluxVariabilityAnalysis(object):
 		z0 = v0.objective_value()
 
 		self.ls.add_rows_to_model(c.reshape([1, N]), [z0 * gamma], [None], only_nonzero=True,
-										 names=['FASTFVAINITIALCONSTRAINT'])
+								  names=['FASTFVAINITIALCONSTRAINT'])
 
 		for sense in [True, False]:
 			rx_per_job = N // self.n_jobs
@@ -83,14 +84,15 @@ if __name__ == '__main__':
 	from cobamp.wrappers import COBRAModelObjectReader
 	import time
 
-	model =  read_sbml_model('/home/skapur/MEOCloud/Projectos/cobamp/examples/iAF1260_resources/original_model/Ec_iAF1260_flux2.xml')
+	model = read_sbml_model(
+		'/home/skapur/MEOCloud/Projectos/cobamp/examples/iAF1260_resources/original_model/Ec_iAF1260_flux2.xml')
 	mor = COBRAModelObjectReader(model)
 
 	cbm_mp = mor.to_cobamp_cbm('CPLEX')
 	cbm_fast = mor.to_cobamp_cbm('CPLEX')
 
-	init_sol = cbm_mp.optimize({1004:1}, False)
-	Z0 = (1-1e-6) * init_sol.objective_value()
+	init_sol = cbm_mp.optimize({1004: 1}, False)
+	Z0 = (1 - 1e-6) * init_sol.objective_value()
 	cbm_mp.set_reaction_bounds(1004, lb=Z0)
 
 	c1_time = time.time()
@@ -101,12 +103,12 @@ if __name__ == '__main__':
 	pp.close()
 	pp.join()
 	c2_time = time.time()
-	print('Multi-threaded:',c2_time-c1_time,'seconds')
+	print('Multi-threaded:', c2_time - c1_time, 'seconds')
 
 	fva = FluxVariabilityAnalysis(cbm_fast.model)
 	limits_fast = fva.run(1004, False)
 	c3_time = time.time()
-	print('Multi-threaded fast FVA:',c3_time-c2_time,'seconds')
+	print('Multi-threaded fast FVA:', c3_time - c2_time, 'seconds')
 
 	error = 1e-6
 	error_rx = []
@@ -116,4 +118,4 @@ if __name__ == '__main__':
 		if (abs(ld) > error) | (abs(ud) > error):
 			error_rx.append([i, mpr, fr])
 
-	print('Valid:',len(error_rx) == 0)
+	print('Valid:', len(error_rx) == 0)

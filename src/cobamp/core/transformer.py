@@ -1,7 +1,8 @@
 import abc
-from cobamp.core.models import ConstraintBasedModel
-from itertools import product
 from copy import deepcopy
+from itertools import product
+
+from cobamp.core.models import ConstraintBasedModel
 
 
 class ModelTransformer(object):
@@ -24,19 +25,20 @@ class ModelTransformer(object):
 			lb, ub = args.get_bounds_as_list()
 			new_properties = deepcopy(properties)
 
-			for k in ['block','keep']:
+			for k in ['block', 'keep']:
 				if new_properties[k] != None:
-					new_properties[k] = [args.decode_index(r,'reaction') for r in properties[k]]
+					new_properties[k] = [args.decode_index(r, 'reaction') for r in properties[k]]
 
 			Sn, lbn, ubn, mapping, metabs = self.transform_array(S, lb, ub, new_properties)
 
-			reaction_names_new = [new_properties['reaction_id_sep'].join([args.reaction_names[i] for i in mapping.from_new(i)]) for i in
-								  range(len(lbn))]
+			reaction_names_new = [
+				new_properties['reaction_id_sep'].join([args.reaction_names[i] for i in mapping.from_new(i)]) for i in
+				range(len(lbn))]
 			modeln = ConstraintBasedModel(
 				S=Sn,
 				thermodynamic_constraints=[list(k) for k in list(zip(lbn, ubn))],
 				reaction_names=reaction_names_new,
-				metabolite_names= [args.metabolite_names[k] for k in metabs]
+				metabolite_names=[args.metabolite_names[k] for k in metabs]
 			)
 
 			return modeln, mapping, metabs
@@ -68,5 +70,3 @@ class ReactionIndexMapping(object):
 
 	def multiply(self, new_ids):
 		return list(product(*[self.from_new(k) for k in set(new_ids)]))
-
-

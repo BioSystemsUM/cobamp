@@ -1,5 +1,3 @@
-import abc
-
 from cobamp.algorithms.kshortest import *
 from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem
 from cobamp.wrappers.external_wrappers import model_readers
@@ -80,7 +78,7 @@ class KShortestEnumeratorWrapper(object):
 			self.__algo_properties[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = max_populate_sols_override
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
-		self.force_bounds = {self.model_reader.r_ids.index(k):v for k,v in force_bounds.items()}
+		self.force_bounds = {self.model_reader.r_ids.index(k): v for k, v in force_bounds.items()}
 		self.solver = solver
 		self.__setup_algorithm()
 		self.enumerated_sols = []
@@ -184,7 +182,7 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 				consumed=conv_cn,
 				non_consumed=conv_nc,
 				produced=conv_pr,
-				subset=	[self.model_reader.reaction_id_to_index(s) for s in self.__subset],
+				subset=[self.model_reader.reaction_id_to_index(s) for s in self.__subset],
 				solver=self.solver,
 				force_bounds=self.force_bounds
 			)
@@ -208,7 +206,6 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		converted_ybs = [DefaultYieldbound.from_tuple(self.model_reader.convert_constraint_ids(t, True)) for t in
 						 target_yield_space]
 		self.__ip_constraints = converted_fbs + converted_ybs
-
 
 	def __materialize_intv_problem(self):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)

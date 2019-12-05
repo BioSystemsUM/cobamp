@@ -1,7 +1,9 @@
-from pathos.pools import _ProcessPool
 from multiprocessing import cpu_count
 
+from pathos.pools import _ProcessPool
+
 MP_THREADS = cpu_count()
+
 
 def _batch_function(param_index):
 	global _params, _function, _iterable
@@ -13,6 +15,7 @@ def _pool_initializer(params):
 	_params = params
 	_iterable = params['iterable']
 	_function = params['function']
+
 
 def _batch_run(params, threads):
 	jobs = len(params['iterable'])
@@ -33,8 +36,9 @@ def _batch_run(params, threads):
 
 	return res_map
 
+
 def batch_run(function, sequence, paramargs=None, threads=MP_THREADS):
-	params = {'function':function, 'iterable':sequence}
+	params = {'function': function, 'iterable': sequence}
 	if paramargs != None:
 		params.update(paramargs)
 	return _batch_run(params, threads)

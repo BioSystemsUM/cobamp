@@ -1,5 +1,6 @@
-from itertools import chain
 from collections import Counter
+from itertools import chain
+
 
 class Tree(object):
 	"""
@@ -102,4 +103,3 @@ def fill_tree(tree, sets):
 				fill_tree(new_node, [[k for k in setf if k != most_common] for setf in sets_containing_most_common])
 			if len(remaining_sets) > 0:
 				fill_tree(tree, remaining_sets)
-

@@ -1,15 +1,17 @@
-from boolean.boolean import BooleanAlgebra
-
 import abc
 import warnings
-import numpy as np
-from numpy import where
-from ..core.models import ConstraintBasedModel
 from re import compile
+
+import numpy as np
+from boolean.boolean import BooleanAlgebra
+from numpy import where
+
+from ..core.models import ConstraintBasedModel
 
 MAX_PRECISION = 1e-10
 GPR_GENE_RE = compile("\\b(?!and\\b|or\\b|AND\\b|OR\\b)[([A-z0-9\.]*")
 BOOLEAN_ALGEBRA = BooleanAlgebra()
+
 
 def normalize_boolean_expression(rule):
 	try:
@@ -17,9 +19,8 @@ def normalize_boolean_expression(rule):
 		bool_expression = BOOLEAN_ALGEBRA.normalize(expression, BOOLEAN_ALGEBRA.OR)
 		return str(bool_expression).replace('&', ' and ').replace('|', ' or ')
 	except Exception as e:
-		warnings.warn('Could not normalize this rule: '+rule)
+		warnings.warn('Could not normalize this rule: ' + rule)
 		return rule
-
 
 
 class AbstractObjectReader(object):
@@ -50,7 +51,6 @@ class AbstractObjectReader(object):
 		self.genes = self.get_model_genes()
 		self.gene_protein_reaction_rules = self.get_model_gprs()
 		self.gpr_map = None
-
 
 	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
@@ -194,17 +194,17 @@ class AbstractObjectReader(object):
 
 	def get_working_gene_names(self):
 		current_model_genes = list(self.get_model_genes())
-		return dict(zip(current_model_genes, map(lambda x: '_'+x, current_model_genes)))
-
+		return dict(zip(current_model_genes, map(lambda x: '_' + x, current_model_genes)))
 
 	def to_cobamp_cbm(self, solver=None):
 		return ConstraintBasedModel(
-			S = self.get_stoichiometric_matrix(),
+			S=self.get_stoichiometric_matrix(),
 			thermodynamic_constraints=[tuple(float(k) for k in l) for l in self.get_model_bounds()],
 			reaction_names=self.r_ids,
 			metabolite_names=self.m_ids,
-			optimizer= solver != None and solver,
+			optimizer=solver != None and solver,
 			solver=solver if solver not in (True, False) else None)
+
 
 class COBRAModelObjectReader(AbstractObjectReader):
 
@@ -251,10 +251,10 @@ class COBRAModelObjectReader(AbstractObjectReader):
 		## TODO: this function should only retrieve a single gpr. the abstract class should normalize it
 
 		def fix_name(gpr_string):
-			#genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
+			# genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
 			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
 			unique_tokens = set([m.string for m in matches])
-			for offset,match_obj in enumerate(matches):
+			for offset, match_obj in enumerate(matches):
 				final_pos = match_obj.span()[0] + offset
 				gpr_string = gpr_string[:final_pos] + '_' + gpr_string[final_pos:]
 			return gpr_string, len(matches), len(unique_tokens), unique_tokens
@@ -267,23 +267,25 @@ class COBRAModelObjectReader(AbstractObjectReader):
 			if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
 				rule = normalize_boolean_expression(rule)
 			else:
-				warnings.warn('Will not normalize rules with more than '+str(token_to_gene_ratio)+' average tokens per gene')
+				warnings.warn(
+					'Will not normalize rules with more than ' + str(token_to_gene_ratio) + ' average tokens per gene')
 
-			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if (k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
+			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if
+							(k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
 			for offsetp, matchp_obj in enumerate(matches_post):
 				final_pos = matchp_obj.span()[0] - offsetp
-				rule = rule[:final_pos] + rule[final_pos+1:]
+				rule = rule[:final_pos] + rule[final_pos + 1:]
 
 			gpr_list.append(rule)
-			# for tok in unique_tokens:
-			# 	rule = rule.replace('_'+tok, tok)
+		# for tok in unique_tokens:
+		# 	rule = rule.replace('_'+tok, tok)
 		return gpr_list
-		#
-		# if not apply_fx:
-		# 	return [fix_name(r.gene_reaction_rule) for r in self.model.reactions]
-		# else:
-		# 	return [apply_fx(fix_name(r.gene_reaction_rule)) for r in self.model.reactions]
 
+	#
+	# if not apply_fx:
+	# 	return [fix_name(r.gene_reaction_rule) for r in self.model.reactions]
+	# else:
+	# 	return [apply_fx(fix_name(r.gene_reaction_rule)) for r in self.model.reactions]
 
 	def convert_gprs_to_list(self, rx, apply_fx):
 		if apply_fx == None:
@@ -313,12 +315,11 @@ class MatFormatReader(AbstractObjectReader):
 		if 'rev' in self.model.dtype.names:
 			bv = (self.model['rev'][0][0]).ravel().astype(bool)
 		else:
-			bv = np.array([(l >= 0 and u >= 0) or (l <= 0 and u <= 0) for l,u in zip(self.lb, self.ub)]).astype(bool)
+			bv = np.array([(l >= 0 and u >= 0) or (l <= 0 and u <= 0) for l, u in zip(self.lb, self.ub)]).astype(bool)
 		if as_index:
 			return where(bv)[0]
 		else:
 			return bv
-
 
 	def get_rx_instances(self):
 		pass

@@ -1,12 +1,12 @@
+import abc
+import warnings
 from collections import OrderedDict
 from itertools import chain
-import abc
-import numpy as np
-import warnings
+from multiprocessing import cpu_count
 
+import numpy as np
 import optlang
 from optlang.symbolics import Zero
-from multiprocessing import cpu_count
 
 CUSTOM_DEFAULT_SOLVER = None
 SOLVER_ORDER = ['CPLEX', 'GUROBI', 'GLPK', 'MOSEK', 'SCIPY']
@@ -37,6 +37,7 @@ VAR_TYPES = (VAR_CONTINUOUS, VAR_INTEGER, VAR_BINARY)
 VARIABLE, CONSTRAINT = 'var', 'const'
 SENSE_MINIMIZE, SENSE_MAXIMIZE = ('min', 'max')
 
+
 def fwd_irrev(lb, ub):
 	"""
 	Args:
@@ -44,6 +45,7 @@ def fwd_irrev(lb, ub):
 	 ub:
 	"""
 	return ((lb >= 0) and (ub >= 0)).astype(int)
+
 
 def bak_irrev(lb, ub):
 	"""
@@ -63,7 +65,8 @@ def fix_backwards_irreversible_reactions(S, lb, ub):
 	"""
 	S = np.array(S)
 	lb, ub = np.array(lb), np.array(ub)
-	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in [fwd_irrev, bak_irrev]]
+	fwd_irrev_index, bak_irrev_index = [[i for i in range(S.shape[1]) if fx(lb[i], ub[i])] for fx in
+										[fwd_irrev, bak_irrev]]
 	# irrev = np.union1d(fwd_irrev_index, bak_irrev_index)
 
 	if len(bak_irrev_index) > 0:
@@ -73,6 +76,7 @@ def fix_backwards_irreversible_reactions(S, lb, ub):
 		lb[bak_irrev_index] = -ub_temp
 
 	return S, lb, ub, fwd_irrev_index, bak_irrev_index
+
 
 def make_irreversible_model(S, lb, ub):
 	# lb, ub = np.array(lb), np.array(ub)
@@ -138,6 +142,7 @@ class LinearSystem():
 			return (len(self.model.variables) != 0) or (len(self.model.constraints) != 0)
 		else:
 			return False
+
 	def select_solver(self, solver=None):
 		"""
 		Args:
@@ -197,19 +202,20 @@ class LinearSystem():
 		cnst = cons_list
 
 		def row_factory(mask, values):
-			row =  np.zeros([1, len(var_list)])
+			row = np.zeros([1, len(var_list)])
 			# print(len(mask), len(values), row.shape)
-			row[:,mask] = values
+			row[:, mask] = values
 			return row
 
 		def get_mask_value_list(constraint):
 			if constraint.indicator_variable == None:
-				return list(zip(*[(var_dict[var],value) for var,value in constraint.get_linear_coefficients(var_list).items()]))
+				return list(zip(
+					*[(var_dict[var], value) for var, value in constraint.get_linear_coefficients(var_list).items()]))
 			else:
-				return [(0,1),(0,0)]
+				return [(0, 1), (0, 0)]
+
 		A = np.vstack([row_factory(*get_mask_value_list(c)) for c in cnst])
 		return A
-
 
 	def set_number_of_threads(self, n_threads=0):
 		"""Defines the amount of threads available for the solver to use. :param
@@ -230,13 +236,12 @@ class LinearSystem():
 		if n_threads > cpu_c:
 			warnings.warn('User-defined number of threads exceeds the amount of physical threads')
 
-
 		if self.solver == 'CPLEX':
 			self.model.problem.parameters.threads.set(actual_threads)
 		elif self.solver == 'GUROBI':
 			self.model.problem.Params.Threads = actual_threads
 		else:
-			warnings.warn('Could not set threads for '+str(self.solver)+' instance. Not yet implemented!')
+			warnings.warn('Could not set threads for ' + str(self.solver) + ' instance. Not yet implemented!')
 
 	def set_working_memory_limit(self, workmem):
 		"""Defines the amount of memory available for the solver to use. Use this at
@@ -258,7 +263,7 @@ class LinearSystem():
 			elif self.solver == 'GUROBI':
 				self.model.problem.Params.NodefileStart = actual_mem / 1024
 			else:
-				warnings.warn('Could not set threads for '+str(self.solver)+' instance. Not yet implemented!')
+				warnings.warn('Could not set threads for ' + str(self.solver) + ' instance. Not yet implemented!')
 
 	@abc.abstractmethod
 	def build_problem(self):
@@ -423,9 +428,6 @@ class LinearSystem():
 		vars = [self.interface.Variable(name=name, lb=lbv, ub=ubv, type=t) for name, lbv, ubv, t in
 				zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
-		# debug lines - TODO: remove this
-		# for var in vars:
-		# 	print(var)
 		self.model.update()
 
 		return vars
@@ -638,7 +640,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
-def prepare_irreversible_system(self ,S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
+def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
 	"""
 	Args:
 	 self:
@@ -684,7 +686,7 @@ def prepare_irreversible_system(self ,S, lb, ub, non_consumed, consumed, produce
 			lbi[k], ubi[k] = tup
 
 	## TODO: remove this line - added for debugging
-	#ubi = [10000 if ((k == None) or (k >= 10000)) else k for k in ubi]
+	# ubi = [10000 if ((k == None) or (k >= 10000)) else k for k in ubi]
 
 	self.rev_mapping = rev_mapping
 	self.__ivars = None
@@ -728,7 +730,6 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 		self.dvar_mapping = dict(rev_mapping)
 
 
-
 class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	## TODO: Code + docstrings. Do not use this yet!
 	def __init__(self, S, lb, ub, subset, **kwargs):
@@ -747,7 +748,7 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 		for r in self.subset:
 			if not isinstance(self.rev_mapping[r], int):
 				fid, rid = self.dvar_mapping[r]
-				dvm_new[r] = (len(fwds),len(subset)+len(revs))
+				dvm_new[r] = (len(fwds), len(subset) + len(revs))
 				fwds.append(fid)
 				revs.append(rid)
 			else:
@@ -849,6 +850,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 
 		return Sd, VAR_CONTINUOUS, v_lb, v_ub, b_lb, b_ub, names
 
+
 class BendersMasterSystem(GenericLinearSystem):
 	def __init__(self, F, c, g, lb, ub, solver):
 		"""
@@ -860,8 +862,8 @@ class BendersMasterSystem(GenericLinearSystem):
 		  ub:
 		  solver:
 		"""
-		var_names = ['x'+str(i) for i in range(F.shape[1])]
-		super().__init__(S=F, var_types=VAR_INTEGER, lb=lb, ub=ub, b_lb=np.array([None]*F.shape[1]),
+		var_names = ['x' + str(i) for i in range(F.shape[1])]
+		super().__init__(S=F, var_types=VAR_INTEGER, lb=lb, ub=ub, b_lb=np.array([None] * F.shape[1]),
 						 b_ub=g, var_names=var_names, solver=solver)
 		self.c = c
 		self.cuts = []
@@ -880,10 +882,11 @@ class BendersMasterSystem(GenericLinearSystem):
 		cut_coefs[pos_mask] = -1
 		cut_coefs[~pos_mask] = 1
 		rhs = pos_mask.sum()
-		self.cuts.extend(self.add_rows_to_model(cut_coefs.reshape(1,-1), [1-rhs], [None]))
+		self.cuts.extend(self.add_rows_to_model(cut_coefs.reshape(1, -1), [1 - rhs], [None]))
 
 	def remove_cuts(self):
 		self.remove_from_model(index=[c.name for c in self.cuts], what='const')
+
 
 class BendersSlaveSystem(GenericLinearSystem):
 	def __init__(self, A, M, D, b, e, lb_y, ub_y, solver=None):
@@ -898,19 +901,19 @@ class BendersSlaveSystem(GenericLinearSystem):
 		  ub_y:
 		  solver:
 		"""
-		self.slack_vars = ['slack'+str(i) for i in range(A.shape[0])]
-		self.y_var_names = ['y'+str(i) for i in range(A.shape[1])]
+		self.slack_vars = ['slack' + str(i) for i in range(A.shape[0])]
+		self.y_var_names = ['y' + str(i) for i in range(A.shape[1])]
 		var_names = self.y_var_names + self.slack_vars
-		self.b_ub_fixed = np.array([None]*(A.shape[0]+D.shape[0]))
+		self.b_ub_fixed = np.array([None] * (A.shape[0] + D.shape[0]))
 		self.lby, self.uby = np.array(lb_y), np.array(ub_y)
-		Af = np.hstack([A,np.eye(A.shape[0])])
-		Df = np.hstack([D,np.zeros([D.shape[0],A.shape[0]])])
+		Af = np.hstack([A, np.eye(A.shape[0])])
+		Df = np.hstack([D, np.zeros([D.shape[0], A.shape[0]])])
 		slack_bounds = np.zeros(A.shape[0])
 
-		super().__init__(S=np.vstack([Af,Df]), var_types=VAR_CONTINUOUS,
+		super().__init__(S=np.vstack([Af, Df]), var_types=VAR_CONTINUOUS,
 						 lb=np.concatenate([self.lby, slack_bounds]),
 						 ub=np.concatenate([self.uby, slack_bounds]),
-						 b_lb=np.array([0]*(A.shape[0]+D.shape[0])), b_ub=self.b_ub_fixed,
+						 b_lb=np.array([0] * (A.shape[0] + D.shape[0])), b_ub=self.b_ub_fixed,
 						 var_names=var_names, solver=solver)
 
 		self.e, self.M, self.b = e, M, b
@@ -927,11 +930,11 @@ class BendersSlaveSystem(GenericLinearSystem):
 			chgmap = zip(self.previous_changes, np.zeros(len(self.previous_changes)))
 			self.model._set_variable_bounds_on_problem(chgmap, chgmap)
 
-		rhs = np.concatenate([self.b - np.dot(self.M, x_sol.reshape(-1,1)).ravel(), self.e.copy()], axis=0)
+		rhs = np.concatenate([self.b - np.dot(self.M, x_sol.reshape(-1, 1)).ravel(), self.e.copy()], axis=0)
 		nzi = np.nonzero(rhs)[0]
 		self.previous_changes = [self.model.variables[self.slack_vars[k]] for k in nzi]
 		values_to_change = rhs[nzi]
 		nchgmap = zip(self.previous_changes, values_to_change)
 		# self.set_constraint_bounds(self.constraints, lb=rhs, ub=self.b_ub_fixed)
-		#lb_n, ub_n = np.concatenate([self.lby, -rhs]), np.concatenate([self.uby, -rhs])
+		# lb_n, ub_n = np.concatenate([self.lby, -rhs]), np.concatenate([self.uby, -rhs])
 		self.model._set_variable_bounds_on_problem(nchgmap, nchgmap)
