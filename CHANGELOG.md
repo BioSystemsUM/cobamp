@@ -1,5 +1,12 @@
 # Change log
 Major changes between versions will be documented on this file.
+## [0.1.5] - 2019-12-6 (1 year anniversary!)
+### Added
+ - Benders decomposition solver (this is a very experimental feature)
+ - Multiprocessing utilities (mp_utils)
+### Changed
+ - Several bugfixes and additional features for LinearSystem classes
+
 ## [0.1.4] - 2019-10-14
 ### Changed
  - Version revision 

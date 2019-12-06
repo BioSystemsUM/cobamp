@@ -80,8 +80,10 @@ def is_number_token(token):
 def is_operator_token(token):
 	return token in ['**', '/', '*', '+', '-']
 
+
 def is_string_token(token):
 	return isinstance(token, str) and not is_boolean_operator(token) and (('(' not in token) and (')' not in token))
+
 
 def op_prec(op):
 	precedence = {

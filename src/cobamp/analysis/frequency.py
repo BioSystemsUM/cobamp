@@ -1,8 +1,9 @@
-from itertools import combinations, chain
 from collections import Counter
-from cobamp.analysis.plotting import display_heatmap
-import matplotlib.pyplot as plt
+from itertools import combinations, chain
+
 import pandas as pd
+
+from cobamp.analysis.plotting import display_heatmap
 
 
 def get_frequency_dataframe(pathway_dict, k_min=1, k_max=1):

@@ -12,16 +12,18 @@ References:
 
 """
 import abc
-
+import warnings
 from itertools import chain
+
 from numpy import concatenate, array, zeros, hstack, ones, identity
 
-from cobamp.core.optimization import LinearSystemOptimizer, KShortestSolution
 from cobamp.core.linear_systems import IrreversibleLinearPatternSystem, VAR_BINARY
-from ..utilities.property_management import PropertyDictionary
-import warnings
+from cobamp.core.optimization import LinearSystemOptimizer, KShortestSolution
+from cobamp.utilities.property_management import PropertyDictionary
 
 decompose_list = lambda a: chain.from_iterable(map(lambda i: i if isinstance(i, list) else [i], a))
+
+MAX_POPULATE_SOLS_DEFAULT = 2100000000
 
 
 def value_map_apply(single_fx, pair_fx, value_map, **kwargs):
@@ -48,12 +50,14 @@ K_SHORTEST_METHOD_POPULATE = "POPULATE"
 
 K_SHORTEST_MPROPERTY_TYPE_EFP = "EFP_PROBLEM"
 
+K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS = "BIGM_CONSTS"
 K_SHORTEST_OPROPERTY_MAXSIZE = 'MAXSIZE'
 K_SHORTEST_OPROPERTY_MAXSOLUTIONS = "MAXSOLUTIONS"
 K_SHORTEST_OPROPERTY_N_THREADS = 'N_THREADS'
 K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION = 'FORCE_NON_CANCEL'
 K_SHORTEST_OPROPERTY_BIG_M_VALUE = "BIGMVALUE"
 K_SHORTEST_OPROPERTY_WORKMEMORY = 'WORKMEM'
+K_SHORTEST_OPROPERTY_TIMELIMIT = 'TIMELIMIT'
 
 kshortest_mandatory_properties = {
 	K_SHORTEST_MPROPERTY_METHOD: [K_SHORTEST_METHOD_ITERATE, K_SHORTEST_METHOD_POPULATE],
@@ -66,7 +70,9 @@ kshortest_optional_properties = {
 	K_SHORTEST_OPROPERTY_BIG_M_VALUE: lambda x: isinstance(x, (float, int)),
 	K_SHORTEST_OPROPERTY_N_THREADS: lambda x: isinstance(x, int),
 	K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION: bool,
-	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None
+	K_SHORTEST_OPROPERTY_WORKMEMORY: lambda x: isinstance(x, (float, int)) or x == None,
+	K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS: bool,
+	K_SHORTEST_OPROPERTY_TIMELIMIT: lambda x: isinstance(x, (float, int))
 }
 
 
@@ -86,7 +92,10 @@ class KShortestProperties(PropertyDictionary):
 		# set optional properties by default
 		self[K_SHORTEST_OPROPERTY_N_THREADS] = 0
 		self[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION] = True
-		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e9
+		self[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = 1e8
+		self[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS] = False
+		self[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = MAX_POPULATE_SOLS_DEFAULT
+		self[K_SHORTEST_OPROPERTY_TIMELIMIT] = 0
 
 
 class KShortestEnumerator(object):
@@ -98,7 +107,8 @@ class KShortestEnumerator(object):
 	ENUMERATION_METHOD_ITERATE = 'iterate'
 	ENUMERATION_METHOD_POPULATE = 'populate'
 
-	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0, workmem=None):
+	def __init__(self, linear_system, m_value=None, force_non_cancellation=True, is_efp_problem=False, n_threads=0,
+				 workmem=None, force_big_m=False, max_populate_sols=MAX_POPULATE_SOLS_DEFAULT, max_time=0):
 
 		"""
 
@@ -111,6 +121,7 @@ class KShortestEnumerator(object):
 		"""
 
 		linear_system.build_problem()
+		# linear_system.model.configuration.verbosity = 3
 		self.__dvar_mapping = linear_system.get_dvar_mapping()
 		self.__ls_shape = linear_system.get_stoich_matrix_shape()
 		self.model = linear_system
@@ -118,9 +129,10 @@ class KShortestEnumerator(object):
 		self.__c = linear_system.get_c_variable()
 		self.__solzip = lambda x: zip(self.model._get_variables_names(), x)
 		self.__force_non_cancellation = force_non_cancellation
-
+		self.__max_populate_dflt = max_populate_sols
 		# TODO: Find a way to estimate the best possible value for this
 		self.__m_value = 10e6 if m_value == None else m_value
+		self.__max_time = max_time
 
 		# Open log files
 		# self.resf = open('results', 'w')
@@ -128,16 +140,17 @@ class KShortestEnumerator(object):
 
 		# Setup CPLEX parameters
 		self.__set_model_parameters()
-		#self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
+		# self.is_efp_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 		self.subset_problem = isinstance(linear_system, IrreversibleLinearPatternSystem)
 		self.is_efp_problem = is_efp_problem
 
 		# Setup k-shortest constraints
 		self.indicator_map = {}
 		self.__ivars = []
-		big_m = linear_system.solver != 'CPLEX'
-		if big_m:
-			warnstr = linear_system.solver + ' does not support indicator constraints. Using Big-M constraints with M= ' + str(
+		no_indicators = (force_big_m) or linear_system.solver != 'CPLEX'
+		# big_m = force_big_m and (no_indicators)
+		if no_indicators:
+			warnstr = 'Using Big-M constraints with M= ' + str(
 				self.__m_value)
 			warnings.warn(warnstr)
 			self.__add_kshortest_indicators_big_m()
@@ -149,7 +162,7 @@ class KShortestEnumerator(object):
 		else:
 			if self.__force_non_cancellation:
 				warnings.warn('The original elementary flux pattern formulation allows cancellation. If this option is'
-							  +' forced, results might differ.')
+							  + ' forced, results might differ.')
 				self.__add_exclusivity_constraints()
 
 		self.__size_constraint = None
@@ -167,9 +180,46 @@ class KShortestEnumerator(object):
 		self.__current_size = 1
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.__vnames = self.model.model._get_variables_names()
+		self.__ivar_objs = self.model.get_stuff('var',
+												[self.indicator_map[i] for i in sorted(self.indicator_map.keys())])
+
 		self.model.set_number_of_threads(n_threads)
 		if workmem != None:
 			self.model.set_working_memory_limit(workmem)
+
+	def set_indicator_activity(self, forced_off=None, forced_on=None):
+		ivar_lbn, ivar_ubn = [1] * len(self.__ivar_objs), [1] * len(self.__ivar_objs)
+		if isinstance(forced_off, type(None)):
+			forced_off = [0] * len(self.__ivar_objs)
+		if isinstance(forced_on, type(None)):
+			forced_on = [0] * len(self.__ivar_objs)
+
+		for dvtup, offv, onv in zip(enumerate(self.__ivar_objs), forced_off, forced_on):
+			offv, onv = bool(offv), bool(onv)
+			i, _ = dvtup
+			off, on = offv and not onv, onv and not offv
+
+			if off:
+				bvs = 0, 0
+			elif on:
+				bvs = 1, 1
+			else:
+				bvs = 0, 1
+			ivar_lbn[i], ivar_ubn[i] = bvs
+		self.model.set_variable_bounds(self.__ivar_objs, ivar_lbn, ivar_ubn)
+
+	def set_objective_expression(self, mask):
+		ivar_ubn = [1] * len(self.__ivar_objs)
+		mapping = self.model.get_dvar_mapping()
+
+		for dvtup, active in zip(mapping.items(), mask):
+			iorig, isplit = dvtup
+			if isinstance(isplit, tuple):
+				for i in isplit:
+					ivar_ubn[i] = active
+			else:
+				ivar_ubn[isplit] = active
+		self.__set_objective(array(ivar_ubn))
 
 	def __set_model_parameters(self):
 		"""
@@ -192,15 +242,20 @@ class KShortestEnumerator(object):
 		instance = self.model.model.problem
 
 		instance.parameters.mip.tolerances.integrality.set(1e-9)
+		# instance.parameters.mip.tolerances.mipgap.set(1e-2)
+
 		instance.parameters.clocktype.set(1)
 		instance.parameters.advance.set(0)
 		instance.parameters.mip.strategy.fpheur.set(1)
 		instance.parameters.emphasis.mip.set(2)
-		instance.parameters.mip.limits.populate.set(1000000)
+		instance.parameters.mip.limits.populate.set(self.__max_populate_dflt)
 		instance.parameters.mip.pool.intensity.set(4)
 		instance.parameters.mip.pool.absgap.set(0)
 		instance.parameters.mip.pool.replace.set(2)
-
+		# instance.parameters.lpmethod.set(6)
+		#		instance.parameters.tune_problem()
+		if self.__max_time != 0:
+			instance.parameters.timelimit.set(self.__max_time)
 
 	def __set_model_parameters_gurobi(self):
 		"""
@@ -286,8 +341,8 @@ class KShortestEnumerator(object):
 		:param chunksize: Integer value determining how many constraints are added per iteration (performance issues)
 		"""
 		for i in range(0, len(self.__dvars), chunksize):
-			#print('Adding chunk:',i,i+chunksize)
-			dvl = self.__dvars[i:i+chunksize]
+			# print('Adding chunk:',i,i+chunksize)
+			dvl = self.__dvars[i:i + chunksize]
 			self.__add_kshortest_indicators_from_dvar(dvl)
 
 	def __add_kshortest_indicators_from_dvar(self, dvars):
@@ -375,7 +430,7 @@ class KShortestEnumerator(object):
 		helpers = self.model.add_variables_to_model(['efp_h' + str(i) for i in range(len(indicator_vars))], lb=ilb,
 													ub=iub, var_types=itype)
 
-		self.__efp_auxiliary_map = dict(zip(self.__ivars, [offset+i for i in range(len(helpers))]))
+		self.__efp_auxiliary_map = dict(zip(self.__ivars, [offset + i for i in range(len(helpers))]))
 		vlist = indicator_vars + helpers
 		mat_template = identity(len(self.indicator_map))
 		mat = hstack([mat_template, -mat_template])
@@ -414,7 +469,7 @@ class KShortestEnumerator(object):
 		self.model.add_rows_to_model(smat, [None] * M, [1] * M, True,
 									 vars=[self.model.model.variables[self.indicator_map[k]] for k in self.__dvars])
 
-	def __set_objective(self):
+	def __set_objective(self, mask=None):
 		"""
 		Defines the objective for the optimization problem (Minimize the sum of all indicator variables)
 
@@ -422,7 +477,7 @@ class KShortestEnumerator(object):
 
 		"""
 		vars = [self.model.model.variables[i] for i in self.__ivars]
-		self.model.set_objective(ones(len(vars), ), minimize=True, vars=vars)
+		self.model.set_objective(ones(len(vars), ) if isinstance(mask, type(None)) else mask, minimize=True, vars=vars)
 
 	def __integer_cut_count(self):
 		"""
@@ -501,7 +556,8 @@ class KShortestEnumerator(object):
 		else:
 			c = ones((1, len(self.__ivars)))
 			vars = [self.model.model.variables[i] for i in self.__ivars]
-			constraint = self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
+			constraint = \
+			self.model.add_rows_to_model(c, [start_at], [start_at if equal else None], only_nonzero=False, vars=vars,
 										 names=['KSH_SizeConstraint_'])[0]
 			self.model.model.update()
 
@@ -515,7 +571,7 @@ class KShortestEnumerator(object):
 		"""
 		return self.model
 
-	def __optimize(self):
+	def __optimize(self, allow_suboptimal=False):
 		"""
 
 		Optimizes the model and returns a single KShortestSolution instance for the model, adding an exclusion integer
@@ -527,10 +583,15 @@ class KShortestEnumerator(object):
 		try:
 			sol = self.optimizer.optimize()
 			status = sol.status()
-			if status == 'optimal':
+			# print('Solution status: ',self.model.model.problem.solution.get_status())
+			if status == 'optimal' or (status != 'infeasible' and allow_suboptimal):
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames)
+				sol = KShortestSolution(var_values, status, self.indicator_map, self.__dvar_mapping, self.__dvars,
+										names=self.__vnames)
 				return sol
+			else:
+				pass
+		# print('Non-optimal solution status:',sol.status())
 		except Exception as e:
 			print(e)
 
@@ -549,7 +610,8 @@ class KShortestEnumerator(object):
 			rawsols = self.optimizer.populate(999999)
 			for sol in rawsols:
 				var_values = dict(zip(list(range(len(sol.x()))), sol.x()))
-				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars, names=self.__vnames))
+				sols.append(KShortestSolution(var_values, None, self.indicator_map, self.__dvar_mapping, self.__dvars,
+											  names=self.__vnames))
 			for sol in sols:
 				self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 			return sols
@@ -602,7 +664,7 @@ class KShortestEnumerator(object):
 				sols = self.populate_current_size()
 				yield sols if sols is not None else []
 			except Exception as e:
-				print('No solutions or error occurred at size ', i)
+				print('No solutions or error occurred at size ', i, e.args)
 				raise e
 
 	def populate_current_size(self):
@@ -616,7 +678,7 @@ class KShortestEnumerator(object):
 		sols = self.__populate()
 		return sols
 
-	def get_single_solution(self):
+	def get_single_solution(self, cut=True, allow_suboptimal=False):
 		"""
 
 		Returns a single solution. Use the solution_iterator method instead.
@@ -624,10 +686,11 @@ class KShortestEnumerator(object):
 		-------
 
 		"""
-		sol = self.__optimize()
+		sol = self.__optimize(allow_suboptimal)
 		if sol is None:
 			raise Exception('Solution is empty')
-		self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
+		if cut:
+			self.__add_integer_cut(sol.var_values(), efp_cut=self.is_efp_problem)
 		return sol
 
 	def reset_enumerator_state(self):
@@ -642,6 +705,8 @@ class KShortestEnumerator(object):
 		self.model.model.remove(self.__integer_cuts)
 		self.__integer_cuts = []
 		self.set_size_constraint(1)
+		self.__set_objective()
+		self.set_indicator_activity()
 
 
 class KShortestEFMAlgorithm(object):
@@ -687,14 +752,17 @@ class KShortestEFMAlgorithm(object):
 		"""
 		assert self.configuration.has_required_properties(), "Algorithm configuration is missing required parameters."
 
-
 		self.ksh = KShortestEnumerator(
 			linear_system=linear_system,
 			m_value=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_VALUE],
 			is_efp_problem=self.configuration[K_SHORTEST_MPROPERTY_TYPE_EFP],
 			force_non_cancellation=self.configuration[K_SHORTEST_OPROPERTY_FORCE_NON_CANCELLATION],
 			n_threads=self.configuration[K_SHORTEST_OPROPERTY_N_THREADS],
-			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY])
+			workmem=self.configuration[K_SHORTEST_OPROPERTY_WORKMEMORY],
+			force_big_m=self.configuration[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS],
+			max_populate_sols=self.configuration[K_SHORTEST_OPROPERTY_MAXSOLUTIONS],
+			max_time=self.configuration[K_SHORTEST_OPROPERTY_TIMELIMIT]
+		)
 		if excluded_sets is not None:
 			self.ksh.exclude_solutions(excluded_sets)
 		if forced_sets is not None:

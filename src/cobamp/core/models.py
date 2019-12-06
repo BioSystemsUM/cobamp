@@ -1,10 +1,12 @@
+import warnings
+from collections import OrderedDict
+from copy import deepcopy
+
 from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
 	int32, int64
+
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
-from collections import OrderedDict
-import warnings
-from copy import deepcopy
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
@@ -36,8 +38,6 @@ def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 			nub[new_rx] = ub[orig_rx]
 
 	return S_new, nlb, nub, rx_mapping
-
-
 
 
 # def make_irreversible_model(S, lb, ub):
@@ -148,9 +148,9 @@ class ConstraintBasedModel(object):
 		return list(map(interpret_bound, enumerate(thermodynamic_constraints)))
 
 	def flux_limits(self, reaction):
-		self.set_objective({reaction:1}, True)
+		self.set_objective({reaction: 1}, True)
 		min_flux = self.optimize().objective_value()
-		self.set_objective({reaction:1}, False)
+		self.set_objective({reaction: 1}, False)
 		max_flux = self.optimize().objective_value()
 
 		return min_flux, max_flux
@@ -240,7 +240,7 @@ class ConstraintBasedModel(object):
 		if isinstance(arg, dict):
 			col = zeros([self.__S.shape[0], 1])
 			for k, v in arg.items():
-				col[self.decode_index(k, 'metabolite'),0] = v
+				col[self.decode_index(k, 'metabolite'), 0] = v
 		elif isinstance(arg, ndarray):
 			if len(arg) == len(self.metabolite_names):
 				col = arg.reshape(self.__S.shape[0], 1)
@@ -336,7 +336,6 @@ class ConstraintBasedModel(object):
 			self.model.model.objective = cur_obj
 
 		return sol
-
 
 	def revert_to_original_bounds(self):
 		for rx, bounds in zip(self.reaction_names, self.original_bounds):

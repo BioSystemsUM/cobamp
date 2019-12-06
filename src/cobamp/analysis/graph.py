@@ -1,5 +1,6 @@
 from ..utilities.tree import Tree
 
+
 def compress_linear_paths(tree):
 	"""
 	Collapses sequences of nodes contained in a Tree with only one children as a single node containing all values of

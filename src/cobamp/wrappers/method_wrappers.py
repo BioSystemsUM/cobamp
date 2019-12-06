@@ -1,5 +1,3 @@
-import abc
-
 from cobamp.algorithms.kshortest import *
 from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem
 from cobamp.wrappers.external_wrappers import model_readers
@@ -24,7 +22,8 @@ class KShortestEnumeratorWrapper(object):
 	}
 
 	def __init__(self, model, algorithm_type=ALGORITHM_TYPE_POPULATE, stop_criteria=1, forced_solutions=None,
-				 excluded_solutions=None, solver='CPLEX', force_bounds={}, n_threads=0, workmem=None):
+				 excluded_solutions=None, solver='CPLEX', force_bounds={}, n_threads=0, workmem=None, big_m=False,
+				 max_populate_sols_override=None, time_limit=None, big_m_value=None):
 		"""
 
 		Parameters
@@ -70,10 +69,16 @@ class KShortestEnumeratorWrapper(object):
 		self.__algo_properties[K_SHORTEST_MPROPERTY_TYPE_EFP] = self.is_efp
 		self.__algo_properties[K_SHORTEST_OPROPERTY_N_THREADS] = n_threads
 		self.__algo_properties[K_SHORTEST_OPROPERTY_WORKMEMORY] = workmem
+		self.__algo_properties[K_SHORTEST_OPROPERTY_TIMELIMIT] = 0 if time_limit == None else time_limit
+		self.__algo_properties[K_SHORTEST_OPROPERTY_BIG_M_CONSTRAINTS] = big_m
 		self.__algo_properties[self.__alg_to_prop_name[algorithm_type]] = stop_criteria
+		if big_m_value != None:
+			self.__algo_properties[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = big_m_value
+		if (max_populate_sols_override != None) and algorithm_type == self.ALGORITHM_TYPE_POPULATE:
+			self.__algo_properties[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = max_populate_sols_override
 		self.__forced_solutions = forced_solutions
 		self.__excluded_solutions = excluded_solutions
-		self.force_bounds = {self.model_reader.r_ids.index(k):v for k,v in force_bounds.items()}
+		self.force_bounds = {self.model_reader.r_ids.index(k): v for k, v in force_bounds.items()}
 		self.solver = solver
 		self.__setup_algorithm()
 		self.enumerated_sols = []
@@ -177,7 +182,7 @@ class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 				consumed=conv_cn,
 				non_consumed=conv_nc,
 				produced=conv_pr,
-				subset=	[self.model_reader.reaction_id_to_index(s) for s in self.__subset],
+				subset=[self.model_reader.reaction_id_to_index(s) for s in self.__subset],
 				solver=self.solver,
 				force_bounds=self.force_bounds
 			)
@@ -202,7 +207,6 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 						 target_yield_space]
 		self.__ip_constraints = converted_fbs + converted_ybs
 
-
 	def __materialize_intv_problem(self):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)
 
@@ -225,12 +229,14 @@ class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 		self.__consumed, self.__non_consumed, self.__produced = consumed, non_consumed, produced
 
 	def get_linear_system(self):
+		## TODO:  change irrev to lb/ub structure
 		to_convert = [self.__consumed, self.__non_consumed, self.__produced]
+		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(as_dict=False, separate_list=True)]
 		conv_cn, conv_nc, conv_pr = [[self.model_reader.metabolite_id_to_index(k) for k in lst] for lst in to_convert]
 		conv_subsets = [self.model_reader.reaction_id_to_index(s) for s in self.__subset]
 		return IrreversibleLinearPatternSystem(
 			S=self.model_reader.S,
-			irrev=self.model_reader.irrev_index,
+			lb=lb, ub=ub,
 			subset=conv_subsets,
 			consumed=conv_cn,
 			non_consumed=conv_nc,
