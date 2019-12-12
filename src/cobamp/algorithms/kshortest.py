@@ -436,13 +436,9 @@ class KShortestEnumerator(object):
 		mat = hstack([mat_template, -mat_template])
 		rhs_l = [0] * len(self.indicator_map)
 		rhs_u = [None] * len(self.indicator_map)
-
-		print('MILP2')
 		## Adding MILP2
 		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=True, indicator_rows=None, vars=vlist,
 									 names=None)
-
-		print('MILP4')
 		## Adding MILP4
 		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=True,
 									 indicator_rows=None, vars=helpers, names=None)
