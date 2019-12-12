@@ -103,14 +103,17 @@ def make_irreversible_model(S, lb, ub):
 	# 	ub[bak_irrev_index] = -lb[bak_irrev_index]
 	# 	lb[bak_irrev_index] = -ub_temp
 
-	Sr = S[:, rev]
+	if len(rev) > 0:
+		Sr = S[:, rev]
+		S_new = np.hstack([S, -Sr])
+	else:
+		S_new = S.copy()
 	offset = S.shape[1]
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
 	for i, rx in enumerate(rev):
 		rx_mapping[rx].append(offset + i)
 	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
 
-	S_new = np.hstack([S, -Sr])
 	nlb, nub = np.zeros(S_new.shape[1]), np.zeros(S_new.shape[1])
 	for orig_rx, new_rx in rx_mapping.items():
 		if isinstance(new_rx, tuple):
