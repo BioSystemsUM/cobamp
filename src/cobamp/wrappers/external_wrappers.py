@@ -1,27 +1,13 @@
 import abc
 import warnings
-from re import compile
 
 import numpy as np
-from boolean.boolean import BooleanAlgebra
 from numpy import where
 
 from ..core.models import ConstraintBasedModel
+from ..gpr.evaluator import GPREvaluator
 
 MAX_PRECISION = 1e-10
-GPR_GENE_RE = compile("\\b(?!and\\b|or\\b|AND\\b|OR\\b)[([A-z0-9\.]*")
-BOOLEAN_ALGEBRA = BooleanAlgebra()
-
-
-def normalize_boolean_expression(rule):
-	try:
-		expression = BOOLEAN_ALGEBRA.parse(rule, simplify=True)
-		bool_expression = BOOLEAN_ALGEBRA.normalize(expression, BOOLEAN_ALGEBRA.OR)
-		return str(bool_expression).replace('&', ' and ').replace('|', ' or ')
-	except Exception as e:
-		warnings.warn('Could not normalize this rule: ' + rule)
-		return rule
-
 
 class AbstractObjectReader(object):
 	"""
@@ -30,7 +16,7 @@ class AbstractObjectReader(object):
 	"""
 	__metaclass__ = abc.ABCMeta
 
-	def __init__(self, model):
+	def __init__(self, model, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str):
 		"""
 		Parameters
 
@@ -41,6 +27,13 @@ class AbstractObjectReader(object):
 
 		"""
 		self.model = model
+		self.initialize()
+
+	def initialize(self, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str):
+		"""
+			This method re-initializes the class attributes from the current state of self.model
+		"""
+
 		self.r_ids, self.m_ids = self.get_reaction_and_metabolite_ids()
 		self.rx_instances = self.get_rx_instances()
 		self.S = self.get_stoichiometric_matrix()
@@ -48,9 +41,20 @@ class AbstractObjectReader(object):
 		self.irrev_bool = self.get_irreversibilities(False)
 		self.irrev_index = self.get_irreversibilities(True)
 		self.bounds_dict = self.get_model_bounds(True)
-		self.genes = self.get_model_genes()
-		self.gene_protein_reaction_rules = self.get_model_gprs()
-		self.gpr_map = None
+		self.gene_protein_reaction_rules = gpr_and_char, gpr_or_char, gpr_gene_parse_function
+
+	@property
+	def gene_protein_reaction_rules(self):
+		return self.__gene_protein_reaction_rules
+
+
+	@gene_protein_reaction_rules.setter
+	def gene_protein_reaction_rules(self, value):
+		and_char, or_char, apply_fx = value
+		self.__gene_protein_reaction_rules = GPREvaluator(
+			gpr_list=self.get_model_gpr_strings(),
+			and_char=and_char, or_char=or_char, apply_fx=apply_fx
+		)
 
 	@abc.abstractmethod
 	def get_stoichiometric_matrix(self):
@@ -58,7 +62,7 @@ class AbstractObjectReader(object):
 		Returns a 2D numpy array with the stoichiometric matrix whose metabolite and reaction indexes match the names
 		defined in the class variables r_ids and m_ids
 		"""
-		return
+		pass
 
 	@abc.abstractmethod
 	def get_model_bounds(self, as_dict, separate_list):
@@ -74,7 +78,7 @@ class AbstractObjectReader(object):
 			separate: A boolean value that controls whether the result is two numpy.array(), one for lb and the other\n
 			to ub
 		"""
-		return
+		pass
 
 	@abc.abstractmethod
 	def get_irreversibilities(self, as_index):
@@ -89,41 +93,34 @@ class AbstractObjectReader(object):
 			as_dict: A boolean value that controls whether the result is a vector of indexes
 
 		"""
-		return
+		pass
 
 	@abc.abstractmethod
 	def get_rx_instances(self):
 		"""
 		Returns the reaction instances contained in the model. Varies depending on the framework.
 		"""
-		return
+		pass
 
 	@abc.abstractmethod
 	def get_reaction_and_metabolite_ids(self):
 		"""
 		Returns two ordered iterables containing the metabolite and reaction ids respectively.
 		"""
-		return
+		pass
 
-	@abc.abstractmethod
-	def get_model_genes(self):
-		"""
+	# @abc.abstractmethod
+	# def get_model_genes(self):
+	# 	"""
+	#
+	# 	Returns the identifiers for the genes contained in the model
+	#
+	# 	"""
 
-		Returns the identifiers for the genes contained in the model
+	@property
+	def genes(self):
+		return self.gene_protein_reaction_rules.get_genes()
 
-		"""
-
-	@abc.abstractmethod
-	def get_model_gprs(self, apply_fx=None):
-		"""
-
-		Returns the model gene-protein-reaction rules associated with each reaction
-
-		"""
-
-	@abc.abstractmethod
-	def convert_gprs_to_list(self, rx, apply_fx):
-		return
 
 	def reaction_id_to_index(self, id):
 		"""
@@ -161,40 +158,28 @@ class AbstractObjectReader(object):
 			constraint = tuple([self.reaction_id_to_index(tup[0])] + list(tup[1:]))
 		return constraint
 
-	def decode_k_shortest_solution(self, solarg):
-		if isinstance(solarg, list):
-			return [self.__decode_k_shortest_solution(sol) for sol in solarg]
-		else:
-			return self.__decode_k_shortest_solution(solarg)
 
-	def __decode_k_shortest_solution(self, sol):
-		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
-		return {self.r_ids[k]: v for k, v in sol.attribute_value(sol.SIGNED_VALUE_MAP).items() if
-				abs(v) > MAX_PRECISION}
-
-	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False, apply_fx=None):
-		if self.gpr_map == None:
-			self.gpr_map = {rx: self.convert_gprs_to_list(rx, apply_fx) for rx in self.r_ids}
-		gpr_map = self.gpr_map
-
-		def aux_apply(fx, it):
-			args = [k for k in it if k is not None]
-			return fx(args) if args else None
-
-		def eval_gpr(lists):
-			return aux_apply(or_fx,
-							 [aux_apply(and_fx, [expression[x] for x in gs if x in expression.keys()]) for gs in lists])
-
-		exp_map = {rx: eval_gpr(gpr_map[rx]) for rx in gpr_map}
+	def get_reaction_scores(self, expression, and_fx=min, or_fx=max, as_vector=False):
+		exp_map = {rx: self.gene_protein_reaction_rules.eval_gpr(i, expression, or_fx=or_fx, and_fx=and_fx)
+				   for i,rx in enumerate(self.r_ids)}
 
 		if as_vector:
 			return [exp_map[k] for k in self.r_ids]
 		else:
 			return exp_map
 
-	def get_working_gene_names(self):
-		current_model_genes = list(self.get_model_genes())
-		return dict(zip(current_model_genes, map(lambda x: '_' + x, current_model_genes)))
+	#@warnings.warn('g2rx will be deprecated in a future release. Use the get_reaction_scores method instead',
+	#			   DeprecationWarning)
+	def g2rx(self, expression, and_fx=min, or_fx=max, as_vector=False, apply_fx=str):
+		warnings.warn('g2rx will be deprecated in a future release. Use the get_reaction_scores method instead',
+					   DeprecationWarning)
+		return self.get_reaction_scores(expression, and_fx, or_fx, as_vector)
+
+
+	@abc.abstractmethod
+	def get_model_gpr_strings(self):
+		pass
+
 
 	def to_cobamp_cbm(self, solver=None):
 		return ConstraintBasedModel(
@@ -202,11 +187,34 @@ class AbstractObjectReader(object):
 			thermodynamic_constraints=[tuple(float(k) for k in l) for l in self.get_model_bounds()],
 			reaction_names=self.r_ids,
 			metabolite_names=self.m_ids,
-			optimizer=solver != None and solver,
+			optimizer= solver == True,
 			solver=solver if solver not in (True, False) else None)
 
-
 class COBRAModelObjectReader(AbstractObjectReader):
+
+	def __read_model(self, path, format, **kwargs):
+		from cobra.io import read_sbml_model, load_matlab_model, load_json_model
+		parse_functions = {
+			'xml': read_sbml_model,
+			'mat': load_matlab_model,
+			'json': load_json_model,
+			'sbml': read_sbml_model
+		}
+		if format == None:
+			nformat = path.split('.')[-1]
+		else:
+			nformat = format
+		if nformat in parse_functions.keys():
+			return parse_functions[nformat](path, **kwargs)
+		else:
+			raise ValueError('Format '+str(nformat)+' is invalid or not yet available through the cobrapy readers. '+
+							 'Choose one of the following: '+','.join(parse_functions.keys()))
+
+	def __init__(self, model, gpr_gene_parse_function=str, format=None, **kwargs):
+		if isinstance(model, str):
+			warnings.warn('Reading model with cobrapy from the provided path...')
+			model = self.__read_model(model, format, **kwargs)
+		super().__init__(model, gpr_gene_parse_function=gpr_gene_parse_function)
 
 	def get_stoichiometric_matrix(self):
 		S = np.zeros((len(self.m_ids), len(self.r_ids)))
@@ -241,59 +249,9 @@ class COBRAModelObjectReader(AbstractObjectReader):
 	def get_model_genes(self):
 		return set([g.id for g in self.model.genes])
 
-	# def get_model_gprs(self, apply_fx=None):
-	# 	if not apply_fx:
-	# 		return [r.gene_reaction_rule for r in self.model.reactions]
-	# 	else:
-	# 		return [apply_fx(r.gene_reaction_rule) for r in self.model.reactions]
-
-	def get_model_gprs(self, apply_fx=None, token_to_gene_ratio=20):
-		## TODO: this function should only retrieve a single gpr. the abstract class should normalize it
-
-		def fix_name(gpr_string):
-			# genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
-			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
-			unique_tokens = set([m.string for m in matches])
-			for offset, match_obj in enumerate(matches):
-				final_pos = match_obj.span()[0] + offset
-				gpr_string = gpr_string[:final_pos] + '_' + gpr_string[final_pos:]
-			return gpr_string, len(matches), len(unique_tokens), unique_tokens
-
-		gpr_list = []
-		for r in self.model.reactions:
-			rule, num_matches, num_unique_tokens, unique_tokens = fix_name(r.gene_reaction_rule)
-			if apply_fx:
-				rule = apply_fx(rule)
-			if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
-				rule = normalize_boolean_expression(rule)
-			else:
-				warnings.warn(
-					'Will not normalize rules with more than ' + str(token_to_gene_ratio) + ' average tokens per gene')
-
-			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if
-							(k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
-			for offsetp, matchp_obj in enumerate(matches_post):
-				final_pos = matchp_obj.span()[0] - offsetp
-				rule = rule[:final_pos] + rule[final_pos + 1:]
-
-			gpr_list.append(rule)
-		# for tok in unique_tokens:
-		# 	rule = rule.replace('_'+tok, tok)
-		return gpr_list
-
-	#
-	# if not apply_fx:
-	# 	return [fix_name(r.gene_reaction_rule) for r in self.model.reactions]
-	# else:
-	# 	return [apply_fx(fix_name(r.gene_reaction_rule)) for r in self.model.reactions]
-
-	def convert_gprs_to_list(self, rx, apply_fx):
-		if apply_fx == None:
-			apply_fx = lambda x: x
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''),
-							apply_fx(self.gene_protein_reaction_rules[self.r_ids.index(rx)]).split('or')))
-		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
-		return rules
+	def get_model_gpr_strings(self, apply_fx=None):
+		return [apply_fx(r.gene_reaction_rule) if apply_fx is not None
+				else r.gene_reaction_rule for r in self.model.reactions]
 
 
 class MatFormatReader(AbstractObjectReader):
@@ -330,18 +288,8 @@ class MatFormatReader(AbstractObjectReader):
 	def get_model_genes(self):
 		return set([k[0][0] for k in self.model['genes'][0][0]])
 
-	def get_model_gprs(self, apply_fx=None):
-		gprs = [k[0][0] if len(k[0]) > 0 else '' for k in self.model['grRules'][0][0]]
-		if apply_fx:
-			return list(map(apply_fx, gprs))
-		else:
-			return gprs
-
-	def convert_gprs_to_list(self, rx, apply_fx):
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''),
-							self.get_model_gprs(apply_fx)[self.r_ids.index(rx)].split('or')))
-		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
-		return rules
+	def get_model_gpr_strings(self):
+		return [k[0][0] if len(k[0]) > 0 else '' for k in self.model['grRules'][0][0]]
 
 
 class FramedModelObjectReader(AbstractObjectReader):
@@ -371,10 +319,8 @@ class FramedModelObjectReader(AbstractObjectReader):
 	def get_rx_instances(self):
 		return [self.model.reactions[rx] for rx in self.r_ids]
 
-	def convert_gprs_to_list(self, rx):
-		proteins = list(map(lambda x: x.strip().replace('(', '').replace(')', ''), rx.gene_reaction_rule.split('or')))
-		rules = [[s.strip() for s in x.split('and') if s.strip() != ''] for x in proteins]
-		return rules
+	def get_model_gpr_strings(self):
+		return [rx.gene_reaction_rule for rx in self.r_ids]
 
 
 class CobampModelObjectReader(AbstractObjectReader):
@@ -403,6 +349,8 @@ class CobampModelObjectReader(AbstractObjectReader):
 	def get_rx_instances(self):
 		return None
 
+	def get_model_gpr_strings(self):
+		return ['']*len(self.r_ids)
 
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.
