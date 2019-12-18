@@ -3,10 +3,12 @@ from collections import OrderedDict
 from copy import deepcopy
 
 from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
-	int32, int64
+	int32, int64, where
 
 from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
+from ..utilities.print_utils import pretty_table_print
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
+from .cb_analysis import FluxVariabilityAnalysis
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
@@ -155,6 +157,24 @@ class ConstraintBasedModel(object):
 
 		return min_flux, max_flux
 
+	def simplify(self, initial_objective, objective_sense, fva_gamma=1-1e-6):
+		res = FluxVariabilityAnalysis(self.model).run(
+			initial_objective=initial_objective, minimize_initial=objective_sense, gamma=fva_gamma)
+		blocked_reaction_names = [self.reaction_names[i] for i in res.find_blocked_reactions()]
+		self.remove_reactions(blocked_reaction_names)
+		self.remove_orphan_metabolites()
+
+
+	def remove_orphan_metabolites(self):
+		zero_rows = [self.metabolite_names[i] for i in where((self.get_stoichiometric_matrix() == 0).all(axis=1))[0]]
+		if len(zero_rows) > 0:
+			self.remove_metabolites(zero_rows)
+
+	def remove_orphan_reactions(self):
+		zero_cols = [self.metabolite_names[i] for i in where((self.get_stoichiometric_matrix() == 0).all(axis=0))[0]]
+		if len(zero_cols) > 0:
+			self.remove_reactions(zero_cols)
+
 	def initialize_optimizer(self):
 		lb, ub = self.get_bounds_as_list()
 		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names, solver=self.solver)
@@ -260,20 +280,42 @@ class ConstraintBasedModel(object):
 			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
 
 	def remove_reaction(self, index):
-		j = self.decode_index(index, 'reaction')
-		if not isinstance(index, int):
-			self.reaction_names.pop(j)
-		self.bounds.pop(j)
-		self.__S = delete(self.__S, [j], axis=1)
+		warnings.warn('''remove_reaction will be renamed to remove_reactions in a future version to represent the
+					  method\'s true behaviour''',DeprecationWarning)
+		self.remove_reactions(index)
+
+	def remove_metabolite(self, index):
+		warnings.warn('''remove_metabolite will be renamed to remove_metabolites in a future version to represent the
+					  method\'s true behaviour''',DeprecationWarning)
+		self.remove_metabolites(index)
+
+	def remove_reactions(self, index):
+		if isinstance(index, (int, str)):
+			index = [index]
+
+		j = [self.decode_index(i, 'reaction') for i in index]
+
+		if self.reaction_names is not None:
+			new_rnames = [self.reaction_names[k] for k in j]
+			self.reaction_names = new_rnames
+
+		new_bounds = [self.bounds[i] for i,k in enumerate(self.bounds.pop) if i not in j]
+		self.bounds = new_bounds
+		self.__S = delete(self.__S, j, axis=1)
 		self.__update_decoder_map()
 
 		if self.model:
 			self.model.remove_from_model(j, 'var')
 
-	def remove_metabolite(self, index):
+	def remove_metabolites(self, index):
+		if isinstance(index, (int, str)):
+			index = [index]
+
 		i = self.decode_index(index, 'metabolite')
-		if not isinstance(index, int):
-			self.metabolite_names.pop(i)
+
+		if self.reaction_names is not None:
+			new_mnames = [self.metabolite_names[k] for k in i]
+			self.metabolite_names = new_mnames
 
 		self.__S = delete(self.__S, [i], axis=0)
 		self.__update_decoder_map()
@@ -285,10 +327,17 @@ class ConstraintBasedModel(object):
 		lb, ub = self.get_bounds_as_list()
 		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
 		rev = array([int(v[0]) for k, v in rx_mapping.items() if isinstance(v, (list, tuple))])
-		revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
-		rnames = self.reaction_names + revnames
-		model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
-									 optimizer=self.model is not None, solver=self.solver)
+		if self.reaction_names != None:
+			if len(rev) > 0:
+				revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
+			else:
+				revnames = []
+			rnames = self.reaction_names + revnames
+
+			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
+										 optimizer=self.model is not None, solver=self.solver)
+		else:
+			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), optimizer=self.model is not None, solver=self.solver)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
@@ -345,6 +394,11 @@ class ConstraintBasedModel(object):
 			if clb != lb or cub != ub:
 				self.set_reaction_bounds(rx, lb=lb, ub=ub)
 
+	def summarize_solution(self, sol, drains, eps=1e-9):
+		active_drains = {k:v for k,v in sol.var_values().items() if abs(v) > eps and k in drains}
+		table = [[k]+[r for r,v in active_drains.items() if f(v)] for k,f in [('produced',lambda x: x < -eps), ('consumed',lambda x: x > eps)]]
+
+		pretty_table_print(array(table).T.tolist(), has_header=True, header_sep=2)
 
 class CORSOModel(ConstraintBasedModel):
 	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO'), solver=None):
