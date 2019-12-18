@@ -45,7 +45,7 @@ def convert_gpr_to_list(gpr, apply_fx=str, or_char='or', and_char='and'):
 class GPREvaluator(object):
 	def __init__(self, gpr_list, apply_fx=str, or_char='or', and_char='and', ttg_ratio=20):
 		self.apply_fx = apply_fx
-		self.__gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=ttg_ratio) for gp in gpr_list]
+		self.__gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=ttg_ratio) if gp != '' else '' for gp in gpr_list]
 		self.__or_char, self.__and_char = or_char, and_char
 		self.__gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=or_char, and_char=and_char) for g in
 						   self.__gprs]
