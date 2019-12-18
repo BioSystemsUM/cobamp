@@ -43,19 +43,18 @@ def convert_gpr_to_list(gpr, apply_fx=str, or_char='or', and_char='and'):
 
 
 class GPREvaluator(object):
-	def __init__(self, gpr_list, apply_fx=str, or_char='or', and_char='and'):
-		self.__gprs = gpr_list
-		#self.or_fx, self.and_fx = or_fx, and_fx
-		self.__or_char, self.__and_char = or_char, and_char
+	def __init__(self, gpr_list, apply_fx=str, or_char='or', and_char='and', ttg_ratio=20):
 		self.apply_fx = apply_fx
+		self.__gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=ttg_ratio) for gp in gpr_list]
+		self.__or_char, self.__and_char = or_char, and_char
 		self.__gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=or_char, and_char=and_char) for g in
 						   self.__gprs]
 		self.__genes = tuple(set(list(chain(*chain(*self.__gpr_list)))))
 		self.__gene_to_index_mapping = dict(zip(self.__genes, range(len(self.__genes))))
 
-	def __preprocess_gprs(self, token_to_gene_ratio=20):
+	def __preprocess_gprs(self, gpr_str, token_to_gene_ratio=20):
 		## TODO: this function should only retrieve a single gpr. the abstract class should normalize it
-		gpr_string_list = self.__gprs
+		# gpr_string_list = self.__gprs
 		def fix_name(gpr_string):
 			# genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
 			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
@@ -65,25 +64,24 @@ class GPREvaluator(object):
 				gpr_string = gpr_string[:final_pos] + '_' + gpr_string[final_pos:]
 			return gpr_string, len(matches), len(unique_tokens), unique_tokens
 
-		gpr_list = []
-		for gpr_str in gpr_string_list:
-			rule, num_matches, num_unique_tokens, unique_tokens = fix_name(gpr_str)
-			if self.apply_fx:
-				rule = self.apply_fx(rule)
-			if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
-				rule = normalize_boolean_expression(rule)
-			else:
-				warnings.warn(
-					'Will not normalize rules with more than ' + str(token_to_gene_ratio) + ' average tokens per gene')
+		# gpr_list = []
+		# for gpr_str in gpr_string_list:
+		rule, num_matches, num_unique_tokens, unique_tokens = fix_name(gpr_str)
+		if self.apply_fx:
+			rule = self.apply_fx(rule)
+		if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
+			rule = normalize_boolean_expression(rule)
+		else:
+			warnings.warn(
+				'Will not normalize rules with more than ' + str(token_to_gene_ratio) + ' average tokens per gene')
 
-			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if
-							(k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
-			for offsetp, matchp_obj in enumerate(matches_post):
-				final_pos = matchp_obj.span()[0] - offsetp
-				rule = rule[:final_pos] + rule[final_pos + 1:]
+		matches_post = [k for k in GPR_GENE_RE.finditer(rule) if
+						(k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
+		for offsetp, matchp_obj in enumerate(matches_post):
+			final_pos = matchp_obj.span()[0] - offsetp
+			rule = rule[:final_pos] + rule[final_pos + 1:]
 
-			gpr_list.append(rule)
-		return gpr_list
+		return rule
 
 
 	def __len__(self):
