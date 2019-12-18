@@ -10,6 +10,7 @@ from numpy import zeros
 from pathos.multiprocessing import cpu_count
 from pathos.pools import _ProcessPool
 
+from functools import reduce, partial
 from cobamp.core.optimization import LinearSystemOptimizer
 
 
@@ -46,6 +47,7 @@ class FluxVariabilityAnalysis(object):
 	def __init__(self, linear_system, workers=None):
 		self.ls = linear_system
 		self.n_jobs = min(cpu_count() if workers == None else workers, linear_system.get_stoich_matrix_shape()[1])
+		self.result = None
 
 	def run(self, initial_objective, minimize_initial, gamma=1 - 1e-6):
 
@@ -76,8 +78,28 @@ class FluxVariabilityAnalysis(object):
 			self.pool.join()
 
 		self.ls.remove_from_model([M], 'const')
-		return [result[i] for i in range(N)]
+		return FluxVariabilityAnalysisResult([result[i] for i in range(N)])
 
+class FluxVariabilityAnalysisResult(object):
+
+	func_condition_dict = {
+		'blocked':lambda x: (abs(x[0]) < 1e-9) and (abs(x[1]) < 1e-9),
+		'forced_active' : lambda x: (1e-9 < x[0] <= x[1]) or (-1e-9 > x[1] > x[0]),
+		'forward_irreversible' : lambda x: (x[0] >= 0) and (x[1] > 0),
+		'backwards_irreversible' : lambda x: (x[1] <= 0) and  (x[0] < 0)
+	}
+	def __init__(self, limits):
+		self.__limits = tuple(tuple(l) for l in limits)
+		for k,v in self.func_condition_dict.items():
+			func_name = '_'.join(['find',k,'reactions'])
+			setattr(self, func_name, partial(self.find_filter_matching_reactions,func_conditions=[v]))
+
+	@property
+	def limits(self):
+		return self.__limits
+
+	def find_filter_matching_reactions(self, func_conditions):
+		return set(i for i,l in enumerate(self.__limits) if sum(fx(l) for fx in func_conditions) == len(func_conditions))
 
 if __name__ == '__main__':
 	from cobra.io.sbml3 import read_sbml_model
@@ -112,7 +134,7 @@ if __name__ == '__main__':
 
 	error = 1e-6
 	error_rx = []
-	for i, lsts in enumerate(zip(limits_mp, limits_fast)):
+	for i, lsts in enumerate(zip(limits_mp, limits_fast.limits)):
 		mpr, fr = lsts
 		ld, ud = [mpr[i] - fr[i] for i in range(len(mpr))]
 		if (abs(ld) > error) | (abs(ud) > error):
