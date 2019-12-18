@@ -1,6 +1,12 @@
-from itertools import chain
+import warnings
 
+from itertools import chain
 from numpy import zeros, where, array
+from boolean.boolean import BooleanAlgebra
+import re
+
+GPR_GENE_RE = re.compile("\\b(?!and\\b|or\\b|AND\\b|OR\\b)[([A-z0-9\.]*")
+BOOLEAN_ALGEBRA = BooleanAlgebra()
 
 
 def logical_or(x):
@@ -12,10 +18,18 @@ def logical_and(x):
 
 
 def aux_apply(fx, it):
-	print(fx, it)
+	#print(fx, it)
 	args = [k for k in it if k is not None]
 	return fx(args) if args else None
 
+def normalize_boolean_expression(rule):
+	try:
+		expression = BOOLEAN_ALGEBRA.parse(rule, simplify=True)
+		bool_expression = BOOLEAN_ALGEBRA.normalize(expression, BOOLEAN_ALGEBRA.OR)
+		return str(bool_expression).replace('&', ' and ').replace('|', ' or ')
+	except Exception as e:
+		warnings.warn('Could not normalize this rule: ' + rule)
+		return rule
 
 def convert_gpr_to_list(gpr, apply_fx=str, or_char='or', and_char='and'):
 	proteins = list(
@@ -24,24 +38,59 @@ def convert_gpr_to_list(gpr, apply_fx=str, or_char='or', and_char='and'):
 			apply_fx(gpr).split(or_char)
 		)
 	)
-
 	rules = [[s.strip() for s in x.split(and_char) if s.strip() != ''] for x in proteins]
 	return rules
 
 
 class GPREvaluator(object):
-	def __init__(self, gpr_list, or_fx=logical_or, and_fx=logical_and, apply_fx=str, or_char='or', and_char='and'):
+	def __init__(self, gpr_list, apply_fx=str, or_char='or', and_char='and'):
 		self.__gprs = gpr_list
-		self.or_fx, self.and_fx = or_fx, and_fx
+		#self.or_fx, self.and_fx = or_fx, and_fx
 		self.__or_char, self.__and_char = or_char, and_char
 		self.apply_fx = apply_fx
-		self.__gpr_list = [convert_gpr_to_list(g, apply_fx=self.apply_fx, or_char=or_char, and_char=and_char) for g in
+		self.__gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=or_char, and_char=and_char) for g in
 						   self.__gprs]
 		self.__genes = tuple(set(list(chain(*chain(*self.__gpr_list)))))
 		self.__gene_to_index_mapping = dict(zip(self.__genes, range(len(self.__genes))))
 
-	def get_num_of_gprs(self):
+	def __preprocess_gprs(self, token_to_gene_ratio=20):
+		## TODO: this function should only retrieve a single gpr. the abstract class should normalize it
+		gpr_string_list = self.__gprs
+		def fix_name(gpr_string):
+			# genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
+			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
+			unique_tokens = set([m.string for m in matches])
+			for offset, match_obj in enumerate(matches):
+				final_pos = match_obj.span()[0] + offset
+				gpr_string = gpr_string[:final_pos] + '_' + gpr_string[final_pos:]
+			return gpr_string, len(matches), len(unique_tokens), unique_tokens
+
+		gpr_list = []
+		for gpr_str in gpr_string_list:
+			rule, num_matches, num_unique_tokens, unique_tokens = fix_name(gpr_str)
+			if self.apply_fx:
+				rule = self.apply_fx(rule)
+			if (num_unique_tokens > 0) and (num_matches // num_unique_tokens) < token_to_gene_ratio:
+				rule = normalize_boolean_expression(rule)
+			else:
+				warnings.warn(
+					'Will not normalize rules with more than ' + str(token_to_gene_ratio) + ' average tokens per gene')
+
+			matches_post = [k for k in GPR_GENE_RE.finditer(rule) if
+							(k.span()[0] - k.span()[1] != 0) and k.string[k.span()[0]:k.span()[1]][0] == '_']
+			for offsetp, matchp_obj in enumerate(matches_post):
+				final_pos = matchp_obj.span()[0] - offsetp
+				rule = rule[:final_pos] + rule[final_pos + 1:]
+
+			gpr_list.append(rule)
+		return gpr_list
+
+
+	def __len__(self):
 		return len(self.__gpr_list)
+
+	def __getitem__(self, item):
+		return self.__gprs[item]
 
 	def gpr_has_string(self, index, string):
 		return string in self.__gprs[index]
@@ -58,10 +107,10 @@ class GPREvaluator(object):
 	def get_genes(self):
 		return self.__genes
 
-	def eval_gpr(self, index, state):
-		print(self.__gpr_list[index])
-		return aux_apply(self.or_fx,
-						 [aux_apply(self.and_fx, [state[x] for x in gs if x in state.keys()]) for gs in
+	def eval_gpr(self, index, state, or_fx=logical_or, and_fx=logical_and):
+		#print(self.__gpr_list[index])
+		return aux_apply(or_fx,
+						 [aux_apply(and_fx, [state[x] for x in gs if x in state.keys()]) for gs in
 						  self.__gpr_list[index]])
 
 	def associated_genes(self, index):
@@ -70,55 +119,13 @@ class GPREvaluator(object):
 	def associated_gene_matrix(self):
 		B = zeros([len(self.__genes), len(self.__gpr_list)])
 		row_ind, col_ind = [], []
-		for i in range(self.get_num_of_gprs()):
+		for i in range(len(self)):
 			gene_indexes = [self.__gene_to_index_mapping[k] for k in self.associated_genes(i)]
 			row_ind += gene_indexes
 			col_ind += [i] * len(gene_indexes)
 		B[row_ind, col_ind] = 1
 		return B
 
-
-class GeneMatrixBuilder(object):
-	def __init__(self, gpr_evaluator):
-		self.__gpr_evaluator = gpr_evaluator
-		self.__B, self.__b = self.__get_association_matrix()
-
-	def __get_association_matrix(self):
-		B = self.__gpr_evaluator.associated_gene_matrix()
-		b = B.sum(axis=0)
-		return B, b
-
-	def __step_one(self):
-
-		# build step 1 matrices
-		# G is for reactions
-		# F is for genes
-
-		single_gene_rx = where(self.__b == 1)[0]
-		matched_genes = where(self.__B[:, single_gene_rx])[0]
-
-		F1, G1 = [zeros([len(single_gene_rx), n]) for n in self.__B.shape]
-		for mat, ind in zip([F1, G1], [matched_genes, single_gene_rx]):
-			mat[list(range(len(single_gene_rx))), ind] = 1
-		return F1, G1, single_gene_rx
-
-	def __step_exclusive_chars(self, and_ops=True):
-
-		# build step 2 matrices
-
-		exclusive_char_gene_rx = array([i for i in set(where(self.__b > 1)[0]) if self.__gpr_evaluator.gpr_has_string(i,
-																													  self.__gpr_evaluator.or_char() if and_ops else self.__gpr_evaluator.and_char())])
-		matched_genes, rx_ind = where(self.__B[:, exclusive_char_gene_rx])
-		mat_inds = [exclusive_char_gene_rx[i] for i in rx_ind]
-
-		F1, G1 = [zeros([len(exclusive_char_gene_rx), n]) for n in self.__B.shape]
-		for mat, ind in zip([F1, G1], [mat_inds, exclusive_char_gene_rx]):
-			mat[list(range(len(exclusive_char_gene_rx))), ind] = 1
-
-		return F1, G1, exclusive_char_gene_rx
-
-	def build_gene_reaction_network(self, reactions):
-		gpr_lists = [self.__gpr_evaluator.get_gpr_as_lists(i) for i in reactions]
 
 
 # def __identify_single_gene_reactions(self):
