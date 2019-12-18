@@ -76,8 +76,23 @@ class KShortestEnumeratorWrapper(object):
 			self.__algo_properties[K_SHORTEST_OPROPERTY_BIG_M_VALUE] = big_m_value
 		if (max_populate_sols_override != None) and algorithm_type == self.ALGORITHM_TYPE_POPULATE:
 			self.__algo_properties[K_SHORTEST_OPROPERTY_MAXSOLUTIONS] = max_populate_sols_override
-		self.__forced_solutions = forced_solutions
-		self.__excluded_solutions = excluded_solutions
+
+
+		def preprocess_cuts(cut_list):
+			if cut_list is not None:
+				new_cuts = []
+				for cut in cut_list:
+					new_cut = cut
+					if not isinstance(cut, KShortestSolution):
+						new_cut = [self.model_reader.reaction_id_to_index(k) if isinstance(k, str) else k for k in cut]
+					new_cuts.append(new_cut)
+				return new_cuts
+			else:
+				return []
+
+		self.__forced_solutions = preprocess_cuts(forced_solutions)
+		self.__excluded_solutions = preprocess_cuts(excluded_solutions)
+
 		self.force_bounds = {self.model_reader.r_ids.index(k): v for k, v in force_bounds.items()}
 		self.solver = solver
 		self.__setup_algorithm()
@@ -128,8 +143,18 @@ class KShortestEnumeratorWrapper(object):
 
 		for solarg in enumerator:
 			self.enumerated_sols.append(solarg)
-			yield self.model_reader.decode_k_shortest_solution(solarg)
+			yield self.decode_solution(solarg)
 
+	def __decode_k_shortest_solution(self, sol):
+		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
+		return {self.model_reader.r_ids[k]: sol.attribute_value(sol.SIGNED_VALUE_MAP)[k]
+				for k in sol.get_active_indicator_varids()}
+
+	def decode_solution(self, solarg):
+		if isinstance(solarg, (list,tuple)):
+			return [self.__decode_k_shortest_solution(sol) for sol in solarg]
+		else:
+			return self.__decode_k_shortest_solution(solarg)
 
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
@@ -211,7 +236,7 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)
 
 	def get_linear_system(self):
-		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(separate_list=True)]
+		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(separate_list=True, as_dict=False)]
 		T, b = self.__materialize_intv_problem()
 		return DualLinearSystem(self.model_reader.S, lb, ub, T, b, solver=self.solver)
 
