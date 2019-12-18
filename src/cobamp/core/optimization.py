@@ -528,4 +528,4 @@ class KShortestSolution(Solution):
 		-------
 
 		"""
-		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if abs(v) > 1e-10]
+		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if abs(v) > 1e-9]
