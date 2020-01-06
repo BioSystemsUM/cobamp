@@ -643,7 +643,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
-def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
+def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds, add_c=True):
 	"""
 	Args:
 	 self:
@@ -673,8 +673,8 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 	# 	bwd_names = []
 	# 	rev_mapping = {i:i for i in range(Si.shape[1])}
 
-	lbi = [0] * len(lbi) + [1]
-	ubi = [None] * len(ubi) + [None]
+	lbi = [0] * len(lbi) + [1] if add_c else []
+	ubi = [None] * len(ubi) + [None] if add_c else []
 
 	for k, tup in force_bounds.items():
 		if isinstance(rev_mapping[k], (list, tuple)):
@@ -695,7 +695,7 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 	self.__ivars = None
 	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
 																									c in consumed]
-	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))])
+	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))]) if add_c else Si
 	b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 	## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
 
@@ -764,6 +764,61 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 	def build_problem(self):
 		super().build_problem()
 
+class GeneticDualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
+	def __init__(self, S, lb, ub, G, T, b, solver=None):
+		self.select_solver(solver)
+		Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping = \
+			prepare_irreversible_system(self, S, lb, ub, [], [], [], solver, {}, add_c=False)
+		#
+		# list_bi = []
+		# list_ti = []
+		# # fix T and b
+		#
+
+		self.__ivars = None
+		self.__c = "C"
+		Gi = np.zeros([G.shape[0], Si.shape[1]])
+		for i, tup in rev_mapping.items():
+			Gi[:,tup] = np.vstack([G[:,i], G[:,i]]).reshape(-1, 2) if isinstance(tup, (tuple,list)) else G[:,i]
+		super().__init__(*self.generate_dual_problem(Si, Gi, T, b), solver=solver)
+
+		self.dvars = list([Si.shape[0]+i for i in range(G.shape[0])])
+		self.dvar_mapping = {i: i for i in range(len(self.dvars))}
+
+	def generate_dual_problem(self, S, G, T, b):
+		m, n = S.shape
+		Sxi = S.T
+		Ii = G.T
+		Ti = T.T
+
+		veclens = [("u", m), ("v", G.shape[0]), ("w", T.shape[0])]
+
+		var_prop_list = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
+						pref, n in
+						veclens]
+
+		Sdi = np.hstack([Sxi, Ii, Ti, np.zeros([Sxi.shape[0], 1])])
+		Sd = np.vstack([Sdi, np.zeros([1, Sdi.shape[1]])])
+
+		#names, v_lb, v_ub = list(zip(*list(chain(u, v, w))))
+		names, v_lb, v_ub = list(zip(*chain(*var_prop_list)))
+
+		names = list(names) + ['C']
+		v_lb = list(v_lb) + [1]
+		v_ub = list(v_ub) + [None]
+
+		w_idx = [m + Ii.shape[1] + i for i in range(len(b))]
+		Sd[-1, w_idx] = b
+		Sd[-1, -1] = 1
+
+		b_ub = np.hstack([np.array([None] * Sdi.shape[0]), np.array([0])])
+		b_lb = np.array([0] * (Sd.shape[0]), dtype=object)
+		b_ub[-1] = 0
+		b_lb[-1] = None
+
+		return Sd, VAR_CONTINUOUS, v_lb, v_ub, b_lb, b_ub, names
+
+
 
 class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""Class representing a dual system based on a steady-state metabolic network
@@ -777,7 +832,7 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	network. Bioinformatics, 28(3), 381-387.
 	"""
 
-	def __init__(self, S, lb, ub, T, b, solver=None):
+	def __init__(self, S, lb, ub, T, b, solver=None, alt_ident=None):
 		"""Parameters
 
 		----------
@@ -808,14 +863,14 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		self.__ivars = None
 		self.S, self.irrev, self.T, self.b = S, irrev, T, b
 		self.__c = "C"
-		super().__init__(*self.generate_dual_problem(S, irrev, T, b), solver=solver)
+		super().__init__(*self.generate_dual_problem(S, irrev, T, b, alt_ident), solver=solver)
 
 		offset = S.shape[0]
 		self.dvars = list(range(offset, offset + (S.shape[1] * 2)))
 
 		self.dvar_mapping = {i: (i, S.shape[1] + i) for i in range(S.shape[1])}
 
-	def generate_dual_problem(self, S, irrev, T, b):
+	def generate_dual_problem(self, S, irrev, T, b, alt_ident=None):
 		"""
 		Args:
 		  S:
@@ -824,19 +879,27 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		  b:
 		"""
 		m, n = S.shape
-		veclens = [("u", m), ("vp", n), ("vn", n), ("w", self.T.shape[0])]
-		I = np.identity(n)
 		Sxi, Sxr = S[:, irrev].T, np.delete(S, irrev, axis=1).T
+
+		if alt_ident is not None:
+			I = alt_ident
+		else:
+			I = np.identity(n)
+		veclens = [("u", m), ("vp", I.shape[0]), ("vn", I.shape[0]), ("w", self.T.shape[0])]
+
 		Ii, Ir = I[irrev, :], np.delete(I, irrev, axis=0)
+
 		Ti, Tr = T[:, irrev].T, np.delete(T, irrev, axis=1).T
 
-		u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
+		var_prop_list = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
 						pref, n in
 						veclens]
+
+
 		Sdi = np.hstack([Sxi, Ii, -Ii, Ti, np.zeros([Sxi.shape[0], 1])])
 		Sdr = np.hstack([Sxr, Ir, -Ir, Tr, np.zeros([Sxr.shape[0], 1])])
 		Sd = np.vstack([Sdi, Sdr, np.zeros([1, Sdi.shape[1]])])
-		names, v_lb, v_ub = list(zip(*list(chain(u, vp, vn, w))))
+		names, v_lb, v_ub = list(zip(*chain(*var_prop_list)))
 
 		names = list(names) + ['C']
 		v_lb = list(v_lb) + [1]
