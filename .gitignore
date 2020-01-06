@@ -1,6 +1,10 @@
 .idea
 .ipynb_checkpoints
+.eggs
 gb
 old
 /gurobi.log
 /inspyred.log
+build
+dist
+pypi
