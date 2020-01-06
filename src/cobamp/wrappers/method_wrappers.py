@@ -1,6 +1,10 @@
 from cobamp.algorithms.kshortest import *
-from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem
+from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem, \
+	GeneticDualLinearSystem
 from cobamp.wrappers.external_wrappers import model_readers
+
+from functools import reduce
+from itertools import product
 
 
 class KShortestEnumeratorWrapper(object):
@@ -105,7 +109,7 @@ class KShortestEnumeratorWrapper(object):
 		Returns:
 
 		"""
-		self.__algo = KShortestEFMAlgorithm(self.__algo_properties, False)
+		self.algo = KShortestEFMAlgorithm(self.__algo_properties, False)
 
 	def __get_forced_solutions(self):
 		"""
@@ -136,7 +140,7 @@ class KShortestEnumeratorWrapper(object):
 		Returns an iterator that yields a single EFM or a list of multiple EFMs of the same size. Call next(iterator) to
 		obtain the next set of EFMs.
 		"""
-		enumerator = self.__algo.get_enumerator(
+		enumerator = self.algo.get_enumerator(
 			linear_system=self.get_linear_system(),
 			forced_sets=self.__get_forced_solutions(),
 			excluded_sets=self.__get_excluded_solutions())
@@ -145,16 +149,16 @@ class KShortestEnumeratorWrapper(object):
 			self.enumerated_sols.append(solarg)
 			yield self.decode_solution(solarg)
 
-	def __decode_k_shortest_solution(self, sol):
+	def decode_k_shortest_solution(self, sol):
 		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
 		return {self.model_reader.r_ids[k]: sol.attribute_value(sol.SIGNED_VALUE_MAP)[k]
 				for k in sol.get_active_indicator_varids()}
 
 	def decode_solution(self, solarg):
 		if isinstance(solarg, (list,tuple)):
-			return [self.__decode_k_shortest_solution(sol) for sol in solarg]
+			return [self.decode_k_shortest_solution(sol) for sol in solarg]
 		else:
-			return self.__decode_k_shortest_solution(solarg)
+			return self.decode_k_shortest_solution(solarg)
 
 class KShortestEFMEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
@@ -220,7 +224,8 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 
 	"""
 
-	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, **kwargs):
+	def __init__(self, model, target_flux_space_dict, target_yield_space_dict, alternative_identity=(None, None, None),
+				 **kwargs):
 		self.is_efp = False
 		super().__init__(model, **kwargs)
 
@@ -231,6 +236,14 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 		converted_ybs = [DefaultYieldbound.from_tuple(self.model_reader.convert_constraint_ids(t, True)) for t in
 						 target_yield_space]
 		self.__ip_constraints = converted_fbs + converted_ybs
+		self.alternative_identity, self.decoder_mapping, F = \
+			alternative_identity[0], {v:k for k,v in alternative_identity[1].items()}, alternative_identity[2]
+		gene_sets = [set(f.nonzero()[0]) for f in F]
+		self.weights = [len(g) for g in gene_sets]
+		#rev_map = {v: k for k, v in self.decoder_mapping.items()}
+		self.alternative_gene_identity ={i:{j for j, h in enumerate(gene_sets) if len(h & g) == len(g) and i != j}
+										 for i, g in enumerate(gene_sets)}
+		self.reverse_decoder_mapping = {v:k for k,v in self.decoder_mapping.items()}
 
 	def __materialize_intv_problem(self):
 		return InterventionProblem(self.model_reader.S).generate_target_matrix(self.__ip_constraints)
@@ -238,8 +251,36 @@ class KShortestMCSEnumeratorWrapper(KShortestEnumeratorWrapper):
 	def get_linear_system(self):
 		lb, ub = [array(k) for k in self.model_reader.get_model_bounds(separate_list=True, as_dict=False)]
 		T, b = self.__materialize_intv_problem()
-		return DualLinearSystem(self.model_reader.S, lb, ub, T, b, solver=self.solver)
+		if self.alternative_identity is not None:
+			return GeneticDualLinearSystem(self.model_reader.S, lb, ub,self.alternative_identity,T, b)
+		else:
+			return DualLinearSystem(self.model_reader.S, lb, ub, T, b,
+									solver=self.solver)
 
+	def decode_k_shortest_solution(self, sol):
+		## TODO: Make MAX_PRECISION a parameter for linear systems or the KShortestAlgorithm
+		mapper = self.decoder_mapping if self.decoder_mapping is not None else self.model_reader.r_ids
+		return {mapper[k]: sol.attribute_value(sol.SIGNED_VALUE_MAP)[k] for k in sol.get_active_indicator_varids()}
+
+	def add_gene_cuts(self, solx):
+		for sol in solx:
+			act_vars = [self.reverse_decoder_mapping[k] for k in sol.keys()]
+			if len(act_vars) > 1:
+				dependencies = list(chain(*product(filter(lambda x: len(x) > 0,
+												   [list(self.alternative_gene_identity[av]) for av in act_vars]))))
+			else:
+				dependencies = [[k] for k in [self.alternative_gene_identity[av] for av in act_vars][0]]
+			if len(dependencies) > 0:
+				self.algo.ksh.exclude_solutions(dependencies)
+
+
+	def get_enumerator(self):
+		wrapped_enumerator = super().get_enumerator()
+		for sol_var in wrapped_enumerator:
+			self.algo.ksh.set_objective_expression(self.weights)
+			yield sol_var
+			if self.alternative_identity is not None:
+				self.add_gene_cuts(sol_var if isinstance(sol_var, (tuple, list)) else [sol_var])
 
 class KShortestEFPEnumeratorWrapper(KShortestEnumeratorWrapper):
 	"""
