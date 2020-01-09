@@ -896,6 +896,7 @@ class AbstractConstraint(object):
 		return
 
 	@abc.abstractmethod
+	@staticmethod
 	def from_tuple(tup):
 		"""
 		Generates a constraint from a tuple. Refer to subclasses for each specific format.
@@ -943,6 +944,7 @@ class DefaultFluxbound(AbstractConstraint):
 
 		return concatenate(Tx, axis=0), b
 
+	@staticmethod
 	def from_tuple(tup):
 		"""
 
@@ -1000,6 +1002,7 @@ class DefaultYieldbound(AbstractConstraint):
 
 		return concatenate(Tx, axis=0), b
 
+	@staticmethod
 	def from_tuple(tup):
 		"""
 
@@ -1011,5 +1014,17 @@ class DefaultYieldbound(AbstractConstraint):
 		n, d, ylb, yub = tup[:4]
 		if len(tup) > 4:
 			dev = tup[4]
+		else:
+			dev = 0
 
 		return DefaultYieldbound(ylb, yub, n, d, dev)
+
+	@staticmethod
+	def convert_tuple_intervention_problem(tfluxes, tyields, reader):
+		target_flux_space = [tuple([k]) + tuple(v) for k, v in tfluxes.items()]
+		target_yield_space = [k + tuple(v) for k, v in tyields.items()]
+		converted_fbs = [DefaultFluxbound.from_tuple(reader.convert_constraint_ids(t, False)) for t in
+						 target_flux_space]
+		converted_ybs = [DefaultYieldbound.from_tuple(reader.convert_constraint_ids(t, True)) for t in
+						 target_yield_space]
+		return converted_fbs, converted_ybs
