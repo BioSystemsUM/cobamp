@@ -907,6 +907,17 @@ class AbstractConstraint(object):
 		"""
 		return
 
+	@staticmethod
+	def convert_tuple_intervention_problem(tfluxes, tyields, reader):
+		target_flux_space = [tuple([k]) + tuple(v) for k, v in tfluxes.items()]
+		target_yield_space = [k + tuple(v) for k, v in tyields.items()]
+		converted_fbs = [DefaultFluxbound.from_tuple(reader.convert_constraint_ids(t, False)) for t in
+						 target_flux_space]
+		converted_ybs = [DefaultYieldbound.from_tuple(reader.convert_constraint_ids(t, True)) for t in
+						 target_yield_space]
+		return converted_fbs, converted_ybs
+
+
 
 class DefaultFluxbound(AbstractConstraint):
 	"""
@@ -1018,13 +1029,3 @@ class DefaultYieldbound(AbstractConstraint):
 			dev = 0
 
 		return DefaultYieldbound(ylb, yub, n, d, dev)
-
-	@staticmethod
-	def convert_tuple_intervention_problem(tfluxes, tyields, reader):
-		target_flux_space = [tuple([k]) + tuple(v) for k, v in tfluxes.items()]
-		target_yield_space = [k + tuple(v) for k, v in tyields.items()]
-		converted_fbs = [DefaultFluxbound.from_tuple(reader.convert_constraint_ids(t, False)) for t in
-						 target_flux_space]
-		converted_ybs = [DefaultYieldbound.from_tuple(reader.convert_constraint_ids(t, True)) for t in
-						 target_yield_space]
-		return converted_fbs, converted_ybs
