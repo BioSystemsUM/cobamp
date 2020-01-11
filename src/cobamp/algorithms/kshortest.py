@@ -895,8 +895,8 @@ class AbstractConstraint(object):
 		"""
 		return
 
-	@abc.abstractmethod
 	@staticmethod
+	@abc.abstractmethod
 	def from_tuple(tup):
 		"""
 		Generates a constraint from a tuple. Refer to subclasses for each specific format.
