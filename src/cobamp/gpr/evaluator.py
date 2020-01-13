@@ -45,18 +45,37 @@ def convert_gpr_to_list(gpr, apply_fx=str, or_char='or', and_char='and'):
 class GPREvaluator(object):
 	def __init__(self, gpr_list, apply_fx=str, or_char='or', and_char='and', ttg_ratio=20):
 		self.apply_fx = apply_fx
-		self.__gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=ttg_ratio) if gp != '' else '' for gp in gpr_list]
 		self.__or_char, self.__and_char = or_char, and_char
-		self.__gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=or_char, and_char=and_char) for g in
-						   self.__gprs]
+		self.ttg_ratio = ttg_ratio
+
+
+
+	def __initialize(self, gpr_list):
+		self.__gprs = []
+		self.__gpr_list = []
+		self.add_gprs(gpr_list)
+		self.__update_genes()
+
+	def add_gprs(self, gpr_list):
+		gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=self.ttg_ratio) if gp != '' else '' for gp in gpr_list]
+		gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=self.__or_char, and_char=self.__and_char) for g in
+		 self.__gprs]
+
+		self.__gprs.extend(gprs)
+		self.__gpr_list.extend(gpr_list)
+		self.__update_genes()
+
+	def remove_gprs(self, indices):
+		self.__gprs, self.__gpr_list = zip(*[(self.__gprs[i], self.__gpr_list[i]) for i in range(len(self.__gprs)) if i not in indices])
+		self.__gprs, self.__gpr_list = [list(k) for k in [self.__gprs, self.__gpr_list]]
+		self.__update_genes()
+
+	def __update_genes(self):
 		self.__genes = tuple(set(list(chain(*chain(*self.__gpr_list)))))
 		self.__gene_to_index_mapping = dict(zip(self.__genes, range(len(self.__genes))))
 
 	def __preprocess_gprs(self, gpr_str, token_to_gene_ratio=20):
-		## TODO: this function should only retrieve a single gpr. the abstract class should normalize it
-		# gpr_string_list = self.__gprs
 		def fix_name(gpr_string):
-			# genes = set(findall(GPR_GENE_RE, gpr_string)) - {''}
 			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
 			unique_tokens = set([m.string for m in matches])
 			for offset, match_obj in enumerate(matches):

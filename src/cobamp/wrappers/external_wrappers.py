@@ -188,7 +188,9 @@ class AbstractObjectReader(object):
 			reaction_names=self.r_ids,
 			metabolite_names=self.m_ids,
 			optimizer= solver == True,
-			solver=solver if solver not in (True, False) else None)
+			solver=solver if solver not in (True, False) else None,
+			gprs=self.gene_protein_reaction_rules
+		)
 
 class COBRAModelObjectReader(AbstractObjectReader):
 
@@ -320,7 +322,7 @@ class FramedModelObjectReader(AbstractObjectReader):
 		return [self.model.reactions[rx] for rx in self.r_ids]
 
 	def get_model_gpr_strings(self):
-		return [rx.gene_reaction_rule for rx in self.r_ids]
+		return [rx.gene_reaction_rule for rx in self.get_rx_instances()]
 
 
 class CobampModelObjectReader(AbstractObjectReader):
@@ -350,7 +352,7 @@ class CobampModelObjectReader(AbstractObjectReader):
 		return None
 
 	def get_model_gpr_strings(self):
-		return ['']*len(self.r_ids)
+		return [self.gene_protein_reaction_rules[i] for i in range(len(self.r_ids))]
 
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.
