@@ -2,7 +2,7 @@ import unittest
 from scipy.sparse import csc_matrix
 from numpy import array
 from cobamp.core.models import ConstraintBasedModel
-from cobamp.wrappers import KShortestMCSEnumeratorWrapper, KShortestGeneticMCSEnumeratorWrapper
+from cobamp.wrappers import KShortestGeneticMCSEnumeratorWrapper
 from cobamp.gpr.evaluator import GPREvaluator
 from cobamp.gpr.integration import GeneMatrixBuilder
 from itertools import chain
@@ -59,21 +59,14 @@ class GMCSToyModelTest(unittest.TestCase):
 		gprs = ['g1', 'g2', 'g2', 'g3 and g4', 'g2 and g5', 'g3 or g6', '(g2 and (g5 or g6)) or g7', '']
 		gprs_irrev = gprs + [g for i, g in enumerate(gprs) if i in [1, 5]]
 
-		#
 		gmat_builder = GeneMatrixBuilder(GPREvaluator(gprs_irrev))
-		G_new, F_new, gene_map_new = gmat_builder.get_GF_matrices()
+		G_new, _, irreducible_gene_map, F_deps, weights = gmat_builder.get_GF_matrices()
 
-		# G,F,gene_map = G_test_irrev, F_test, {'g'+str(i+1):i for i in range(F_test.shape[1])}
 		cbm = ConstraintBasedModel(S, list(zip(lb, ub)), reaction_names=rx_names, metabolite_names=met_names)
 		irrev_cbm, mapping = cbm.make_irreversible()
-		irreducible_gene_map = {' and '.join({v: k for k, v in gene_map_new.items()}[k] for k in row.nonzero()[0]): i
-								for i, row in enumerate(F_new)}
 
-		gene_sets = [set(f.nonzero()[0]) for f in F_new]
-		weights = [len(g) for g in gene_sets]
-		rev_map = {v: k for k, v in irreducible_gene_map.items()}
-		F_deps = {i: {j for j, h in enumerate(gene_sets) if len(h & g) == len(g) and i != j} for i, g in
-				  enumerate(gene_sets)}
+
+
 		gmcs_enumerator = KShortestGeneticMCSEnumeratorWrapper(
 			model=irrev_cbm,
 			target_flux_space_dict={'rbio': (1, None)},

@@ -109,8 +109,17 @@ class GeneMatrixBuilder(object):
 		Fm, old_indices, reverse = unique(F, axis=0, return_index=True, return_inverse=True)
 		Frev_dict = {k: where(reverse == k)[0].tolist() for k in unique(reverse)}
 		Gm = vstack([G[idx, :].any(axis=0) for k, idx in Frev_dict.items()])
+		rev_gmap = {v: k for k, v in genes.items()}
+		irreducible_gene_map = {' and '.join(rev_gmap[k] for k in row.nonzero()[0]): i
+								for i, row in enumerate(Fm)}
 
-		return [x.astype(int) for x in [Gm, Fm]] + [genes]
+		gene_sets = [set(f.nonzero()[0]) for f in Fm]
+		weights = [len(g) for g in gene_sets]
+		F_deps = {i: {j for j, h in enumerate(gene_sets) if len(h & g) == len(g) and i != j} for i, g in
+				  enumerate(gene_sets)}
+
+
+		return [x.astype(int) for x in [Gm, Fm]] + [irreducible_gene_map, F_deps, weights]
 
 
 
