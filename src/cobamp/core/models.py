@@ -349,6 +349,14 @@ class ConstraintBasedModel(object):
 		lb, ub = self.get_bounds_as_list()
 		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
 		rev = array([int(v[0]) for k, v in rx_mapping.items() if isinstance(v, (list, tuple))])
+
+		gprs_irrev = ['']*len(lb)
+		for i,tup in rx_mapping:
+			if isinstance(tup, (tuple, list)):
+				gprs_irrev[tup[0]] = gprs_irrev[tup[1]] = self.gpr[i]
+			else:
+				gprs_irrev[tup] = self.gpr[i]
+
 		if self.reaction_names != None:
 			if len(rev) > 0:
 				revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
@@ -357,9 +365,10 @@ class ConstraintBasedModel(object):
 			rnames = self.reaction_names + revnames
 
 			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
-										 optimizer=self.model is not None, solver=self.solver)
+										 optimizer=self.model is not None, solver=self.solver, gprs=gprs_irrev)
 		else:
-			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), optimizer=self.model is not None, solver=self.solver)
+			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), optimizer=self.model is not None, solver=self.solver,
+										 gprs=gprs_irrev)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
