@@ -9,6 +9,7 @@ from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreve
 from ..utilities.print_utils import pretty_table_print
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from .cb_analysis import FluxVariabilityAnalysis
+from ..gpr.evaluator import GPREvaluator
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
@@ -70,7 +71,7 @@ def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 
 class ConstraintBasedModel(object):
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True,
-				 solver=None):
+				 solver=None, gprs=None):
 
 		def __validate_args():
 
@@ -106,6 +107,10 @@ class ConstraintBasedModel(object):
 
 		self.__update_decoder_map()
 
+		if gprs is not None:
+			self.gpr = gprs
+		else:
+			self.gpr = ['']*len(self.reaction_names)
 		self.c = None
 		self.model = None
 
@@ -164,6 +169,21 @@ class ConstraintBasedModel(object):
 		self.remove_reactions(blocked_reaction_names)
 		self.remove_orphan_metabolites()
 
+
+	@property
+	def gpr(self):
+		return self.__gpr
+
+	@gpr.setter
+	def gpr(self, gprs, **kwargs):
+		if isinstance(gprs, (list, tuple)):
+			assert not (False in [isinstance(gpr, str) for gpr in gprs]), 'Non-string object found in gprs iterable'
+			self.__gpr = GPREvaluator(gpr_list=gprs, **kwargs)
+		elif isinstance(gprs, GPREvaluator):
+			assert len(gprs) == len(self.bounds)
+			self.__gpr = gprs
+		else:
+			raise(TypeError,'Can\'t use '+str(type(gprs))+' to redefine this model\'s GPRs')
 
 	def remove_orphan_metabolites(self):
 		zero_rows = [self.metabolite_names[i] for i in where((self.get_stoichiometric_matrix() == 0).all(axis=1))[0]]
@@ -255,7 +275,7 @@ class ConstraintBasedModel(object):
 		if self.model:
 			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]))
 
-	def add_reaction(self, arg, bounds, name=None):
+	def add_reaction(self, arg, bounds, name=None, gpr=''):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
 			col = zeros([self.__S.shape[0], 1])
@@ -275,7 +295,7 @@ class ConstraintBasedModel(object):
 		self.bounds.append(bounds)
 
 		self.__update_decoder_map()
-
+		self.gpr.add_gprs([gpr])
 		if self.model:
 			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
 
@@ -303,6 +323,8 @@ class ConstraintBasedModel(object):
 		self.bounds = new_bounds
 		self.__S = delete(self.__S, j, axis=1)
 		self.__update_decoder_map()
+
+		self.gpr.remove_gprs(index)
 
 		if self.model:
 			self.model.remove_from_model(j, 'var')
@@ -397,7 +419,6 @@ class ConstraintBasedModel(object):
 	def summarize_solution(self, sol, drains, eps=1e-9):
 		active_drains = {k:v for k,v in sol.var_values().items() if abs(v) > eps and k in drains}
 		table = [[k]+[r for r,v in active_drains.items() if f(v)] for k,f in [('produced',lambda x: x < -eps), ('consumed',lambda x: x > eps)]]
-
 		pretty_table_print(array(table).T.tolist(), has_header=True, header_sep=2)
 
 class CORSOModel(ConstraintBasedModel):
