@@ -47,6 +47,7 @@ class GPREvaluator(object):
 		self.apply_fx = apply_fx
 		self.__or_char, self.__and_char = or_char, and_char
 		self.ttg_ratio = ttg_ratio
+		self.__initialize(gpr_list)
 
 
 
@@ -57,16 +58,18 @@ class GPREvaluator(object):
 		self.__update_genes()
 
 	def add_gprs(self, gpr_list):
-		gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=self.ttg_ratio) if gp != '' else '' for gp in gpr_list]
+		gprs = [self.__preprocess_gprs(gp, token_to_gene_ratio=self.ttg_ratio, debug_index=i) if gp != '' else ''
+				for i,gp in enumerate(gpr_list)]
 		gpr_list = [convert_gpr_to_list(g, apply_fx=str, or_char=self.__or_char, and_char=self.__and_char) for g in
-		 self.__gprs]
+		 gprs]
 
 		self.__gprs.extend(gprs)
 		self.__gpr_list.extend(gpr_list)
 		self.__update_genes()
 
 	def remove_gprs(self, indices):
-		self.__gprs, self.__gpr_list = zip(*[(self.__gprs[i], self.__gpr_list[i]) for i in range(len(self.__gprs)) if i not in indices])
+		self.__gprs, self.__gpr_list = zip(*[(self.__gprs[i], self.__gpr_list[i]) for i in range(len(self.__gprs))
+											 if i not in indices])
 		self.__gprs, self.__gpr_list = [list(k) for k in [self.__gprs, self.__gpr_list]]
 		self.__update_genes()
 
@@ -74,7 +77,9 @@ class GPREvaluator(object):
 		self.__genes = tuple(set(list(chain(*chain(*self.__gpr_list)))))
 		self.__gene_to_index_mapping = dict(zip(self.__genes, range(len(self.__genes))))
 
-	def __preprocess_gprs(self, gpr_str, token_to_gene_ratio=20):
+	def __preprocess_gprs(self, gpr_str, token_to_gene_ratio=20, debug_index=None):
+		if debug_index is not None:
+			print(debug_index)
 		def fix_name(gpr_string):
 			matches = [k for k in GPR_GENE_RE.finditer(gpr_string) if k.span()[0] - k.span()[1] != 0]
 			unique_tokens = set([m.string for m in matches])
@@ -159,6 +164,6 @@ if __name__ == '__main__':
 		'G6'
 	]
 	# gprs = [model.reactions[i].gene_reaction_rule for i in range(len(model.reactions))]
-	gpr_eval = GPREvaluator(gprs, or_fx=logical_or, and_fx=logical_and)
+	gpr_eval = GPREvaluator(gprs)
 	for i in range(len(gprs)):
 		print(gprs[i], gpr_eval.get_gpr_as_lists(i))
