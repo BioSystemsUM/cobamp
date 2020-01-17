@@ -16,7 +16,7 @@ class AbstractObjectReader(object):
 	"""
 	__metaclass__ = abc.ABCMeta
 
-	def __init__(self, model, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str):
+	def __init__(self, model, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str, ttg_ratio=20):
 		"""
 		Parameters
 
@@ -27,9 +27,9 @@ class AbstractObjectReader(object):
 
 		"""
 		self.model = model
-		self.initialize()
+		self.initialize(gpr_and_char, gpr_or_char, gpr_gene_parse_function, ttg_ratio)
 
-	def initialize(self, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str):
+	def initialize(self, gpr_and_char='and', gpr_or_char='or', gpr_gene_parse_function=str, ttg_ratio=20):
 		"""
 			This method re-initializes the class attributes from the current state of self.model
 		"""
@@ -41,7 +41,7 @@ class AbstractObjectReader(object):
 		self.irrev_bool = self.get_irreversibilities(False)
 		self.irrev_index = self.get_irreversibilities(True)
 		self.bounds_dict = self.get_model_bounds(True)
-		self.gene_protein_reaction_rules = gpr_and_char, gpr_or_char, gpr_gene_parse_function
+		self.gene_protein_reaction_rules = gpr_and_char, gpr_or_char, gpr_gene_parse_function, ttg_ratio
 
 	@property
 	def gene_protein_reaction_rules(self):
@@ -50,10 +50,10 @@ class AbstractObjectReader(object):
 
 	@gene_protein_reaction_rules.setter
 	def gene_protein_reaction_rules(self, value):
-		and_char, or_char, apply_fx = value
+		and_char, or_char, apply_fx, ttg_ratio = value
 		self.__gene_protein_reaction_rules = GPREvaluator(
 			gpr_list=self.get_model_gpr_strings(),
-			and_char=and_char, or_char=or_char, apply_fx=apply_fx
+			and_char=and_char, or_char=or_char, apply_fx=apply_fx, ttg_ratio=ttg_ratio
 		)
 
 	@abc.abstractmethod
@@ -216,7 +216,7 @@ class COBRAModelObjectReader(AbstractObjectReader):
 		if isinstance(model, str):
 			warnings.warn('Reading model with cobrapy from the provided path...')
 			model = self.__read_model(model, format, **kwargs)
-		super().__init__(model, gpr_gene_parse_function=gpr_gene_parse_function)
+		super().__init__(model, gpr_gene_parse_function=gpr_gene_parse_function, **kwargs)
 
 	def get_stoichiometric_matrix(self):
 		S = np.zeros((len(self.m_ids), len(self.r_ids)))
