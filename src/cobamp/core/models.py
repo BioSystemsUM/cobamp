@@ -9,7 +9,7 @@ from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreve
 from ..utilities.print_utils import pretty_table_print
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from .cb_analysis import FluxVariabilityAnalysis
-from ..gpr.evaluator import GPREvaluator
+from ..gpr.evaluator import GPRContainer
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
@@ -178,8 +178,8 @@ class ConstraintBasedModel(object):
 	def gpr(self, gprs, **kwargs):
 		if isinstance(gprs, (list, tuple)):
 			assert not (False in [isinstance(gpr, str) for gpr in gprs]), 'Non-string object found in gprs iterable'
-			self.__gpr = GPREvaluator(gpr_list=gprs, **kwargs)
-		elif isinstance(gprs, GPREvaluator):
+			self.__gpr = GPRContainer(gpr_list=gprs, **kwargs)
+		elif isinstance(gprs, GPRContainer):
 			assert len(gprs) == len(self.bounds)
 			self.__gpr = gprs
 		else:
@@ -350,8 +350,8 @@ class ConstraintBasedModel(object):
 		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
 		rev = array([int(v[0]) for k, v in rx_mapping.items() if isinstance(v, (list, tuple))])
 
-		gprs_irrev = ['']*len(lb)
-		for i,tup in rx_mapping:
+		gprs_irrev = ['']*len(nlb)
+		for i,tup in rx_mapping.items():
 			if isinstance(tup, (tuple, list)):
 				gprs_irrev[tup[0]] = gprs_irrev[tup[1]] = self.gpr[i]
 			else:

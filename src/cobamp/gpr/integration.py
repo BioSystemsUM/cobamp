@@ -124,7 +124,7 @@ class GeneMatrixBuilder(object):
 
 
 if __name__ == '__main__':
-	from cobamp.gpr.evaluator import GPREvaluator, logical_and, logical_or
+	from cobamp.gpr.evaluator import GPRContainer, logical_and, logical_or
 
 	gprs = [
 		'g1',
@@ -136,7 +136,7 @@ if __name__ == '__main__':
 		'(g2 and (g5 or g6)) or g7',
 		''
 	]
-	gpr_eval = GPREvaluator(gprs)
+	gpr_eval = GPRContainer(gprs)
 	gmb = GeneMatrixBuilder(gpr_eval)
 	G, F, gene_mapping = gmb.get_GF_matrices()
 	ord_map = [gene_mapping['g'+str(i)] for i in range(1,8)]

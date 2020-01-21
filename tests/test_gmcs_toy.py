@@ -3,7 +3,7 @@ from scipy.sparse import csc_matrix
 from numpy import array
 from cobamp.core.models import ConstraintBasedModel
 from cobamp.wrappers import KShortestGeneticMCSEnumeratorWrapper
-from cobamp.gpr.evaluator import GPREvaluator
+from cobamp.gpr.evaluator import GPRContainer
 from cobamp.gpr.integration import GeneMatrixBuilder
 from itertools import chain
 
@@ -59,7 +59,7 @@ class GMCSToyModelTest(unittest.TestCase):
 		gprs = ['g1', 'g2', 'g2', 'g3 and g4', 'g2 and g5', 'g3 or g6', '(g2 and (g5 or g6)) or g7', '']
 		gprs_irrev = gprs + [g for i, g in enumerate(gprs) if i in [1, 5]]
 
-		gmat_builder = GeneMatrixBuilder(GPREvaluator(gprs_irrev))
+		gmat_builder = GeneMatrixBuilder(GPRContainer(gprs_irrev))
 		G_new, _, irreducible_gene_map, F_deps, weights = gmat_builder.get_GF_matrices()
 
 		cbm = ConstraintBasedModel(S, list(zip(lb, ub)), reaction_names=rx_names, metabolite_names=met_names)

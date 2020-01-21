@@ -5,7 +5,7 @@ import numpy as np
 from numpy import where
 
 from ..core.models import ConstraintBasedModel
-from ..gpr.evaluator import GPREvaluator
+from ..gpr.evaluator import GPRContainer
 
 MAX_PRECISION = 1e-10
 
@@ -51,7 +51,7 @@ class AbstractObjectReader(object):
 	@gene_protein_reaction_rules.setter
 	def gene_protein_reaction_rules(self, value):
 		and_char, or_char, apply_fx, ttg_ratio = value
-		self.__gene_protein_reaction_rules = GPREvaluator(
+		self.__gene_protein_reaction_rules = GPRContainer(
 			gpr_list=self.get_model_gpr_strings(),
 			and_char=and_char, or_char=or_char, apply_fx=apply_fx, ttg_ratio=ttg_ratio
 		)
@@ -352,7 +352,7 @@ class CobampModelObjectReader(AbstractObjectReader):
 		return None
 
 	def get_model_gpr_strings(self):
-		return [self.gene_protein_reaction_rules[i] for i in range(len(self.r_ids))]
+		return [self.model.gpr[i] for i in range(len(self.r_ids))]
 
 # This dict contains the mapping between model instance namespaces (without the class name itself) and the appropriate
 # model reader object. Modify this if a new reader is implemented.
