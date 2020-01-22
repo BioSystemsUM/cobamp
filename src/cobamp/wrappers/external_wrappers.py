@@ -5,7 +5,7 @@ import numpy as np
 from numpy import where
 
 from ..core.models import ConstraintBasedModel
-from ..gpr.evaluator import GPRContainer
+from ..gpr.core import GPRContainer
 
 MAX_PRECISION = 1e-10
 

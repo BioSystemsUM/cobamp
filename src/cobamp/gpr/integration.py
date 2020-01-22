@@ -124,7 +124,7 @@ class GeneMatrixBuilder(object):
 
 
 if __name__ == '__main__':
-	from cobamp.gpr.evaluator import GPRContainer, logical_and, logical_or
+	from cobamp.gpr.core import GPRContainer, logical_and, logical_or
 
 	gprs = [
 		'g1',

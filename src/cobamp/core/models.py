@@ -9,7 +9,7 @@ from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreve
 from ..utilities.print_utils import pretty_table_print
 from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
 from .cb_analysis import FluxVariabilityAnalysis
-from ..gpr.evaluator import GPRContainer
+from ..gpr.core import GPRContainer
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
