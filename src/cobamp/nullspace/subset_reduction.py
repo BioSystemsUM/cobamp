@@ -10,7 +10,7 @@ from numpy.linalg import norm
 
 from cobamp.core.transformer import ModelTransformer, ReactionIndexMapping
 from cobamp.utilities.property_management import PropertyDictionary
-from ..nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
+from cobamp.nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
 PRECISION = 1e-10

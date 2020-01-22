@@ -5,11 +5,11 @@ from copy import deepcopy
 from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
 	int32, int64, where
 
-from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
-from ..utilities.print_utils import pretty_table_print
-from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
-from .cb_analysis import FluxVariabilityAnalysis
-from ..gpr.core import GPRContainer
+from cobamp.core.linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
+from cobamp.utilities.print_utils import pretty_table_print
+from cobamp.core.optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
+from cobamp.core.cb_analysis import FluxVariabilityAnalysis
+from cobamp.gpr.core import GPRContainer
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1

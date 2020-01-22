@@ -3,7 +3,6 @@ from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSyste
 	GenericDualLinearSystem
 from cobamp.wrappers.external_wrappers import model_readers
 
-from functools import reduce
 from itertools import product
 
 

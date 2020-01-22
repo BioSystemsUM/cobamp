@@ -2,6 +2,7 @@ from numpy import where, zeros, array, vstack, unique, eye, hstack, ones
 from cobamp.wrappers.method_wrappers import KShortestGenericMCSEnumeratorWrapper
 from cobamp.core.models import ConstraintBasedModel
 from functools import reduce
+
 def filled_vector(dim, index, fill_value=1):
 	fvec = zeros(dim)
 	fvec[index] = fill_value

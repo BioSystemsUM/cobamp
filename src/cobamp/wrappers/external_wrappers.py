@@ -4,8 +4,8 @@ import warnings
 import numpy as np
 from numpy import where
 
-from ..core.models import ConstraintBasedModel
-from ..gpr.core import GPRContainer
+from cobamp.core.models import ConstraintBasedModel
+from cobamp.gpr.core import GPRContainer
 
 MAX_PRECISION = 1e-10
 
