@@ -363,3 +363,9 @@ model_readers = {
 	'cobamp.core.models': CobampModelObjectReader,
 	'numpy': MatFormatReader
 }
+
+def get_model_reader(model_obj):
+	if type(model_obj).__module__ in model_readers.keys():
+		return model_readers[type(model_obj).__module__](model_obj)
+	else:
+		raise TypeError('model_obj has an unknown type that could not be read with cobamp:', type(model_obj).__module__)
