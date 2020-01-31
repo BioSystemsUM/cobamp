@@ -159,28 +159,36 @@ def eval_boolean_operator(operator, o1, o2):
 
 if __name__ == '__main__':
 
-	def test_algebraic_expression():
-		op = tokenize_infix_expression('((15 / (7 - (1 + 1))) * 3) - (2 + (1 + 1)) ')
-		psfix = parse_infix_expression(op, is_number_token, is_operator_token, op_prec)
-		res = evaluate_postfix_expression(psfix, eval_math_operator)
-		print(res)
+	# def test_algebraic_expression():
+	# 	op = tokenize_infix_expression('((15 / (7 - (1 + 1))) * 3) - (2 + (1 + 1)) ')
+	# 	psfix = parse_infix_expression(op, is_number_token, is_operator_token, op_prec)
+	# 	res = evaluate_postfix_expression(psfix, eval_math_operator)
+	# 	print(res)
 
 
-	def test_boolean_expression():
-		from urllib.request import urlretrieve
-		from cobra.io.sbml3 import read_sbml_model
-		from random import random
+	# def test_boolean_expression():
+	from urllib.request import urlretrieve
+	from cobra.io.sbml3 import read_sbml_model
+	from random import random
 
-		path, content = urlretrieve('http://bigg.ucsd.edu/static/models/RECON1.xml')
-		model = read_sbml_model(path)
-		ogpr = model.reactions.ATPS4m.gene_name_reaction_rule
-		gene_activation = {k: 1 for k in [g.id for g in model.genes]}
-		for test in range(20):
-			gpr = ogpr
-			for gene in gene_activation:
-				dec = random() > 0.6
-				gpr = gpr.replace(gene, '1' if dec else '0')
-			op = [tok if tok in ('0', '1', 'and', 'not', 'or', ')', '(') else '1' for tok in
-				  tokenize_infix_expression(gpr)]
-			psfix = parse_infix_expression(op, is_boolean_value, is_boolean_operator, boolean_precedence)
-			print(gpr, ''.join(psfix), evaluate_postfix_expression(psfix, eval_boolean_operator), sep=',')
+	BOOL_OPS = ('and', 'not', 'or', ')', '(')
+	path, content = urlretrieve('http://bigg.ucsd.edu/static/models/RECON1.xml')
+	model = read_sbml_model(path)
+
+	# [(i,r.gene_name_reaction_rule) for i,r in enumerate(model.reactions)]
+	ogpr = model.reactions[616].gene_name_reaction_rule
+	gpr_tok = tokenize_infix_expression(ogpr)
+	psfix = parse_infix_expression(gpr_tok, lambda x: x not in BOOL_OPS, is_boolean_operator, boolean_precedence)
+
+	# gene_activation = {k: 1 for k in [g.id for g in model.genes]}
+	# for test in range(20):
+	# 	gpr = ogpr
+	# 	for gene in gene_activation:
+	# 		dec = random() > 0.6
+	# 		gpr = gpr.replace(gene, '1' if dec else '0')
+	# 	op = [tok if tok in ('0', '1', 'and', 'not', 'or', ')', '(') else '1' for tok in
+	# 		  tokenize_infix_expression(gpr)]
+	# 	psfix = parse_infix_expression(op, is_boolean_value, is_boolean_operator, boolean_precedence)
+	# 	print(gpr, ''.join(psfix), evaluate_postfix_expression(psfix, eval_boolean_operator), sep=',')
+
+	# test_boolean_expression()

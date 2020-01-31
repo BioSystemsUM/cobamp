@@ -8,7 +8,9 @@ from boolean.boolean import BooleanAlgebra
 import re
 
 GPR_GENE_RE = re.compile("\\b(?!and\\b|or\\b|AND\\b|OR\\b)[([._A-z0-9]*")
+
 GPR_DOT = '__COBAMPGPRDOT__'
+GPR_UNDERSCORE = '__COBAMPGPRUNDERSCORE__'
 
 def symbol_encode(match_str): return '_' + match_str.replace('.', GPR_DOT) if match_str != '' else ''
 def symbol_decode(match_str): return match_str[1:].replace(GPR_DOT, '.') if match_str != '' else ''
