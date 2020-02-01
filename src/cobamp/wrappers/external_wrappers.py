@@ -187,7 +187,7 @@ class AbstractObjectReader(object):
 			thermodynamic_constraints=[tuple(float(k) for k in l) for l in self.get_model_bounds()],
 			reaction_names=self.r_ids,
 			metabolite_names=self.m_ids,
-			optimizer= solver == True,
+			optimizer= (solver == True) or (solver is not None and solver != False),
 			solver=solver if solver not in (True, False) else None,
 			gprs=self.gene_protein_reaction_rules
 		)
