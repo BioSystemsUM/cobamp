@@ -279,21 +279,21 @@ class ConstraintBasedModel(object):
 
 			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
 
-	def add_metabolites(self, arg, names=None):
-		assert not names in self.metabolite_names, 'Duplicate metabolite name found!'
-		if isinstance(arg, list):
-			rows = zeros(len(arg), self.__S.shape[1])
-			for row_i in range(len(arg)):
-				for k, v in arg[row_i].items():
+	def add_metabolites(self, args, names=None):
+		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate metabolite name found!'
+		if isinstance(args, list):
+			rows = zeros(len(args), self.__S.shape[1])
+			for row_i in range(len(args)):
+				for k, v in args[row_i].items():
 					rows[row_i,self.decode_index(k, 'reaction')] = v
-		elif isinstance(arg, ndarray):
-			if arg.shape[1] == len(self.reaction_names):
-				rows = arg
+		elif isinstance(args, ndarray):
+			if args.shape[1] == len(self.reaction_names):
+				rows = args
 			else:
 				raise Exception('Numpy argument dimensions should be (', len(self.metabolite_names), ',). Got',
-								arg.shape, 'instead')
+								args.shape, 'instead')
 		else:
-			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
 			self.context_managers[-1].queue_command(self.remove_metabolites, self.__S.shape[0])
@@ -307,28 +307,29 @@ class ConstraintBasedModel(object):
 			self.model.add_rows_to_model(rows.reshape([1, self.__S.shape[1]]),
 										 b_lb=array([0]*rows.shape[0]), b_ub=array([0]*rows.shape[0]))
 
-	def add_reactions(self, arg, bounds, name=None, gpr=None):
-		assert not name in self.reaction_names, 'Duplicate reaction name found!'
-		if isinstance(arg, list):
-			cols = zeros([self.__S.shape[0], len(arg)])
-			for col_i in range(len(arg)):
-				for k, v in arg[col_i].items():
+	def add_reactions(self, args, bounds, names=None, gpr=None):
+		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate reaction name found!'
+		if isinstance(args, (list,tuple)):
+			cols = zeros([self.__S.shape[0], len(args)])
+			for col_i in range(len(args)):
+				for k, v in args[col_i].items():
 					cols[self.decode_index(k, 'metabolite'), col_i] = v
-		elif isinstance(arg, ndarray):
-			if arg.shape[0] == len(self.metabolite_names):
-				cols = arg
+		elif isinstance(args, ndarray):
+			if args.shape[0] == len(self.metabolite_names):
+				cols = args
 			else:
-				raise Exception('Numpy argument dimensions should be (', len(self.reaction_names), ',). Got', arg.shape,
-								'instead')
+				raise Exception('Numpy argument dimensions should be (','m',',', len(self.reaction_names),'). Got',
+								str(args.shape), 'instead')
 		else:
-			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
-			self.context_managers[-1].queue_command(self.remove_reactions, {'index': self.__S.shape[1]})
+			self.context_managers[-1].queue_command(self.remove_reactions,
+													{'index': [self.__S.shape[1]+i for i in range(cols.shape[1])]})
 
 		self.__S = hstack([self.__S, cols])
 
-		self.reaction_names.extend(name)
+		self.reaction_names.extend(names)
 		self.bounds.extend(bounds)
 
 		self.__update_decoder_map()
@@ -340,7 +341,7 @@ class ConstraintBasedModel(object):
 
 		lbs, ubs = zip(*bounds)
 		if self.model:
-			self.model.add_columns_to_model(cols, name, lbs, ubs, VAR_CONTINUOUS)
+			self.model.add_columns_to_model(cols, names, lbs, ubs, VAR_CONTINUOUS, only_nonzero=True)
 
 	def add_metabolite(self, arg, name=None):
 		assert not name in self.metabolite_names, 'Duplicate metabolite name found!'
@@ -523,6 +524,35 @@ class ConstraintBasedModel(object):
 		if self.model:
 			var = self.model.model.variables[true_idx]
 			self.model.set_variable_bounds([var], [lb], [ub])
+
+	# def set_reaction_bounds(self, indices, lb, ub, temporary=False):
+	# 	true_idx = self.decode_index(index, 'reaction')
+	# 	lb, ub = self.get_reaction_bounds(true_idx)
+	#
+	# 	if self.has_context():
+	# 		self.context_managers[-1].queue_command(
+	# 			self.set_reaction_bounds,
+	# 			{
+	# 				'index':true_idx,
+	# 				'lb': lb,
+	# 				'ub': ub
+	# 			}
+	# 		)
+	#
+	# 	if 'lb' in kwargs:
+	# 		lb = kwargs['lb']
+	# 	if 'ub' in kwargs:
+	# 		ub = kwargs['ub']
+	# 	bound = (lb, ub)
+	# 	self.bounds[true_idx] = bound
+	#
+	# 	if 'temporary' in kwargs and kwargs['temporary'] == False:
+	# 		self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
+	#
+	# 	if self.model:
+	# 		var = self.model.model.variables[true_idx]
+	# 		self.model.set_variable_bounds([var], [lb], [ub])
+
 
 	def set_objective(self, coef_dict, minimize=False):
 		if self.model:
