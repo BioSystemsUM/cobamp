@@ -342,10 +342,6 @@ class LinearSystem():
 
 		for coefs, constraint in zip(coef_list, constraints):
 			if constraint.indicator_variable is None:
-				constraint.set_linear_coefficients(coefs)
-
-		for coefs, constraint in zip(coef_list, constraints):
-			if constraint.indicator_variable is None:
 				if len(coefs) > 0:
 					constraint.set_linear_coefficients(coefs)
 
@@ -403,7 +399,7 @@ class LinearSystem():
 
 		self.model.update()
 
-	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
+	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types, only_nonzero=False):
 		"""
 		Args:
 		  S_new:
@@ -414,7 +410,7 @@ class LinearSystem():
 		"""
 		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
 
-		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars)
+		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero)
 
 	def add_variables_to_model(self, var_names, lb, ub, var_types):
 
