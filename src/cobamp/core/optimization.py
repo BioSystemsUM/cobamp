@@ -148,7 +148,7 @@ class Solution(object):
 		return array(list(self.__value_map.values()))
 
 	def __repr__(self):
-		'<'+self.status()+'solution - objective: '+self.objective_value()+'; at '+hex(id(self))+'>'
+		'<'+self.status().capitalize()+' Solution - objective: '+str(self.objective_value())+'; at '+hex(id(self))+'>'
 
 
 class LinearSystemOptimizer(object):
