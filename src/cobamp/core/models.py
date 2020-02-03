@@ -279,6 +279,69 @@ class ConstraintBasedModel(object):
 
 			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
 
+	def add_metabolites(self, arg, names=None):
+		assert not names in self.metabolite_names, 'Duplicate metabolite name found!'
+		if isinstance(arg, list):
+			rows = zeros(len(arg), self.__S.shape[1])
+			for row_i in range(len(arg)):
+				for k, v in arg[row_i].items():
+					rows[row_i,self.decode_index(k, 'reaction')] = v
+		elif isinstance(arg, ndarray):
+			if arg.shape[1] == len(self.reaction_names):
+				rows = arg
+			else:
+				raise Exception('Numpy argument dimensions should be (', len(self.metabolite_names), ',). Got',
+								arg.shape, 'instead')
+		else:
+			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_metabolites, self.__S.shape[0])
+
+		self.__S = vstack([self.__S, rows])
+		self.metabolite_names.extend(names)
+
+		self.__update_decoder_map()
+
+		if self.model:
+			self.model.add_rows_to_model(rows.reshape([1, self.__S.shape[1]]),
+										 b_lb=array([0]*rows.shape[0]), b_ub=array([0]*rows.shape[0]))
+
+	def add_reactions(self, arg, bounds, name=None, gpr=None):
+		assert not name in self.reaction_names, 'Duplicate reaction name found!'
+		if isinstance(arg, list):
+			cols = zeros([self.__S.shape[0], len(arg)])
+			for col_i in range(len(arg)):
+				for k, v in arg[col_i].items():
+					cols[self.decode_index(k, 'metabolite'), col_i] = v
+		elif isinstance(arg, ndarray):
+			if arg.shape[0] == len(self.metabolite_names):
+				cols = arg
+			else:
+				raise Exception('Numpy argument dimensions should be (', len(self.reaction_names), ',). Got', arg.shape,
+								'instead')
+		else:
+			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_reactions, {'index': self.__S.shape[1]})
+
+		self.__S = hstack([self.__S, cols])
+
+		self.reaction_names.extend(name)
+		self.bounds.extend(bounds)
+
+		self.__update_decoder_map()
+		if gpr is None:
+			gprs = ['']*cols.shape[1]
+		else:
+			gprs = gpr
+		self.gpr.add_gprs(gprs)
+
+		lbs, ubs = zip(*bounds)
+		if self.model:
+			self.model.add_columns_to_model(cols, name, lbs, ubs, VAR_CONTINUOUS)
+
 	def add_metabolite(self, arg, name=None):
 		assert not name in self.metabolite_names, 'Duplicate metabolite name found!'
 		if isinstance(arg, dict):
@@ -303,7 +366,7 @@ class ConstraintBasedModel(object):
 		self.__update_decoder_map()
 
 		if self.model:
-			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]))
+			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]), only_nonzero=True)
 
 	def add_reaction(self, arg, bounds, name=None, gpr=''):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
@@ -330,8 +393,9 @@ class ConstraintBasedModel(object):
 
 		self.__update_decoder_map()
 		self.gpr.add_gprs([gpr])
+
 		if self.model:
-			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
+			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS, only_nonzero=True)
 
 	def remove_reaction(self, index):
 		warnings.warn('''remove_reaction will be renamed to remove_reactions in a future version to represent the
