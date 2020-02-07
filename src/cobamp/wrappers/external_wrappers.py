@@ -42,7 +42,7 @@ class AbstractObjectReader(object):
 		self.irrev_index = self.get_irreversibilities(True)
 		self.bounds_dict = self.get_model_bounds(True)
 		self.gene_protein_reaction_rules = gpr_and_char, gpr_or_char, gpr_gene_parse_function, ttg_ratio
-
+		self.__gpr_read_params = gpr_and_char, gpr_or_char, gpr_gene_parse_function, ttg_ratio
 	@property
 	def gene_protein_reaction_rules(self):
 		return self.__gene_protein_reaction_rules
@@ -182,6 +182,11 @@ class AbstractObjectReader(object):
 
 
 	def to_cobamp_cbm(self, solver=None):
+		and_char, or_char, gpr_gene_parse_function, ttg_ratio = self.__gpr_read_params
+		ngprs = GPRContainer(
+			gpr_list=self.get_model_gpr_strings(),
+			and_char=and_char, or_char=or_char, apply_fx=gpr_gene_parse_function, ttg_ratio=ttg_ratio)
+
 		return ConstraintBasedModel(
 			S=self.get_stoichiometric_matrix(),
 			thermodynamic_constraints=[tuple(float(k) for k in l) for l in self.get_model_bounds()],
@@ -189,7 +194,7 @@ class AbstractObjectReader(object):
 			metabolite_names=self.m_ids,
 			optimizer= (solver == True) or (solver is not None and solver != False),
 			solver=solver if solver not in (True, False) else None,
-			gprs=self.gene_protein_reaction_rules
+			gprs=ngprs
 		)
 
 class COBRAModelObjectReader(AbstractObjectReader):
