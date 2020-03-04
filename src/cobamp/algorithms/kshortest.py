@@ -194,9 +194,8 @@ class KShortestEnumerator(object):
 		if isinstance(forced_on, type(None)):
 			forced_on = [0] * len(self.__ivar_objs)
 
-		for dvtup, offv, onv in zip(enumerate(self.__ivar_objs), forced_off, forced_on):
+		for i, offv, onv in zip(range(len(self.__ivar_objs)), forced_off, forced_on):
 			offv, onv = bool(offv), bool(onv)
-			i, _ = dvtup
 			off, on = offv and not onv, onv and not offv
 
 			if off:
@@ -699,6 +698,7 @@ class KShortestEnumerator(object):
 		"""
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.model.model.remove(self.__integer_cuts)
+		self.model.model.update()
 		self.__integer_cuts = []
 		self.set_size_constraint(1)
 		self.__set_objective()
