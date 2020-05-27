@@ -1,9 +1,9 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from copy import deepcopy
 
 from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
-	int32, int64, where
+	int32, int64, where, isin
 
 from cobamp.core.linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
 from cobamp.utilities.context import CommandHistory
@@ -17,6 +17,11 @@ LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
 
+def to_list_if_single(x, n):
+	if isinstance(x, (list, tuple)):
+		return x
+	else:
+		return [x]*n
 
 def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0)])
@@ -407,6 +412,27 @@ class ConstraintBasedModel(object):
 		warnings.warn('''remove_metabolite will be renamed to remove_metabolites in a future version to represent the
 					  method\'s true behaviour''',DeprecationWarning)
 		self.remove_metabolites(index)
+
+	def get_boundary_reactions(self, epsilon=1e-9):
+		nzcoefs = where(abs(self.get_stoichiometric_matrix()) > epsilon)
+		boundary_rx_ids = [k for k,v in Counter(nzcoefs[1]).items() if v == 1]
+		x = array(nzcoefs)
+		boundaries = {}
+		for k,v in zip(*x[:,isin(x[1], boundary_rx_ids)]):
+			ki, vi = self.metabolite_names[k], self.reaction_names[v]
+			if ki not in boundaries:
+				boundaries[ki] = [vi]
+			else:
+				boundaries[ki].append(vi)
+		return boundaries
+
+	def add_boundary_reactions(self, metabolites, lbs, ubs, prefix='EX_', epsilon=1e-9):
+		lbs, ubs = (to_list_if_single(x, len(metabolites)) for x in [lbs, ubs])
+
+		return self.add_reactions(args=[{k:-1} for k in metabolites],
+		                   bounds=[(l,u) for l,u in zip(lbs, ubs)],
+		                   names=[prefix+m for m in metabolites],
+		                   gpr=['' for m in metabolites])
 
 	def remove_reactions(self, index):
 		if isinstance(index, (int, str)):

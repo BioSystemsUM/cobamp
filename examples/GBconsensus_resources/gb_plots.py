@@ -1,10 +1,17 @@
-from cobamp.utilities.file_utils import read_pickle
+from cobamp.utilities.file_io import read_pickle
 from cobamp.utilities.tree_analysis import *
 from itertools import chain
 import matplotlib.pyplot as plt
 import networkx as nx
 
 def generate_efm_results_tree(efm_sets, ignore_greater_than=10, pruning_level=6, merge_dupes=False):
+ """
+ Args:
+     efm_sets:
+     ignore_greater_than:
+     pruning_level:
+     merge_dupes:
+ """
 	root = Tree('ROOT')
 	fill_tree(root, efm_sets)
 	compress_linear_paths(root)
@@ -19,6 +26,12 @@ def generate_efm_results_tree(efm_sets, ignore_greater_than=10, pruning_level=6,
 	return root
 
 def draw_graph(root, write_path, unique=False):
+ """
+ Args:
+     root:
+     write_path:
+     unique:
+ """
 	G = nx.DiGraph()
 	populate_nx_graph(root, G, unique_nodes=unique)
 	print('NetworkX recognizes this as a tree?',nx.is_tree(G))

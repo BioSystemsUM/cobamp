@@ -48,6 +48,10 @@ algorithm = KShortestEFMAlgorithm(configuration)
 lethals = list(algorithm.enumerate(dual_system, exclusions))
 
 def decode_solutions(solutions):
+ """
+ Args:
+     solutions:
+ """
 	return list(chain(*[list(product(*[orx_map[rx_names[i]] for i in lethal.get_active_indicator_varids()])) for lethal in solutions]))
 
 decoded = decode_solutions(lethals)

@@ -1,5 +1,5 @@
 if __name__ == '__main__':
-	from cobamp.utilities.file_utils import read_pickle
+	from cobamp.utilities.file_io import read_pickle
 	from cobamp.core.optimization import BatchOptimizer
 	from numpy import array
 

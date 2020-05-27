@@ -4,7 +4,7 @@ from itertools import chain, product
 from cobamp.nullspace.subset_reduction import SubsetReducerProperties, SubsetReducer
 from cobamp.core.cb_analysis import FluxVariabilityAnalysis
 from cobamp.wrappers import COBRAModelObjectReader, KShortestMCSEnumeratorWrapper
-from cobamp.utilities.file_utils import open_file
+from cobamp.utilities.file_io import open_file
 
 import unittest
 
