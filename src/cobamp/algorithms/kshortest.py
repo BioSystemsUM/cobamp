@@ -727,7 +727,7 @@ class KShortestEFMAlgorithm(object):
 		self.configuration = configuration
 		self.verbose = verbose
 
-	def __prepare(self, linear_system, excluded_sets, forced_sets):
+	def prepare(self, linear_system, excluded_sets, forced_sets):
 		## TODO: Change this method's name
 		"""
 		Enumerates the elementary modes for a linear system
@@ -764,7 +764,7 @@ class KShortestEFMAlgorithm(object):
 		if forced_sets is not None:
 			self.ksh.force_solutions(forced_sets)
 
-	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
+	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None, initialize=True):
 		"""
 		Enumerates the elementary modes for a linear system
 
@@ -783,7 +783,7 @@ class KShortestEFMAlgorithm(object):
 		Returns a list with solutions encoding elementary flux modes.
 
 		"""
-		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets)
+		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets, initialize)
 		sols = list(enumerator)
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_POPULATE:
 			sols = list(chain(*sols))
@@ -791,7 +791,7 @@ class KShortestEFMAlgorithm(object):
 		# linear_system.write_to_lp('test.lp')
 		return sols
 
-	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
+	def get_enumerator(self, linear_system, excluded_sets, forced_sets, initialize=True):
 		"""
 
 
@@ -808,7 +808,8 @@ class KShortestEFMAlgorithm(object):
 		Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.
 
 		"""
-		self.__prepare(linear_system, excluded_sets, forced_sets)
+		if initialize:
+			self.prepare(linear_system, excluded_sets, forced_sets)
 
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_ITERATE:
 			limit = self.configuration[K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
