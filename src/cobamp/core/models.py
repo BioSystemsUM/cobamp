@@ -251,7 +251,7 @@ class ConstraintBasedModel(object):
 		else:
 			return self.__S
 
-	def set_stoichiometric_matrix(self, values, rows=None, columns=None):
+	def set_stoichiometric_matrix(self, values, rows=None, columns=None, update_only_nonzero=False):
 		row_index = [self.decode_index(i, 'metabolite') for i in rows] if rows else None
 		col_index = [self.decode_index(i, 'reaction') for i in columns] if columns else None
 
@@ -282,7 +282,8 @@ class ConstraintBasedModel(object):
 						   row_index] if row_index else self.model.model.constraints
 			vars = [self.model.model.variables[i] for i in col_index] if row_index else self.model.model.variables
 
-			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
+			self.model.populate_constraints_from_matrix(values, constraints=constraints,
+			                                            vars=vars, only_nonzero=update_only_nonzero)
 
 	def add_metabolites(self, args, names=None):
 		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate metabolite name found!'
@@ -309,8 +310,10 @@ class ConstraintBasedModel(object):
 		self.__update_decoder_map()
 
 		if self.model:
-			self.model.add_rows_to_model(rows.reshape([1, self.__S.shape[1]]),
-										 b_lb=array([0]*rows.shape[0]), b_ub=array([0]*rows.shape[0]))
+			self.model.add_rows_to_model(rows.reshape([1, self.__S.shape[1]])
+			                             if rows.size == self.__S.shape[1] else rows,
+										 b_lb=array([0]*rows.shape[0]), b_ub=array([0]*rows.shape[0]),
+										 only_nonzero=True)
 
 	def add_reactions(self, args, bounds, names=None, gpr=None):
 		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate reaction name found!'
