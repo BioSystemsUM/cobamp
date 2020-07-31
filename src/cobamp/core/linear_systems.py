@@ -639,7 +639,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
-def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds, add_c=True):
+def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, non_produced, solver, force_bounds, add_c=True):
 	"""
 	Args:
 	 self:
@@ -689,8 +689,9 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 
 	self.rev_mapping = rev_mapping
 	self.__ivars = None
-	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
-																									c in consumed]
+	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + \
+	                     [(c, 'L', -1) for c in consumed] + [(npd, 'L', 0) for npd in non_produced]
+
 	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))]) if add_c else Si
 	b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 	## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
@@ -708,7 +709,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 	arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
+	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), non_produced=(), solver=None, force_bounds={}):
 		"""
 		Args:
 		  S (Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int):
@@ -721,7 +722,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 		  force_bounds (Dictionary mapping indexes with 2-tuples with lower and upper bounds):
 		"""
 		Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping = \
-			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds)
+			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, non_produced, solver, force_bounds)
 
 		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names + bwd_names + ['C'], solver=solver)
 
