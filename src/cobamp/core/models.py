@@ -554,35 +554,6 @@ class ConstraintBasedModel(object):
 			var = self.model.model.variables[true_idx]
 			self.model.set_variable_bounds([var], [lb], [ub])
 
-	# def set_reaction_bounds(self, indices, lb, ub, temporary=False):
-	# 	true_idx = self.decode_index(index, 'reaction')
-	# 	lb, ub = self.get_reaction_bounds(true_idx)
-	#
-	# 	if self.has_context():
-	# 		self.context_managers[-1].queue_command(
-	# 			self.set_reaction_bounds,
-	# 			{
-	# 				'index':true_idx,
-	# 				'lb': lb,
-	# 				'ub': ub
-	# 			}
-	# 		)
-	#
-	# 	if 'lb' in kwargs:
-	# 		lb = kwargs['lb']
-	# 	if 'ub' in kwargs:
-	# 		ub = kwargs['ub']
-	# 	bound = (lb, ub)
-	# 	self.bounds[true_idx] = bound
-	#
-	# 	if 'temporary' in kwargs and kwargs['temporary'] == False:
-	# 		self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
-	#
-	# 	if self.model:
-	# 		var = self.model.model.variables[true_idx]
-	# 		self.model.set_variable_bounds([var], [lb], [ub])
-
-
 	def set_objective(self, coef_dict, minimize=False):
 		if self.model:
 			if isinstance(coef_dict, dict):
