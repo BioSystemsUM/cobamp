@@ -696,8 +696,16 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 	b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 	## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
 
-	for id, _, v in self.__ss_override:
-		b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
+	for ident, sign, v in self.__ss_override:
+		if sign == 'G':
+			b_lb[ident] = v if b_lb[ident] != None else None
+			b_ub[ident] = None
+		elif sign == 'L':
+			b_lb[ident] = None
+			b_ub[ident] = v if b_ub[ident] != None else None
+	for i in range(len(b_lb)):
+		if (b_lb[i] is None) and (b_ub[i] is None):
+			b_lb[i], b_ub[i] = [-1e6, 1e6]
 
 	return Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping
 
