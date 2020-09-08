@@ -103,14 +103,17 @@ def make_irreversible_model(S, lb, ub):
 	# 	ub[bak_irrev_index] = -lb[bak_irrev_index]
 	# 	lb[bak_irrev_index] = -ub_temp
 
-	Sr = S[:, rev]
+	if len(rev) > 0:
+		Sr = S[:, rev]
+		S_new = np.hstack([S, -Sr])
+	else:
+		S_new = S.copy()
 	offset = S.shape[1]
 	rx_mapping = {k: v if k in irrev else [v] for k, v in dict(zip(range(offset), range(offset))).items()}
 	for i, rx in enumerate(rev):
 		rx_mapping[rx].append(offset + i)
 	rx_mapping = OrderedDict([(k, tuple(v)) if isinstance(v, list) else (k, v) for k, v in rx_mapping.items()])
 
-	S_new = np.hstack([S, -Sr])
 	nlb, nub = np.zeros(S_new.shape[1]), np.zeros(S_new.shape[1])
 	for orig_rx, new_rx in rx_mapping.items():
 		if isinstance(new_rx, tuple):
@@ -339,10 +342,6 @@ class LinearSystem():
 
 		for coefs, constraint in zip(coef_list, constraints):
 			if constraint.indicator_variable is None:
-				constraint.set_linear_coefficients(coefs)
-
-		for coefs, constraint in zip(coef_list, constraints):
-			if constraint.indicator_variable is None:
 				if len(coefs) > 0:
 					constraint.set_linear_coefficients(coefs)
 
@@ -400,7 +399,7 @@ class LinearSystem():
 
 		self.model.update()
 
-	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types):
+	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types, only_nonzero=False):
 		"""
 		Args:
 		  S_new:
@@ -411,7 +410,7 @@ class LinearSystem():
 		"""
 		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
 
-		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars)
+		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero)
 
 	def add_variables_to_model(self, var_names, lb, ub, var_types):
 
@@ -640,7 +639,7 @@ class SteadyStateLinearSystem(GenericLinearSystem):
 		super().__init__(S, VAR_CONTINUOUS, lb, ub, [0] * m, [0] * m, var_names, solver=solver)
 
 
-def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds):
+def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, non_produced, solver, force_bounds, add_c=True):
 	"""
 	Args:
 	 self:
@@ -670,8 +669,8 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 	# 	bwd_names = []
 	# 	rev_mapping = {i:i for i in range(Si.shape[1])}
 
-	lbi = [0] * len(lbi) + [1]
-	ubi = [None] * len(ubi) + [None]
+	lbi = [0] * len(lbi) + [1] if add_c else []
+	ubi = [None] * len(ubi) + [None] if add_c else []
 
 	for k, tup in force_bounds.items():
 		if isinstance(rev_mapping[k], (list, tuple)):
@@ -690,14 +689,23 @@ def prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produce
 
 	self.rev_mapping = rev_mapping
 	self.__ivars = None
-	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + [(c, 'L', -1) for
-																									c in consumed]
-	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))])
+	self.__ss_override = [(nc, 'G', 0) for nc in non_consumed] + [(p, 'G', 1) for p in produced] + \
+	                     [(c, 'L', -1) for c in consumed] + [(npd, 'L', 0) for npd in non_produced]
+
+	Si = np.hstack([Si, np.zeros((Si.shape[0], 1))]) if add_c else Si
 	b_lb, b_ub = [0] * Si.shape[0], [0] * Si.shape[0]
 	## TODO: Maybe allow other values to be provided for constraint relaxation/tightening
 
-	for id, _, v in self.__ss_override:
-		b_lb[id], b_ub[id] = (v, None) if v >= 0 else (None, v)
+	for ident, sign, v in self.__ss_override:
+		if sign == 'G':
+			b_lb[ident] = v if b_lb[ident] != None else None
+			b_ub[ident] = None
+		elif sign == 'L':
+			b_lb[ident] = None
+			b_ub[ident] = v if b_ub[ident] != None else None
+	for i in range(len(b_lb)):
+		if (b_lb[i] is None) and (b_ub[i] is None):
+			b_lb[i], b_ub[i] = [-1e6, 1e6]
 
 	return Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping
 
@@ -709,7 +717,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 	arguments for various algorithms implemented in the package.
 	"""
 
-	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), solver=None, force_bounds={}):
+	def __init__(self, S, lb, ub, non_consumed=(), consumed=(), produced=(), non_produced=(), solver=None, force_bounds={}):
 		"""
 		Args:
 		  S (Stoichiometric matrix represented as a n-by-m ndarray, preferrably with dtype as float or int):
@@ -722,7 +730,7 @@ class IrreversibleLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSys
 		  force_bounds (Dictionary mapping indexes with 2-tuples with lower and upper bounds):
 		"""
 		Si, lbi, ubi, b_lb, b_ub, fwd_names, bwd_names, rev_mapping = \
-			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, solver, force_bounds)
+			prepare_irreversible_system(self, S, lb, ub, non_consumed, consumed, produced, non_produced, solver, force_bounds)
 
 		super().__init__(Si, VAR_CONTINUOUS, lbi, ubi, b_lb, b_ub, fwd_names + bwd_names + ['C'], solver=solver)
 
@@ -762,6 +770,44 @@ class IrreversibleLinearPatternSystem(IrreversibleLinearSystem):
 		super().build_problem()
 
 
+class GenericDualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
+	def __init__(self, S, K, T, b, solver=None):
+		self.select_solver(solver)
+
+		self.__ivars = None
+		self.__c = "C"
+		super().__init__(*self.generate_dual_problem(S, K, T, b), solver=solver)
+
+		offset = S.shape[0]
+		self.dvars = list(range(offset, offset + K.shape[0]))
+		self.dvar_mapping = {i: i for i in range(K.shape[0])}
+
+	def generate_dual_problem(self, S, K, T, b):
+		m, n = S.shape
+		veclens = [("u", m),("v", K.shape[0]),("w", T.shape[0])]
+
+		var_prop_list = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
+						pref, n in
+						veclens]
+
+
+		Sdi = np.hstack([S.T, K.T, T.T, np.zeros([S.shape[1], 1])])
+		Sd = np.vstack([Sdi, np.zeros([1, Sdi.shape[1]])])
+
+		names, v_lb, v_ub = list(zip(*chain(*var_prop_list+[[(self.__c,1, None)]])))
+
+		Sd[-1, [m + K.shape[0] + i for i in range(len(b))]] = b
+		Sd[-1, -1] = 1
+
+		b_ub = np.hstack([np.array([None] * Sdi.shape[0]), np.array([0])])
+		b_lb = np.array([0] * (Sd.shape[0]), dtype=object)
+		b_ub[-1] = 0
+		b_lb[-1] = None
+
+
+		return Sd, VAR_CONTINUOUS, v_lb, v_ub, b_lb, b_ub, names
+
+
 class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 	"""Class representing a dual system based on a steady-state metabolic network
 	whose elementary flux modes are minimal cut sets for use with the KShortest
@@ -799,7 +845,6 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		self.select_solver(solver)
 
 		S, lb, ub, fwd_irrev, bak_irrev = fix_backwards_irreversible_reactions(S, lb, ub)
-
 		irrev = np.union1d(fwd_irrev, bak_irrev).astype(int)
 
 		self.__ivars = None
@@ -821,19 +866,26 @@ class DualLinearSystem(KShortestCompatibleLinearSystem, GenericLinearSystem):
 		  b:
 		"""
 		m, n = S.shape
-		veclens = [("u", m), ("vp", n), ("vn", n), ("w", self.T.shape[0])]
-		I = np.identity(n)
 		Sxi, Sxr = S[:, irrev].T, np.delete(S, irrev, axis=1).T
+
+		I = np.identity(n)
 		Ii, Ir = I[irrev, :], np.delete(I, irrev, axis=0)
+
+		veclens = [("u", m)] + [("vp", I.shape[0]), ("vn", I.shape[0])] + [("w", self.T.shape[0])]
+
+
 		Ti, Tr = T[:, irrev].T, np.delete(T, irrev, axis=1).T
 
-		u, vp, vn, w = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
+		var_prop_list = [[(pref + str(i), 0 if pref != "u" else None, None) for i in range(n)] for
 						pref, n in
 						veclens]
+
+
 		Sdi = np.hstack([Sxi, Ii, -Ii, Ti, np.zeros([Sxi.shape[0], 1])])
 		Sdr = np.hstack([Sxr, Ir, -Ir, Tr, np.zeros([Sxr.shape[0], 1])])
 		Sd = np.vstack([Sdi, Sdr, np.zeros([1, Sdi.shape[1]])])
-		names, v_lb, v_ub = list(zip(*list(chain(u, vp, vn, w))))
+
+		names, v_lb, v_ub = list(zip(*chain(*var_prop_list)))
 
 		names = list(names) + ['C']
 		v_lb = list(v_lb) + [1]

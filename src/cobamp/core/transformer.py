@@ -8,6 +8,7 @@ from cobamp.core.models import ConstraintBasedModel
 class ModelTransformer(object):
 	__metaclass__ = abc.ABCMeta
 
+	@staticmethod
 	def transform(self, args, properties):
 
 		# args must be:
@@ -43,8 +44,9 @@ class ModelTransformer(object):
 
 			return modeln, mapping, metabs
 
+	@staticmethod
 	@abc.abstractmethod
-	def transform_array(self, S, lb, ub, properties):
+	def transform_array(S, lb, ub, properties):
 		## TODO: implement
 
 		# must return:

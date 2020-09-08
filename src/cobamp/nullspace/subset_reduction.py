@@ -4,13 +4,12 @@ Inspired by Metatool's code
 from itertools import chain
 
 from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, delete, unique, where, \
-	dot, eye
+	dot, eye, setdiff1d
 from numpy.core._multiarray_umath import ndarray, array
 from numpy.linalg import norm
-
 from cobamp.core.transformer import ModelTransformer, ReactionIndexMapping
 from cobamp.utilities.property_management import PropertyDictionary
-from ..nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
+from cobamp.nullspace.nullspace import compute_nullspace, nullspace_blocked_reactions
 
 EPSILON = 2 ** -52
 PRECISION = 1e-10
@@ -67,7 +66,7 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 	kernel_blocked = nullspace_blocked_reactions(kernel, ktol)
 
 	if kernel_blocked.shape[0] > 0:
-		kept_reactions = kept_reactions[kernel_blocked]
+		kept_reactions = kept_reactions[setdiff1d(kept_reactions, kernel_blocked)]
 		kernel = compute_nullspace(S[:, kept_reactions], ktol, False)
 
 	correlation_matrix = subset_candidates(kernel)
@@ -85,9 +84,9 @@ def subset_reduction(S, irrev, to_remove=[], to_keep_single=[]):
 			temp = zeros([len(irrv_subsets), n])
 			temp[:, kept_reactions] = irrv_subsets
 			irrv_subsets = temp
-	rd, rdind, dummy, sub = reduce(S, sub, irrev_reduced)
+	rd, rdind, irrev_reduced_final, sub = reduce(S, sub, irrev_reduced)
 
-	return rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
+	return rd, sub, irrev_reduced_final, rdind, irrv_subsets, kept_reactions, kernel, correlation_matrix
 
 
 def subset_candidates(kernel, tol=None):
@@ -176,10 +175,10 @@ def subset_correlation_matrix(S, kernel, irrev, cr, keepSingle=None):
 	sub = sub[:sub_count, :]
 	irrev_sub = irrev_sub[:sub_count]
 
-	ind = where(sub[:, irrev] < 0)[0]
+	ind = unique(where(sub[:, irrev] < 0)[0])
 	if len(ind) > 0:
 		sub[ind, :] = -sub[ind, :]
-		ind = where(sub[:, irrev] < 0)[0]
+		ind = unique(where(sub[:, irrev] < 0)[0])
 		if len(ind) > 0:
 			irrev_violating_subsets = sub[ind, :]
 			sub = delete(sub, ind, 0)
@@ -252,7 +251,8 @@ class SubsetReducer(ModelTransformer):
 	TO_BLOCK = 'SUBSET_REDUCER-TO_BLOCK'
 	ABSOLUTE_BOUNDS = 'SUBSET_REDUCER-ABSOLUTE_BOUNDS'
 
-	def reduce(self, S, lb, ub, keep=(), block=(), absolute_bounds=False):
+	@staticmethod
+	def reduce(S, lb, ub, keep=(), block=(), absolute_bounds=False):
 		lb, ub = list(map(array, [lb, ub]))
 		to_keep, to_block = [], []
 		irrev = (lb >= 0) | ((ub <= 0) & (lb <= 0))
@@ -266,13 +266,13 @@ class SubsetReducer(ModelTransformer):
 		rd, sub, irrev_reduced, rdind, irrv_subsets, kept_reactions, K, _ = subset_reduction(
 			S, irrev, to_keep_single=to_keep, to_remove=to_block)
 
-		mapping = self.get_transform_maps(sub)
+		mapping = SubsetReducer.get_transform_maps(sub)
 
 		nlb = [0 if irrev_reduced[k] else None for k in range(rd.shape[1])]
 		nub = [None] * rd.shape[1]
 
 		if absolute_bounds:
-			nlb = [0 if irrev_reduced[k] else -float('inf') for k in range(rd.shape[1])]
+			nlb = [0 if irrev_reduced[k] else -1000 for k in range(rd.shape[1])]
 			nub = [float('inf')] * rd.shape[1]
 			alb, aub = list(zip(*[[fx([x[k] for k in mapping.from_new(i)]) for x, fx in zip([lb, ub], [max, min])]
 								  for i in range(rd.shape[1])]))
@@ -284,14 +284,16 @@ class SubsetReducer(ModelTransformer):
 
 		return rd, nlb, nub, mapping, rdind
 
-	def transform_array(self, S, lb, ub, properties):
+	@staticmethod
+	def transform_array(S, lb, ub, properties):
 		k, b, a = (properties[k] for k in ['keep', 'block', 'absolute_bounds'])
 
-		Sn, lbn, ubn, mapping, metabs = self.reduce(S, lb, ub, k, b, a)
+		Sn, lbn, ubn, mapping, metabs = SubsetReducer.reduce(S, lb, ub, k, b, a)
 
 		return Sn, lbn, ubn, mapping, metabs
 
-	def get_transform_maps(self, sub):
+	@staticmethod
+	def get_transform_maps(sub):
 		new_to_orig = {i: list(nonzero(sub[i, :])[0]) for i in range(sub.shape[0])}
 		orig_to_new = dict(chain(*[[(i, k) for i in v] for k, v in new_to_orig.items()]))
 

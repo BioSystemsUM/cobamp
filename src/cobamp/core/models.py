@@ -1,18 +1,27 @@
 import warnings
-from collections import OrderedDict
+from collections import OrderedDict, Counter
 from copy import deepcopy
 
 from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append, int_, int8, int16, \
-	int32, int64
+	int32, int64, where, isin
 
-from .linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
-from .optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
+from cobamp.core.linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
+from cobamp.utilities.context import CommandHistory
+from cobamp.utilities.printing import pretty_table_print
+from cobamp.core.optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
+from cobamp.core.cb_analysis import FluxVariabilityAnalysis
+from cobamp.gpr.core import GPRContainer
 
 INT_TYPES = (int, int_, int8, int16, int32, int64)
 LARGE_NUMBER = 10e6 - 1
 SMALL_NUMBER = 1e-6
 BACKPREFIX = 'flux_backwards'
 
+def to_list_if_single(x, n):
+	if isinstance(x, (list, tuple)):
+		return x
+	else:
+		return [x]*n
 
 def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 	irrev = array([i for i in range(S.shape[1]) if not (lb[i] < 0)])
@@ -66,9 +75,11 @@ def make_irreversible_model_raven(S, lb, ub, inverse_reverse_reactions=False):
 # 	S = zeros([3,3])
 # 	lb, ub = ([0,1000],[-1000, 1000],[-1000, 0])
 
+
 class ConstraintBasedModel(object):
 	def __init__(self, S, thermodynamic_constraints, reaction_names=None, metabolite_names=None, optimizer=True,
-				 solver=None):
+				 solver=None, gprs=None):
+
 
 		def __validate_args():
 
@@ -104,11 +115,28 @@ class ConstraintBasedModel(object):
 
 		self.__update_decoder_map()
 
+		if gprs is not None:
+			self.gpr = gprs
+		else:
+			self.gpr = ['']*len(self.reaction_names)
 		self.c = None
 		self.model = None
 
 		if optimizer:
 			self.initialize_optimizer()
+
+		self.context_managers = []
+
+	def has_context(self):
+		return len(self.context_managers) > 0
+
+	def __enter__(self):
+		self.context_managers.append(CommandHistory())
+		return self
+
+	def __exit__(self, exc_type, exc_val, exc_tb):
+		ctx_man = self.context_managers.pop()
+		ctx_man.execute_all(False)
 
 	def __getstate__(self):
 		return self.__dict__
@@ -155,6 +183,39 @@ class ConstraintBasedModel(object):
 
 		return min_flux, max_flux
 
+	def simplify(self, initial_objective, objective_sense, fva_gamma=1-1e-6):
+		res = FluxVariabilityAnalysis(self.model).run(
+			initial_objective=initial_objective, minimize_initial=objective_sense, gamma=fva_gamma)
+		blocked_reaction_names = [self.reaction_names[i] for i in res.find_blocked_reactions()]
+		self.remove_reactions(blocked_reaction_names)
+		self.remove_orphan_metabolites()
+
+
+	@property
+	def gpr(self):
+		return self.__gpr
+
+	@gpr.setter
+	def gpr(self, gprs, **kwargs):
+		if isinstance(gprs, (list, tuple)):
+			assert not (False in [isinstance(gpr, str) for gpr in gprs]), 'Non-string object found in gprs iterable'
+			self.__gpr = GPRContainer(gpr_list=gprs, **kwargs)
+		elif isinstance(gprs, GPRContainer):
+			assert len(gprs) == len(self.bounds)
+			self.__gpr = gprs
+		else:
+			raise(TypeError,'Can\'t use '+str(type(gprs))+' to redefine this model\'s GPRs')
+
+	def remove_orphan_metabolites(self):
+		zero_rows = [self.metabolite_names[i] for i in where((self.get_stoichiometric_matrix() == 0).all(axis=1))[0]]
+		if len(zero_rows) > 0:
+			self.remove_metabolites(zero_rows)
+
+	def remove_orphan_reactions(self):
+		zero_cols = [self.metabolite_names[i] for i in where((self.get_stoichiometric_matrix() == 0).all(axis=0))[0]]
+		if len(zero_cols) > 0:
+			self.remove_reactions(zero_cols)
+
 	def initialize_optimizer(self):
 		lb, ub = self.get_bounds_as_list()
 		self.model = SteadyStateLinearSystem(self.__S, lb, ub, var_names=self.reaction_names, solver=self.solver)
@@ -190,9 +251,19 @@ class ConstraintBasedModel(object):
 		else:
 			return self.__S
 
-	def set_stoichiometric_matrix(self, values, rows=None, columns=None):
+	def set_stoichiometric_matrix(self, values, rows=None, columns=None, update_only_nonzero=False):
 		row_index = [self.decode_index(i, 'metabolite') for i in rows] if rows else None
 		col_index = [self.decode_index(i, 'reaction') for i in columns] if columns else None
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(
+				self.set_stoichiometric_matrix,
+				{
+					'values': self.get_stoichiometric_matrix(rows, columns),
+					'rows': rows,
+					'columns': columns
+				}
+			)
 
 		if rows and columns:
 			self.__S[row_index, col_index] = values
@@ -211,7 +282,74 @@ class ConstraintBasedModel(object):
 						   row_index] if row_index else self.model.model.constraints
 			vars = [self.model.model.variables[i] for i in col_index] if row_index else self.model.model.variables
 
-			self.model.populate_constraints_from_matrix(values, constraints=constraints, vars=vars)
+			self.model.populate_constraints_from_matrix(values, constraints=constraints,
+			                                            vars=vars, only_nonzero=update_only_nonzero)
+
+	def add_metabolites(self, args, names=None):
+		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate metabolite name found!'
+		if isinstance(args, list):
+			rows = zeros(len(args), self.__S.shape[1])
+			for row_i in range(len(args)):
+				for k, v in args[row_i].items():
+					rows[row_i,self.decode_index(k, 'reaction')] = v
+		elif isinstance(args, ndarray):
+			if args.shape[1] == len(self.reaction_names):
+				rows = args
+			else:
+				raise Exception('Numpy argument dimensions should be (', len(self.metabolite_names), ',). Got',
+								args.shape, 'instead')
+		else:
+			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_metabolites, self.__S.shape[0])
+
+		self.__S = vstack([self.__S, rows])
+		self.metabolite_names.extend(names)
+
+		self.__update_decoder_map()
+
+		if self.model:
+			self.model.add_rows_to_model(rows.reshape([1, self.__S.shape[1]])
+			                             if rows.size == self.__S.shape[1] else rows,
+										 b_lb=array([0]*rows.shape[0]), b_ub=array([0]*rows.shape[0]),
+										 only_nonzero=True)
+
+	def add_reactions(self, args, bounds, names=None, gpr=None):
+		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate reaction name found!'
+		if isinstance(args, (list,tuple)):
+			cols = zeros([self.__S.shape[0], len(args)])
+			for col_i in range(len(args)):
+				for k, v in args[col_i].items():
+					cols[self.decode_index(k, 'metabolite'), col_i] = v
+		elif isinstance(args, ndarray):
+			if args.shape[0] == len(self.metabolite_names):
+				cols = args
+			else:
+				raise Exception('Numpy argument dimensions should be (','m',',', len(self.reaction_names),'). Got',
+								str(args.shape), 'instead')
+		else:
+			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_reactions,
+													{'index': [self.__S.shape[1]+i for i in range(cols.shape[1])]})
+
+		self.__S = hstack([self.__S, cols])
+
+		self.reaction_names.extend(names)
+		self.bounds.extend(bounds)
+
+		self.__update_decoder_map()
+		if gpr is None:
+			gprs = ['']*cols.shape[1]
+		else:
+			gprs = gpr
+		self.gpr.add_gprs(gprs)
+
+		lbs, ubs = zip(*bounds)
+		if self.model:
+			self.model.add_columns_to_model(cols, names, lbs, ubs, VAR_CONTINUOUS, only_nonzero=True)
 
 	def add_metabolite(self, arg, name=None):
 		assert not name in self.metabolite_names, 'Duplicate metabolite name found!'
@@ -227,15 +365,19 @@ class ConstraintBasedModel(object):
 								arg.shape, 'instead')
 		else:
 			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_metabolites,self.__S.shape[0])
+
 		self.__S = vstack([self.__S, row])
 		self.metabolite_names.append(name)
 
 		self.__update_decoder_map()
 
 		if self.model:
-			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]))
+			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]), only_nonzero=True)
 
-	def add_reaction(self, arg, bounds, name=None):
+	def add_reaction(self, arg, bounds, name=None, gpr=''):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
 		if isinstance(arg, dict):
 			col = zeros([self.__S.shape[0], 1])
@@ -249,33 +391,107 @@ class ConstraintBasedModel(object):
 								'instead')
 		else:
 			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(self.remove_reactions,{'index':self.__S.shape[1]})
+
 		self.__S = hstack([self.__S, col])
 
 		self.reaction_names.append(name)
 		self.bounds.append(bounds)
 
 		self.__update_decoder_map()
+		self.gpr.add_gprs([gpr])
 
 		if self.model:
-			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS)
+			self.model.add_columns_to_model(col, [name], [bounds[0]], [bounds[1]], VAR_CONTINUOUS, only_nonzero=True)
 
 	def remove_reaction(self, index):
-		j = self.decode_index(index, 'reaction')
-		if not isinstance(index, int):
-			self.reaction_names.pop(j)
-		self.bounds.pop(j)
-		self.__S = delete(self.__S, [j], axis=1)
+		warnings.warn('''remove_reaction will be renamed to remove_reactions in a future version to represent the
+					  method\'s true behaviour''',DeprecationWarning)
+		self.remove_reactions(index)
+
+	def remove_metabolite(self, index):
+		warnings.warn('''remove_metabolite will be renamed to remove_metabolites in a future version to represent the
+					  method\'s true behaviour''',DeprecationWarning)
+		self.remove_metabolites(index)
+
+	def get_boundary_reactions(self, epsilon=1e-9):
+		nzcoefs = where(abs(self.get_stoichiometric_matrix()) > epsilon)
+		boundary_rx_ids = [k for k,v in Counter(nzcoefs[1]).items() if v == 1]
+		x = array(nzcoefs)
+		boundaries = {}
+		for k,v in zip(*x[:,isin(x[1], boundary_rx_ids)]):
+			ki, vi = self.metabolite_names[k], self.reaction_names[v]
+			if ki not in boundaries:
+				boundaries[ki] = [vi]
+			else:
+				boundaries[ki].append(vi)
+		return boundaries
+
+	def add_boundary_reactions(self, metabolites, lbs, ubs, prefix='EX_', epsilon=1e-9):
+		lbs, ubs = (to_list_if_single(x, len(metabolites)) for x in [lbs, ubs])
+
+		return self.add_reactions(args=[{k:-1} for k in metabolites],
+		                   bounds=[(l,u) for l,u in zip(lbs, ubs)],
+		                   names=[prefix+m for m in metabolites],
+		                   gpr=['' for m in metabolites])
+
+	def remove_reactions(self, index):
+		if isinstance(index, (int, str)):
+			index = [index]
+
+		j = [self.decode_index(i, 'reaction') for i in index]
+
+		if self.has_context():
+			for decoded_index in j:
+				self.context_managers[-1].queue_command(
+					self.add_reaction,
+					{
+						'arg':self.get_stoichiometric_matrix(rows=None, columns=[decoded_index]),
+						'name':self.reaction_names[decoded_index],
+						'bounds':self.get_reaction_bounds(decoded_index),
+						'gpr':self.gpr[decoded_index]
+					}
+				)
+
+
+		if self.reaction_names is not None:
+			new_rnames = [self.reaction_names[k] for k in range(len(self.reaction_names)) if k not in j]
+			self.reaction_names = new_rnames
+
+		new_bounds = [k for i,k in enumerate(self.bounds) if i not in j]
+		self.bounds = new_bounds
+		self.__S = delete(self.__S, j, axis=1)
 		self.__update_decoder_map()
+
+		self.gpr.remove_gprs(index)
 
 		if self.model:
 			self.model.remove_from_model(j, 'var')
 
-	def remove_metabolite(self, index):
-		i = self.decode_index(index, 'metabolite')
-		if not isinstance(index, int):
-			self.metabolite_names.pop(i)
+	def remove_metabolites(self, index):
+		if isinstance(index, (int, str)):
+			index = [index]
 
-		self.__S = delete(self.__S, [i], axis=0)
+		i = [self.decode_index(ii, 'metabolite') for ii in index]
+
+		if self.has_context():
+			for decoded_index in i:
+				self.context_managers[-1].queue_command(
+					self.add_metabolite,
+					{
+						'arg':self.get_stoichiometric_matrix(rows=[decoded_index], columns=None).ravel(),
+						'name':self.metabolite_names[decoded_index],
+					}
+				)
+
+
+		if self.reaction_names is not None:
+			new_mnames = [k for i1,k in enumerate(self.metabolite_names) if i1 not in i]
+			self.metabolite_names = new_mnames
+
+		self.__S = delete(self.__S, i, axis=0)
 		self.__update_decoder_map()
 
 		if self.model:
@@ -285,10 +501,26 @@ class ConstraintBasedModel(object):
 		lb, ub = self.get_bounds_as_list()
 		Sn, nlb, nub, rx_mapping = make_irreversible_model(self.__S, lb, ub)
 		rev = array([int(v[0]) for k, v in rx_mapping.items() if isinstance(v, (list, tuple))])
-		revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
-		rnames = self.reaction_names + revnames
-		model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
-									 optimizer=self.model is not None, solver=self.solver)
+
+		gprs_irrev = ['']*len(nlb)
+		for i,tup in rx_mapping.items():
+			if isinstance(tup, (tuple, list)):
+				gprs_irrev[tup[0]] = gprs_irrev[tup[1]] = self.gpr[i]
+			else:
+				gprs_irrev[tup] = self.gpr[i]
+
+		if self.reaction_names != None:
+			if len(rev) > 0:
+				revnames = ['_'.join([name, BACKPREFIX]) for name in (array(self.reaction_names)[rev]).tolist()]
+			else:
+				revnames = []
+			rnames = self.reaction_names + revnames
+
+			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), rnames, self.metabolite_names,
+										 optimizer=self.model is not None, solver=self.solver, gprs=gprs_irrev)
+		else:
+			model = ConstraintBasedModel(Sn, list(zip(nlb, nub)), optimizer=self.model is not None, solver=self.solver,
+										 gprs=gprs_irrev)
 		return model, rx_mapping
 
 	def get_reaction_bounds(self, index):
@@ -297,6 +529,17 @@ class ConstraintBasedModel(object):
 	def set_reaction_bounds(self, index, **kwargs):
 		true_idx = self.decode_index(index, 'reaction')
 		lb, ub = self.get_reaction_bounds(true_idx)
+
+		if self.has_context():
+			self.context_managers[-1].queue_command(
+				self.set_reaction_bounds,
+				{
+					'index':true_idx,
+					'lb': lb,
+					'ub': ub
+				}
+			)
+
 		if 'lb' in kwargs:
 			lb = kwargs['lb']
 		if 'ub' in kwargs:
@@ -345,6 +588,10 @@ class ConstraintBasedModel(object):
 			if clb != lb or cub != ub:
 				self.set_reaction_bounds(rx, lb=lb, ub=ub)
 
+	def summarize_solution(self, sol, drains, eps=1e-9):
+		active_drains = {k:v for k,v in sol.var_values().items() if abs(v) > eps and k in drains}
+		table = [[k]+[r for r,v in active_drains.items() if f(v)] for k,f in [('produced',lambda x: x < -eps), ('consumed',lambda x: x > eps)]]
+		pretty_table_print(array(table).T.tolist(), has_header=True, header_sep=2)
 
 class CORSOModel(ConstraintBasedModel):
 	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO'), solver=None):

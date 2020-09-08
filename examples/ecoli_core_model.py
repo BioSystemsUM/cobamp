@@ -8,6 +8,10 @@ model_path, model_content = urllib.request.urlretrieve(model_url)
 model = cobra.io.sbml3.read_sbml_model(model_path)
 
 def display_efms_escher(efm):
+ """
+ Args:
+     efm:
+ """
 	escher_builder = escher.Builder(
 		map_name='e_coli_core.Core metabolism',
 		hide_secondary_metabolites = True,
@@ -26,7 +30,7 @@ if __name__ == '__main__':
 		stop_criteria=100
 	)
 
-	enumerator = ksefm.get_enumerator()
+	enumerator = ksefm.get_enumerator
 
 	efm_list = []
 	while len(efm_list) == 0:

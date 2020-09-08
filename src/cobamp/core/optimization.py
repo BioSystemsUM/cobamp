@@ -55,8 +55,7 @@ class Solution(object):
 		if 'names' in kwargs:
 			self.__var_names = kwargs['names']
 
-		if 'objective_value' in kwargs:
-			self.__obj_value = kwargs['objective_value']
+		self.__obj_value = kwargs['objective_value'] if 'objective_value' in kwargs else nan
 
 	def __getitem__(self, item):
 		if hasattr(item, '__iter__') and not isinstance(item, str):
@@ -147,6 +146,10 @@ class Solution(object):
 		'''
 
 		return array(list(self.__value_map.values()))
+
+	def __repr__(self):
+		return '<'+self.status().capitalize()+' Solution - objective: '+\
+			   str(self.objective_value())+'; at '+hex(id(self))+'>'
 
 
 class LinearSystemOptimizer(object):
@@ -528,4 +531,4 @@ class KShortestSolution(Solution):
 		-------
 
 		"""
-		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if abs(v) > 1e-10]
+		return [k for k, v in self.attribute_value(self.SIGNED_INDICATOR_SUM).items() if abs(v) > 1e-9]

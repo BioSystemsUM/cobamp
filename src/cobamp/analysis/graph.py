@@ -1,4 +1,4 @@
-from ..utilities.tree import Tree
+from cobamp.utilities.tree import Tree
 
 
 def compress_linear_paths(tree):

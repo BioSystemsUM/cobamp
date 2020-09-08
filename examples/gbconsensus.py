@@ -8,12 +8,16 @@ from cobamp.efm_enumeration.kshortest_efms import KShortestEFMAlgorithm
 from cobamp.linear_systems.linear_systems import DualLinearSystem, IrreversibleLinearSystem, SimpleLinearSystem
 from cobamp.linear_systems.optimization import LinearSystemOptimizer
 from cobamp.mcs_enumeration.intervention_problem import *
-from cobamp.utilities.file_utils import pickle_object
+from cobamp.utilities.file_io import pickle_object
 import cobamp.efm_enumeration.kshortest_efm_properties as kp
 
 #os.chdir('/home/skapur/Workspaces/PyCharm/cobamp')
 
 def decode_mcs(solutions):
+ """
+ Args:
+     solutions:
+ """
 	return list(chain(
 		*[list(product(*[orx_map[rx_names[i]] for i in lethal.get_active_indicator_varids()])) for lethal in
 		  solutions]))
@@ -72,6 +76,13 @@ def optimize_model():
 	sol.var_values()['R_biomass_reaction']
 
 def find_net_conversion(S, efm, met_names, tol=1e-9):
+ """
+ Args:
+     S:
+     efm:
+     met_names:
+     tol:
+ """
 	digits = abs(round(math.log(tol, 10)))
 	metab_balance_dict = {}
 	for rx, v in efm.items():

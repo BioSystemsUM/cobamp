@@ -194,9 +194,8 @@ class KShortestEnumerator(object):
 		if isinstance(forced_on, type(None)):
 			forced_on = [0] * len(self.__ivar_objs)
 
-		for dvtup, offv, onv in zip(enumerate(self.__ivar_objs), forced_off, forced_on):
+		for i, offv, onv in zip(range(len(self.__ivar_objs)), forced_off, forced_on):
 			offv, onv = bool(offv), bool(onv)
-			i, _ = dvtup
 			off, on = offv and not onv, onv and not offv
 
 			if off:
@@ -436,13 +435,9 @@ class KShortestEnumerator(object):
 		mat = hstack([mat_template, -mat_template])
 		rhs_l = [0] * len(self.indicator_map)
 		rhs_u = [None] * len(self.indicator_map)
-
-		print('MILP2')
 		## Adding MILP2
 		self.model.add_rows_to_model(mat, rhs_l, rhs_u, only_nonzero=True, indicator_rows=None, vars=vlist,
 									 names=None)
-
-		print('MILP4')
 		## Adding MILP4
 		self.model.add_rows_to_model(ones([1, len(indicator_vars)]), [1], [None], only_nonzero=True,
 									 indicator_rows=None, vars=helpers, names=None)
@@ -703,6 +698,7 @@ class KShortestEnumerator(object):
 		"""
 		self.optimizer = LinearSystemOptimizer(self.model, build=False)
 		self.model.model.remove(self.__integer_cuts)
+		self.model.model.update()
 		self.__integer_cuts = []
 		self.set_size_constraint(1)
 		self.__set_objective()
@@ -731,7 +727,7 @@ class KShortestEFMAlgorithm(object):
 		self.configuration = configuration
 		self.verbose = verbose
 
-	def __prepare(self, linear_system, excluded_sets, forced_sets):
+	def prepare(self, linear_system, excluded_sets, forced_sets):
 		## TODO: Change this method's name
 		"""
 		Enumerates the elementary modes for a linear system
@@ -768,7 +764,7 @@ class KShortestEFMAlgorithm(object):
 		if forced_sets is not None:
 			self.ksh.force_solutions(forced_sets)
 
-	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None):
+	def enumerate(self, linear_system, excluded_sets=None, forced_sets=None, initialize=True):
 		"""
 		Enumerates the elementary modes for a linear system
 
@@ -787,7 +783,7 @@ class KShortestEFMAlgorithm(object):
 		Returns a list with solutions encoding elementary flux modes.
 
 		"""
-		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets)
+		enumerator = self.get_enumerator(linear_system, excluded_sets, forced_sets, initialize)
 		sols = list(enumerator)
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_POPULATE:
 			sols = list(chain(*sols))
@@ -795,7 +791,7 @@ class KShortestEFMAlgorithm(object):
 		# linear_system.write_to_lp('test.lp')
 		return sols
 
-	def get_enumerator(self, linear_system, excluded_sets, forced_sets):
+	def get_enumerator(self, linear_system, excluded_sets, forced_sets, initialize=True):
 		"""
 
 
@@ -812,7 +808,8 @@ class KShortestEFMAlgorithm(object):
 		Returns an iterator that yields one or multiple EFMs at each iteration, depending on the properties.
 
 		"""
-		self.__prepare(linear_system, excluded_sets, forced_sets)
+		if initialize:
+			self.prepare(linear_system, excluded_sets, forced_sets)
 
 		if self.configuration[K_SHORTEST_MPROPERTY_METHOD] == K_SHORTEST_METHOD_ITERATE:
 			limit = self.configuration[K_SHORTEST_OPROPERTY_MAXSOLUTIONS]
@@ -899,6 +896,7 @@ class AbstractConstraint(object):
 		"""
 		return
 
+	@staticmethod
 	@abc.abstractmethod
 	def from_tuple(tup):
 		"""
@@ -909,6 +907,17 @@ class AbstractConstraint(object):
 
 		"""
 		return
+
+	@staticmethod
+	def convert_tuple_intervention_problem(tfluxes, tyields, reader):
+		target_flux_space = [tuple([k]) + tuple(v) for k, v in tfluxes.items()]
+		target_yield_space = [k + tuple(v) for k, v in tyields.items()]
+		converted_fbs = [DefaultFluxbound.from_tuple(reader.convert_constraint_ids(t, False)) for t in
+						 target_flux_space]
+		converted_ybs = [DefaultYieldbound.from_tuple(reader.convert_constraint_ids(t, True)) for t in
+						 target_yield_space]
+		return converted_fbs, converted_ybs
+
 
 
 class DefaultFluxbound(AbstractConstraint):
@@ -947,6 +956,7 @@ class DefaultFluxbound(AbstractConstraint):
 
 		return concatenate(Tx, axis=0), b
 
+	@staticmethod
 	def from_tuple(tup):
 		"""
 
@@ -1004,6 +1014,7 @@ class DefaultYieldbound(AbstractConstraint):
 
 		return concatenate(Tx, axis=0), b
 
+	@staticmethod
 	def from_tuple(tup):
 		"""
 
@@ -1015,5 +1026,7 @@ class DefaultYieldbound(AbstractConstraint):
 		n, d, ylb, yub = tup[:4]
 		if len(tup) > 4:
 			dev = tup[4]
+		else:
+			dev = 0
 
 		return DefaultYieldbound(ylb, yub, n, d, dev)

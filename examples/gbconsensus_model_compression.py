@@ -1,7 +1,7 @@
 from framed.io.sbml import *
 from framed.cobra import variability,simulation
 from framed.convex.subset_reduction import *
-from cobamp.utilities.file_utils import read_pickle, pickle_object
+from cobamp.utilities.file_io import read_pickle, pickle_object
 
 CONSENSUS_MODEL_PATH = '/home/skapur/MEOCloud/Projectos/PhDThesis/Material/Models/Consensus/ConsensusModel.xml'
 
