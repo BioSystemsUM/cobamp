@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
 	# def test_boolean_expression():
 	from urllib.request import urlretrieve
-	from cobra.io.sbml3 import read_sbml_model
+	from cobra.io import read_sbml_model
 	from random import random
 
 	BOOL_OPS = ('and', 'not', 'or', ')', '(')

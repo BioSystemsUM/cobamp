@@ -1,5 +1,21 @@
 # Change log
 Major changes between versions will be documented on this file.
+
+## [0.2.0] - 2020-09-8
+### Added
+- ConstraintBasedModel simplification based on FVA
+- GPR evaluation class that detaches GPR evaluation from models and readers
+- Genetic minimal cut sets
+- Parameters to ignore GPRs that cannot be parsed due to computational demand
+- Method to identify boundary reactions on ConstraintBasedModels
+- EFM-based methods can now include a "non_produced" parameter for metabolites that are optionally consumed but 
+never produced
+- With expressions can now be used on ConstraintBasedModels to allow context on reaction and metabolite changes
+
+### Changed
+- Bugfixes on GPR evaluation and reading
+- Singular add/remove methods for reactions/metabolites to be deprecated in the future
+
 ## [0.1.5] - 2019-12-6 (1 year anniversary!)
 ### Added
  - Benders decomposition solver (this is a very experimental feature)
