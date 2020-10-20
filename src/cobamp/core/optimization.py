@@ -231,7 +231,7 @@ class LinearSystemOptimizer(object):
 			raise ValueError('The provided solver does not have an implemented populate function. Choose from' +
 							 ''.join(list(intf_dict.keys())))
 
-	def __populate_cplex(self, limit=None):
+	def __populate_cplex(self, limit):
 		instance = self.model.problem
 
 		if not limit:
@@ -256,7 +256,7 @@ class LinearSystemOptimizer(object):
 
 		return solutions
 
-	def __populate_gurobi(self, limit=None):
+	def __populate_gurobi(self, limit):
 
 		instance = self.model.problem
 
