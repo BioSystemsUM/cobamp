@@ -1,9 +1,10 @@
 from cobamp.algorithms.kshortest import *
 from cobamp.core.linear_systems import IrreversibleLinearSystem, DualLinearSystem, IrreversibleLinearPatternSystem, \
 	GenericDualLinearSystem
-from cobamp.wrappers.external_wrappers import model_readers
 
 from itertools import product
+
+from cobamp.wrappers import get_model_reader
 
 
 class KShortestEnumeratorWrapper(object):
@@ -60,13 +61,8 @@ class KShortestEnumeratorWrapper(object):
 			workmem: An integer value defining the amount of memory in MegaBytes available to the solver
 		"""
 
-		self.__model = model
-		if type(model).__module__ in model_readers.keys():
-			self.model_reader = model_readers[type(model).__module__](model)
-		else:
-			raise TypeError(
-				"The `model` instance is not currently supported by cobamp. Currently available readers are: " + str(
-					list(model_readers.keys())))
+		self.__model = get_model_reader(model)
+		self.model_reader = self.__model
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
