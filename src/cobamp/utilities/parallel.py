@@ -44,7 +44,7 @@ def batch_run(function, sequence, paramargs=None, threads=MP_THREADS):
     params = {'function': function, 'iterable': sequence}
     if paramargs != None:
         params.update(paramargs)
-    return _batch_run(params, threads)
+    return _batch_run(params, min(len(sequence),threads))
 
 def batch_optimize_cobamp_model(cobamp_model, bounds, objectives, combine_inputs=False, max_threads=MP_THREADS):
 
