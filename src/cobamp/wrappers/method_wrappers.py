@@ -62,6 +62,7 @@ class KShortestEnumeratorWrapper(object):
 		"""
 
 		self.__model = get_model_reader(model)
+		self.model_reader = self.__model
 
 		self.__algo_properties = KShortestProperties()
 		self.__algo_properties[K_SHORTEST_MPROPERTY_METHOD] = self.__alg_to_alg_name[algorithm_type]
