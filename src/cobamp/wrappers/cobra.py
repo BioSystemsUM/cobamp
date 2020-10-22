@@ -2,20 +2,35 @@ import warnings
 import numpy as np
 
 from cobamp.wrappers.core import AbstractObjectReader
+from cobra.exceptions import Infeasible, Unbounded, UndefinedSolution
 
-def cobra_simulate(params, cobra_func, result_func, bound_change, objective_coefficient, minimize, func_args=None):
+def cobra_simulate(cobra_model, cobra_func, result_func, bound_change, objective_coefficient, minimize, func_args=None):
     if func_args is None:
         func_args = {}
-    model = params['model']
-    with model as context_model:
-        for k, v in bound_change: context_model.reactions.get_by_id(k).bounds = v
-        context_model.objective = objective_coefficient
-        context_model.objective.direction = 'min' if minimize else 'max'
-        sol = cobra_func(model=context_model, **func_args)
-        return result_func(sol)
+    with cobra_model as context_model:
+        if bound_change is not None:
+            for k, v in bound_change.items(): context_model.reactions.get_by_id(k).bounds = v
+
+        if objective_coefficient is not None:
+            context_model.objective = {context_model.reactions.get_by_id(k):v for k,v in objective_coefficient.items()}
+
+        if minimize is not None:
+            context_model.objective.direction = 'min' if minimize else 'max'
+        try:
+            sol = cobra_func(model=context_model, **func_args)
+        except Exception as e:
+            if isinstance(e, (Infeasible, Unbounded, UndefinedSolution)):
+                sol = None
+            else:
+                raise e
+        finally:
+            return result_func(sol)
 
 def cobra_simulation_result_function(sol):
-    return sol.status == 'optimal', sol.objective_value, sol.fluxes['fluxes'].to_dict()
+    if sol is not None:
+        return (sol.status == 'optimal', sol.objective_value, sol.fluxes.to_dict())
+    else:
+        return (False, None, None)
 
 def cobra_fba(model, **func_args):
     return model.optimize()
