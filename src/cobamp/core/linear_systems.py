@@ -25,7 +25,10 @@ def get_solver_interfaces():
 	s = {}
 	for solver, status in optlang.list_available_solvers().items():
 		if status:
-			s[solver] = eval('optlang.' + solver.lower() + '_interface')
+			try:
+				s[solver] = eval('optlang.' + solver.lower() + '_interface')
+			except:
+				print('Optlang reports',solver.lower(),'is available but the interface could not be imported.')
 	return s
 
 
@@ -390,7 +393,10 @@ class LinearSystem():
 		if type(index) not in (list, tuple):
 			index = [index]
 		for i in index:
-			self.model.remove(container[i])
+			try:
+				self.model.remove(container[i])
+			except Exception as e:
+				warnings.warn('Could not remove constraint with index '+str(i)+' with exception:'+str(e))
 
 		if what == VARIABLE:
 			self.S = np.delete(self.S, index, 1)
