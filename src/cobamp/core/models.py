@@ -287,7 +287,7 @@ class ConstraintBasedModel(object):
 	def add_metabolites(self, args, names=None):
 		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate metabolite name found!'
 		if isinstance(args, list):
-			rows = zeros(len(args), self.__S.shape[1])
+			rows = zeros([len(args), self.__S.shape[1]])
 			for row_i in range(len(args)):
 				for k, v in args[row_i].items():
 					rows[row_i,self.decode_index(k, 'reaction')] = v
@@ -301,7 +301,7 @@ class ConstraintBasedModel(object):
 			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
-			self.context_managers[-1].queue_command(self.remove_metabolites, self.__S.shape[0])
+			self.context_managers[-1].queue_command(self.remove_metabolites, {'index': self.__S.shape[0]})
 
 		self.__S = vstack([self.__S, rows])
 		self.metabolite_names.extend(names)
@@ -366,7 +366,7 @@ class ConstraintBasedModel(object):
 			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
-			self.context_managers[-1].queue_command(self.remove_metabolites,self.__S.shape[0])
+			self.context_managers[-1].queue_command(self.remove_metabolites, {'index':self.__S.shape[0]})
 
 		self.__S = vstack([self.__S, row])
 		self.metabolite_names.append(name)
@@ -374,7 +374,8 @@ class ConstraintBasedModel(object):
 		self.__update_decoder_map()
 
 		if self.model:
-			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]), only_nonzero=True)
+			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]),
+			                             only_nonzero=True)
 
 	def add_reaction(self, arg, bounds, name=None, gpr=''):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
@@ -568,6 +569,28 @@ class ConstraintBasedModel(object):
 		else:
 			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
 
+	def add_objective_constraint(self, objective_coefficients, minimize_objective, constrained_objective_perc,
+	                             sink_name, sink_reaction_prefix='EX_', constrain=True, max_default_flux=1e4):
+		if constrain:
+			sol_prime = self.optimize(objective_coefficients, minimize=minimize_objective)
+			obj_value = sol_prime.objective_value()
+		else:
+			obj_value = max_default_flux
+
+		if len(objective_coefficients) > 1:
+			self.add_metabolites([objective_coefficients], names=[sink_name])
+			self.add_boundary_reactions([sink_name],
+			                       lbs=[(constrained_objective_perc[0] * obj_value) if constrain else 0],
+			                       ubs=[(constrained_objective_perc[1] * obj_value) if constrain else max_default_flux],
+			                       prefix=sink_reaction_prefix)
+		else:
+			rx = list(objective_coefficients.keys())[0]
+			if constrain:
+				self.set_reaction_bounds(rx, lb=obj_value * constrained_objective_perc[0],
+				                         ub=obj_value * constrained_objective_perc[1])
+
+		return (sink_name, sink_reaction_prefix+sink_name)
+
 	def optimize(self, coef_dict=None, minimize=False):
 		cur_obj = self.model.model.objective
 		if coef_dict != None:
@@ -591,3 +614,4 @@ class ConstraintBasedModel(object):
 		active_drains = {k:v for k,v in sol.var_values().items() if abs(v) > eps and k in drains}
 		table = [[k]+[r for r,v in active_drains.items() if f(v)] for k,f in [('produced',lambda x: x < -eps), ('consumed',lambda x: x > eps)]]
 		pretty_table_print(array(table).T.tolist(), has_header=True, header_sep=2)
+
