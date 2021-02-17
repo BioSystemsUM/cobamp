@@ -11,7 +11,7 @@ def cobamp_simulate(cobamp_model, cobamp_func, bound_change, objective_coefficie
 
     with cobamp_model as context_model:
         if bound_change is not None:
-            for k, v in bound_change: context_model.set_reaction_bounds(k, lb=v[0], ub=v[1])
+            for k, v in bound_change.items(): context_model.set_reaction_bounds(k, lb=v[0], ub=v[1])
 
         if None not in [objective_coefficient,minimize]:
             context_model.set_objective(objective_coefficient, minimize)

@@ -19,8 +19,8 @@ class ConstraintBasedModelSimulator(object):
         self.__result_function = result_function
 
     def simulate(self, func, bound_change=None, objective_coefficient=None, minimize=None, func_args=None):
-        self.__simulation_function(self.__model, func, self.__result_function,
-                                   bound_change, objective_coefficient, minimize, func_args)
+        self.__simulation_function(self.__model, func, bound_change, objective_coefficient, minimize,
+                                   self.__result_function, func_args)
 
     def batch_simulate(self, func, bound_changes, objective_coefficients, minimize, func_args=None, mp_threads=None):
         mp_params = {'model':self.__model, 'func_args':func_args}
@@ -43,7 +43,7 @@ class ConstraintBasedModelSimulator(object):
             model_mp = params['model']
             func_args_mp = params['func_args']
             bc, oc, min = sequence
-            return self.__simulation_function(model_mp, func, self.__result_function, bc, oc, min, func_args_mp)
+            return self.__simulation_function(model_mp, func, bc, oc, min, self.__result_function, func_args_mp)
 
         sequence = list(zip(*check_multiple_inputs(bound_changes, objective_coefficients, minimize)))
         return batch_run(batch_simulation_function, sequence, mp_params,

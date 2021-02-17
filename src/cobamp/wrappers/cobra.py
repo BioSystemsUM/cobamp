@@ -4,7 +4,7 @@ import numpy as np
 from cobamp.wrappers.core import AbstractObjectReader
 from cobra.exceptions import Infeasible, Unbounded, UndefinedSolution
 
-def cobra_simulate(cobra_model, cobra_func, result_func, bound_change, objective_coefficient, minimize, func_args=None):
+def cobra_simulate(cobra_model, cobra_func, bound_change, objective_coefficient, minimize, result_func, func_args=None):
     if func_args is None:
         func_args = {}
     with cobra_model as context_model:
