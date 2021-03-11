@@ -387,7 +387,7 @@ class LinearSystem():
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
-		self.S = np.vstack(self.S, np.zeros([S_new.shape[0], len(self.model.variables)]))
+		self.S = np.vstack([self.S, np.zeros([S_new.shape[0], len(self.model.variables)])])
 
 		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
 
@@ -449,7 +449,7 @@ class LinearSystem():
 		self.model.add(vars)
 		self.model.update()
 
-		self.S = np.hstack(self.S, np.zeros([len(self.model.constraints), len(vars)]))
+		self.S = np.hstack([self.S, np.zeros([len(self.model.constraints), len(vars)])])
 
 		return vars
 
