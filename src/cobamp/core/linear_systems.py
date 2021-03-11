@@ -141,7 +141,7 @@ class LinearSystem():
 	 __model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
-	model = None
+	model: optlang.Model = None
 
 	def was_built(self):
 		if self.model != None:
@@ -348,7 +348,15 @@ class LinearSystem():
 				if len(coefs) > 0:
 					constraint.set_linear_coefficients(coefs)
 
+		var_name_map = {v:i for i,v in enumerate(self.model.variables)}
+		cns_name_map = {v:i for i,v in enumerate(self.model.constraints)}
+
+		v_ids, c_ids =[[nmap[k.name] for k in container]
+		               for container, nmap in zip([vars,constraints],[var_name_map,cns_name_map])]
+
 		self.model.update()
+		self.S[c_ids,v_ids] = S
+
 
 	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
 		"""
@@ -361,8 +369,11 @@ class LinearSystem():
 		  vars:
 		  names:
 		"""
+
 		if not vars:
 			vars = self.model.variables
+
+
 		# dummy = self.dummy_variable()
 		if names != None:
 			constraints = [self.empty_constraint(b_lb[i], b_ub[i], name=names[i]) for i in range(S_new.shape[0])]
@@ -376,11 +387,14 @@ class LinearSystem():
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
+		self.S = np.vstack(self.S, np.zeros([S_new.shape[0], len(self.model.variables)]))
 
 		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
+
 		# self.model.update()
 		# self.model.remove(dummy)
 		self.model.update()
+
 		return constraints
 
 	def remove_from_model(self, index, what):
@@ -434,6 +448,8 @@ class LinearSystem():
 				zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
 		self.model.update()
+
+		self.S = np.hstack(self.S, np.zeros([len(self.model.constraints), len(vars)]))
 
 		return vars
 
