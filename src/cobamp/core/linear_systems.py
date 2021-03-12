@@ -327,6 +327,7 @@ class LinearSystem():
 		  only_nonzero:
 		  indicator_rows:
 		"""
+		self.S = np.zeros([0,0])
 		self.add_variables_to_model(var_names, lb, ub, var_types)
 		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
