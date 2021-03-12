@@ -349,14 +349,16 @@ class LinearSystem():
 				if len(coefs) > 0:
 					constraint.set_linear_coefficients(coefs)
 
-		var_name_map = {v:i for i,v in enumerate(self.model.variables)}
-		cns_name_map = {v:i for i,v in enumerate(self.model.constraints)}
+		var_name_map = {v.name:i for i,v in enumerate(self.model.variables)}
+		cns_name_map = {v.name:i for i,v in enumerate(self.model.constraints)}
 
-		v_ids, c_ids =[[nmap[k.name] for k in container]
+		v_ids, c_ids =[np.array([nmap[k.name] for k in container])
 		               for container, nmap in zip([vars,constraints],[var_name_map,cns_name_map])]
 
 		self.model.update()
-		self.S[c_ids,v_ids] = S
+
+		if len(c_ids) > 0 and len(v_ids) > 0:
+			self.S[c_ids[:,None],v_ids] = S
 
 
 	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
