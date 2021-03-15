@@ -328,7 +328,7 @@ class LinearSystem():
 		  only_nonzero:
 		  indicator_rows:
 		"""
-		self.S = sprs.csr_matrix(np.zeros([0,0]))
+		self.S = sprs.csc_matrix(np.zeros([0,0]))
 		self.add_variables_to_model(var_names, lb, ub, var_types)
 		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
@@ -402,7 +402,7 @@ class LinearSystem():
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
-		self.S = sprs.vstack([self.S, sprs.csr_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))])
+		self.S = sprs.vstack([self.S, sprs.csc_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))])
 
 		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
 
@@ -464,7 +464,7 @@ class LinearSystem():
 		self.model.add(vars)
 		self.model.update()
 
-		self.S = sprs.hstack([self.S, sprs.csr_matrix(np.zeros([len(self.model.constraints), len(vars)]))])
+		self.S = sprs.hstack([self.S, sprs.csc_matrix(np.zeros([len(self.model.constraints), len(vars)]))])
 
 		return vars
 
