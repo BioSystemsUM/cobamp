@@ -335,7 +335,7 @@ class LinearSystem():
 		if S.shape[0] > MAX_DIM_CONST:
 			runs = np.array_split(np.array(range(S.shape[0])), max(S.shape[0] // MAX_DIM_CONST, 1))
 			for run in runs:
-				subs, subc, subv = S[run,:],[constraints[k] for k in run],[vars[k] for k in run]
+				subs, subc, subv = S[run,:], [constraints[k] for k in run], vars
 				self._populate_constraints_from_matrix(subs, subc, subv)
 		else:
 			self._populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero)
