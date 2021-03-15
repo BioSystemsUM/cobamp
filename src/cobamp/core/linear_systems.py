@@ -368,6 +368,7 @@ class LinearSystem():
 		               for container, nmap in zip([vars,constraints],[var_name_map,cns_name_map])]
 
 		self.model.update()
+
 		if update:
 			if len(c_ids) > 0 and len(v_ids) > 0:
 				self.S[c_ids[:,None],v_ids] = S
@@ -406,7 +407,7 @@ class LinearSystem():
 		if update:
 			self.S = sprs.vstack([self.S, sprs.csc_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))]).tocsc()
 
-		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
+		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero, update)
 
 		# self.model.update()
 		# self.model.remove(dummy)
@@ -447,7 +448,8 @@ class LinearSystem():
 		"""
 		vars = self.add_variables_to_model(var_names, lb, ub, var_types, update=update)
 
-		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero)
+		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero,
+		                                      update=update)
 
 	def add_variables_to_model(self, var_names, lb, ub, var_types, update=True):
 
