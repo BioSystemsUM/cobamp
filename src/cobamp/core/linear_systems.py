@@ -402,7 +402,7 @@ class LinearSystem():
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
-		self.S = sprs.vstack([self.S, sprs.csc_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))])
+		self.S = sprs.vstack([self.S, sprs.csc_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))]).tocsc()
 
 		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
 
