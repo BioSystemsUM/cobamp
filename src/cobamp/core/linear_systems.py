@@ -10,7 +10,7 @@ from optlang.symbolics import Zero
 
 CUSTOM_DEFAULT_SOLVER = None
 SOLVER_ORDER = ['CPLEX', 'GUROBI', 'GLPK', 'MOSEK', 'SCIPY']
-
+MAX_DIM_CONST = 2000
 
 def get_default_solver():
 	if CUSTOM_DEFAULT_SOLVER:
@@ -332,6 +332,15 @@ class LinearSystem():
 		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
 
 	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
+		if S.shape[0] > MAX_DIM_CONST:
+			runs = np.array_split(np.array(range(S.shape[0])), max(S.shape[0] // MAX_DIM_CONST, 1))
+			for run in runs:
+				subs, subc, subv = S[runs,:],[constraints[k] for k in run],[vars[k] for k in run]
+				self._populate_constraints_from_matrix(subs, subc, subv)
+		else:
+			self._populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero)
+
+	def _populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
 		"""
 		Args:
 		  S: Two-dimensional np.ndarray instance
@@ -339,6 +348,8 @@ class LinearSystem():
 		  vars: list of variable instances
 		  only_nonzero:
 		"""
+
+
 		if not only_nonzero:
 			coef_list = [{vars[j]: S[i, j] for j in range(S.shape[1])} for i in range(S.shape[0])]
 		else:
