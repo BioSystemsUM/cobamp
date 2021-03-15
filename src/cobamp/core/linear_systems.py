@@ -339,7 +339,7 @@ class LinearSystem():
 				subs, subc, subv = S[run,:], [constraints[k] for k in run], vars
 				self._populate_constraints_from_matrix(subs, subc, subv)
 		else:
-			self._populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero)
+			self._populate_constraints_from_matrix(S, constraints, vars, only_nonzero)
 
 	def _populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
 		"""
