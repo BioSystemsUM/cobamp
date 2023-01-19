@@ -4,8 +4,7 @@ Inspired by Metatool's code
 from itertools import chain
 
 from numpy import sqrt, triu, logical_not, nonzero, mean, zeros, argmin, isin, sign, delete, unique, where, \
-	dot, eye, setdiff1d
-from numpy.core._multiarray_umath import ndarray, array
+	dot, eye, setdiff1d, ndarray, array
 from numpy.linalg import norm
 from cobamp.core.transformer import ModelTransformer, ReactionIndexMapping
 from cobamp.utilities.property_management import PropertyDictionary

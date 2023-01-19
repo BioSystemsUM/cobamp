@@ -1,7 +1,21 @@
-# Change log
+# Changelog
 Major changes between versions will be documented on this file.
 
-## [0.2.0] - 2020-09-8
+## [0.2.1] - 2020-10-27
+
+### Added
+- Constraint-based simulator class that facilitates batch simulations on the same model with
+the possibility of changing environmental conditions and objective functions
+
+### Changed
+- Wrappers module now automatically loads readers that can be used - this is done by attempting
+to import each associated package.
+
+### Removed
+- GIMME and CORSO model objects, now appropriately a part of the troppo framework
+
+
+## [0.2.0] - 2020-09-08
 ### Added
 - ConstraintBasedModel simplification based on FVA
 - GPR evaluation class that detaches GPR evaluation from models and readers
@@ -16,7 +30,7 @@ never produced
 - Bugfixes on GPR evaluation and reading
 - Singular add/remove methods for reactions/metabolites to be deprecated in the future
 
-## [0.1.5] - 2019-12-6 (1 year anniversary!)
+## [0.1.5] - 2019-12-06 (1 year anniversary!)
 ### Added
  - Benders decomposition solver (this is a very experimental feature)
  - Multiprocessing utilities (mp_utils)

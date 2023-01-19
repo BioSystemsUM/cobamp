@@ -8,7 +8,7 @@ from numpy import ndarray, array, delete, zeros, vstack, hstack, nonzero, append
 from cobamp.core.linear_systems import SteadyStateLinearSystem, VAR_CONTINUOUS, make_irreversible_model
 from cobamp.utilities.context import CommandHistory
 from cobamp.utilities.printing import pretty_table_print
-from cobamp.core.optimization import LinearSystemOptimizer, CORSOSolution, GIMMESolution
+from cobamp.core.optimization import LinearSystemOptimizer
 from cobamp.core.cb_analysis import FluxVariabilityAnalysis
 from cobamp.gpr.core import GPRContainer
 
@@ -106,7 +106,6 @@ class ConstraintBasedModel(object):
 
 		self.solver = solver
 		m, n = __validate_args()
-		# self.__S = self.__parse_stoichiometric_matrix(S)
 		self.__S = array(S)
 
 		self.bounds = self.__interpret_bounds(thermodynamic_constraints)
@@ -288,7 +287,7 @@ class ConstraintBasedModel(object):
 	def add_metabolites(self, args, names=None):
 		assert sum([n in self.reaction_names for n in names]) == 0, 'Duplicate metabolite name found!'
 		if isinstance(args, list):
-			rows = zeros(len(args), self.__S.shape[1])
+			rows = zeros([len(args), self.__S.shape[1]])
 			for row_i in range(len(args)):
 				for k, v in args[row_i].items():
 					rows[row_i,self.decode_index(k, 'reaction')] = v
@@ -302,7 +301,7 @@ class ConstraintBasedModel(object):
 			raise ValueError('Invalid argument type: ', type(args), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
-			self.context_managers[-1].queue_command(self.remove_metabolites, self.__S.shape[0])
+			self.context_managers[-1].queue_command(self.remove_metabolites, {'index': self.__S.shape[0]})
 
 		self.__S = vstack([self.__S, rows])
 		self.metabolite_names.extend(names)
@@ -367,7 +366,7 @@ class ConstraintBasedModel(object):
 			raise ValueError('Invalid argument type: ', type(arg), '. Please supply an ndarray or dict instead.')
 
 		if self.has_context():
-			self.context_managers[-1].queue_command(self.remove_metabolites,self.__S.shape[0])
+			self.context_managers[-1].queue_command(self.remove_metabolites, {'index':self.__S.shape[0]})
 
 		self.__S = vstack([self.__S, row])
 		self.metabolite_names.append(name)
@@ -375,7 +374,8 @@ class ConstraintBasedModel(object):
 		self.__update_decoder_map()
 
 		if self.model:
-			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]), only_nonzero=True)
+			self.model.add_rows_to_model(row.reshape([1, self.__S.shape[1]]), b_lb=array([0]), b_ub=array([0]),
+			                             only_nonzero=True)
 
 	def add_reaction(self, arg, bounds, name=None, gpr=''):
 		assert not name in self.reaction_names, 'Duplicate reaction name found!'
@@ -569,6 +569,28 @@ class ConstraintBasedModel(object):
 		else:
 			raise Exception('Cannot set an objective on a model without the optimizer flag as True.')
 
+	def add_objective_constraint(self, objective_coefficients, minimize_objective, constrained_objective_perc,
+	                             sink_name, sink_reaction_prefix='EX_', constrain=True, max_default_flux=1e4):
+		if constrain:
+			sol_prime = self.optimize(objective_coefficients, minimize=minimize_objective)
+			obj_value = sol_prime.objective_value()
+		else:
+			obj_value = max_default_flux
+
+		if len(objective_coefficients) > 1:
+			self.add_metabolites([objective_coefficients], names=[sink_name])
+			self.add_boundary_reactions([sink_name],
+			                       lbs=[(constrained_objective_perc[0] * obj_value) if constrain else 0],
+			                       ubs=[(constrained_objective_perc[1] * obj_value) if constrain else max_default_flux],
+			                       prefix=sink_reaction_prefix)
+		else:
+			rx = list(objective_coefficients.keys())[0]
+			if constrain:
+				self.set_reaction_bounds(rx, lb=obj_value * constrained_objective_perc[0],
+				                         ub=obj_value * constrained_objective_perc[1])
+
+		return (sink_name, sink_reaction_prefix+sink_name)
+
 	def optimize(self, coef_dict=None, minimize=False):
 		cur_obj = self.model.model.objective
 		if coef_dict != None:
@@ -593,154 +615,3 @@ class ConstraintBasedModel(object):
 		table = [[k]+[r for r,v in active_drains.items() if f(v)] for k,f in [('produced',lambda x: x < -eps), ('consumed',lambda x: x > eps)]]
 		pretty_table_print(array(table).T.tolist(), has_header=True, header_sep=2)
 
-class CORSOModel(ConstraintBasedModel):
-	def __init__(self, cbmodel, corso_element_names=('R_PSEUDO_CORSO', 'M_PSEUDO_CORSO'), solver=None):
-		if not cbmodel.model:
-			cbmodel.initialize_optimizer()
-
-		self.cbmodel = cbmodel
-
-		irrev_model, self.mapping = cbmodel.make_irreversible()
-
-		S = irrev_model.get_stoichiometric_matrix()
-		bounds = irrev_model.bounds
-
-		self.cost_index_mapping = zeros(S.shape[1], dtype=int_)
-
-		self.corso_rx, self.corso_mt = corso_element_names
-		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver)
-		self.add_metabolite(zeros(len(self.reaction_names)), self.corso_mt)
-
-		self.add_reaction(zeros(len(self.metabolite_names)), (0, 0), self.corso_rx)
-
-		self.original_bounds = deepcopy(self.bounds)
-
-		for orx, nrx in self.mapping.items():
-			if isinstance(nrx, int):
-				self.cost_index_mapping[nrx] = orx
-			else:
-				for nrx_split in nrx:
-					self.cost_index_mapping[nrx_split] = orx
-
-	def solve_original_model(self, of_dict, minimize=False):
-		self.cbmodel.set_objective(of_dict, minimize)
-		sol = self.cbmodel.optimize()
-		return sol
-
-	def set_costs(self, cost):
-		true_cost = cost[self.cost_index_mapping]
-		true_cost = append(true_cost, array([-1]))
-		self.set_stoichiometric_matrix(true_cost.reshape(1, len(true_cost)), rows=[self.corso_mt])
-
-	# def set_reaction_bounds(self, index, **kwargs):
-	# 	super().set_reaction_bounds(index, **kwargs)
-	# 	self.original_bounds[self.decode_index(index, 'reaction')] = self.get_reaction_bounds(index)
-
-	def set_corso_objective(self):
-		self.set_objective({self.corso_rx: 1}, True)
-
-	def optimize_corso(self, cost, of_dict, minimize=False, constraint=1, constraintby='val', eps=1e-6, flux1=None):
-		if flux1 is None:
-			flux1 = self.solve_original_model(of_dict, minimize)
-
-		if abs(flux1.objective_value()) < eps:
-			return flux1, flux1
-		f1_x = flux1.x()
-		if constraintby == 'perc':
-			# f1_f = flux1.x()[self.cbmodel.c != 0]
-			f1_f = {idx: f1_x[idx] * (constraint / 100) for idx in of_dict.keys()}
-		elif constraintby == 'val':
-			if (flux1.objective_value() < constraint and not minimize) or (
-					flux1.objective_value() > constraint and minimize):
-				raise Exception('Objective flux is not sufficient for the the set constraint value.')
-			else:
-				f1_f = {idx: constraint for idx in of_dict.keys()}
-		else:
-			raise Exception('Invalid constraint options.')
-
-		self.set_reaction_bounds(self.corso_rx, lb=0, ub=1e20)
-		# corso_of_dict = deepcopy(of_dict)
-		# corso_of_dict[self.corso_rx] = 1
-
-		self.set_costs(cost)
-		for rx in f1_f.keys():
-			true_idx = self.decode_index(rx, 'reaction')
-			involved = self.mapping[true_idx]
-			fluxval = f1_f[rx]  # if isinstance(f1_f, ndarray) else f1_f
-
-			if isinstance(involved, (int, int_)):
-				self.set_reaction_bounds(involved, lb=fluxval, ub=fluxval, temporary=True)
-			else:
-				self.set_reaction_bounds(involved[0], lb=fluxval, ub=fluxval, temporary=True)
-				self.set_reaction_bounds(involved[1], lb=0, ub=0, temporary=True)
-
-		self.set_objective({self.corso_rx: 1}, True)
-
-		sol = self.optimize()
-		self.revert_to_original_bounds()
-
-		return flux1, CORSOSolution(flux1, sol, sum([of_dict[k] * f1_f[k] for k in of_dict.keys()]),
-									self.cost_index_mapping, self.cbmodel.reaction_names, eps=eps)
-
-
-class GIMMEModel(ConstraintBasedModel):
-	def __init__(self, cbmodel, solver=None):
-		self.cbmodel = cbmodel
-		if not self.cbmodel.model:
-			self.cbmodel.initialize_optimizer()
-
-		irrev_model, self.mapping = cbmodel.make_irreversible()
-
-		S = irrev_model.get_stoichiometric_matrix()
-		bounds = irrev_model.bounds
-		super().__init__(S, bounds, irrev_model.reaction_names, irrev_model.metabolite_names, solver=solver,
-						 optimizer=True)
-
-	def __adjust_objective_to_irreversible(self, objective_dict):
-		obj_dict = {}
-		for k, v in objective_dict.items():
-			irrev_map = self.mapping[self.cbmodel.decode_index(k, 'reaction')]
-			if isinstance(irrev_map, (list, tuple)):
-				for i in irrev_map:
-					obj_dict[i] = v
-			else:
-				obj_dict[irrev_map] = v
-		return obj_dict
-
-	def __adjust_expression_vector_to_irreversible(self, exp_vector):
-		exp_vector_n = zeros(len(self.reaction_names), )
-		for rxn, val in enumerate(exp_vector):
-			rxmap = self.mapping[rxn]
-			if isinstance(rxmap, tuple):
-				exp_vector_n[rxmap[0]] = exp_vector_n[rxmap[1]] = val
-			else:
-				exp_vector_n[rxmap] = val
-		return exp_vector_n
-
-	def optimize_gimme(self, exp_vector, objectives, obj_frac, flux_thres):
-		N = len(self.cbmodel.reaction_names)
-		objectives_irr = [self.__adjust_objective_to_irreversible(obj) for obj in objectives]
-		exp_vector_irr = self.__adjust_expression_vector_to_irreversible(exp_vector)
-
-		def find_objective_value(obj):
-			self.cbmodel.set_objective(obj, False)
-			return self.cbmodel.optimize().objective_value()
-
-		objective_values = list(map(find_objective_value, objectives_irr))
-
-		gimme_model_objective = array(
-			[flux_thres - exp_vector_irr[i] if -1 < exp_vector_irr[i] < flux_thres else 0 for i in range(N)])
-
-		objective_lbs = zeros(len(self.reaction_names))
-		for ov, obj in zip(objective_values, objectives_irr):
-			for rx, v in obj.items():
-				objective_lbs[rx] = v * ov * obj_frac
-
-		objective_ids = nonzero(objective_lbs)[0]
-		for id, lb in zip(objective_ids, objective_lbs):
-			self.set_reaction_bounds(id, lb=lb, temporary=True)
-
-		self.set_objective(gimme_model_objective, True)
-		sol = self.optimize()
-		self.revert_to_original_bounds()
-		return GIMMESolution(sol, exp_vector, self.cbmodel.reaction_names, self.mapping)

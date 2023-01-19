@@ -231,7 +231,7 @@ class LinearSystemOptimizer(object):
 			raise ValueError('The provided solver does not have an implemented populate function. Choose from' +
 							 ''.join(list(intf_dict.keys())))
 
-	def __populate_cplex(self, limit=None):
+	def __populate_cplex(self, limit):
 		instance = self.model.problem
 
 		if not limit:
@@ -256,7 +256,7 @@ class LinearSystemOptimizer(object):
 
 		return solutions
 
-	def __populate_gurobi(self, limit=None):
+	def __populate_gurobi(self, limit):
 
 		instance = self.model.problem
 
@@ -444,43 +444,6 @@ class BatchOptimizer(object):
 		assert len(bounds) == len(objective_coefs) == len(objective_senses)
 		return optimization_pool(self.__linear_system, bounds, objective_coefs, objective_senses,
 								 threads=self.__threads)
-
-
-class CORSOSolution(Solution):
-	def __init__(self, sol_max, sol_min, f, index_map, var_names, eps=1e-8):
-		x = sol_min.x()
-		rev = index_map[max(index_map) + 1:]
-
-		nx = x[:max(index_map) + 1]
-		nx[rev] = x[rev] - sol_min.x()[max(index_map) + 1:-1]
-		nx[abs(nx) < eps] = 0
-		nvalmap = OrderedDict([(k, v) for k, v in zip(var_names, nx)])
-		super().__init__(nvalmap, [sol_max.status(), sol_min.status()], objective_value=f)
-
-
-class GIMMESolution(Solution):
-	def __init__(self, sol, exp_vector, var_names, mapping=None):
-		self.exp_vector = exp_vector
-		gimme_solution = sol.x()
-		if mapping:
-			gimme_solution = [max(gimme_solution[array(new)]) if isinstance(new, (tuple, list)) else gimme_solution[new]
-							  for orig, new
-							  in mapping.items()]
-		super().__init__(
-			value_map=OrderedDict([(k, v) for k, v in zip(var_names, gimme_solution)]),
-			status=sol.status(),
-			objective_value=sol.objective_value()
-		)
-
-	def get_reaction_activity(self, flux_threshold):
-		gimme_fluxes = array([kv[1] for i, kv in enumerate(self.var_values().items())])
-		activity = zeros(gimme_fluxes.shape)
-		ones = (self.exp_vector > flux_threshold) | (self.exp_vector == -1)
-		twos = gimme_fluxes > 0
-		activity[ones] = 1
-		activity[twos & ~ones] = 2
-
-		return activity
 
 
 class KShortestSolution(Solution):
