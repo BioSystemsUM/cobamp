@@ -49,4 +49,4 @@ Released under the GNU Public License (version 3.0).
 .. |PyPI version| image:: https://badge.fury.io/py/cobamp.svg
    :target: https://badge.fury.io/py/cobamp
 .. |RTD version| image:: https://readthedocs.org/projects/cobamp/badge/?version=latest&style=plastic
-   :target: https://cobamp.readthedocs.io/
+   :target: https://cobamp.readthedocs.io/ 
