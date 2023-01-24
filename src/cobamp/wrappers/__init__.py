@@ -16,13 +16,14 @@ available_readers_dict = {
 for module_name, reader_name in external_frameworks.items():
 	try:
 		module = import_module(module_name, '')
-		print(reader_name,'is available for',module_name)
+# 		print(reader_name,'is available for',module_name)
 		cobamp_module = import_module('.'+module_name, package='cobamp.wrappers')
 		reader_class = getattr(cobamp_module, reader_name)
 		globals().update({module_name: cobamp_module, reader_name: reader_class})
 		external_framework_readers[reader_name] = reader_class
 	except Exception as e:
-		print(reader_name,'could not be loaded for',module_name)
+# 		print(reader_name,'could not be loaded for',module_name)
+		reader = f'{reader_name} could not be loaded for {module_name}'		
 
 
 available_readers_dict = {k:v for k,v in available_readers_dict.items() if v in globals()}
