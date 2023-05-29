@@ -6,11 +6,12 @@ from multiprocessing import cpu_count
 
 import numpy as np
 import optlang
+import scipy.sparse as sprs
 from optlang.symbolics import Zero
 
 CUSTOM_DEFAULT_SOLVER = None
 SOLVER_ORDER = ['CPLEX', 'GUROBI', 'GLPK', 'MOSEK', 'SCIPY']
-
+MAX_DIM_CONST = 100000
 
 def get_default_solver():
 	if CUSTOM_DEFAULT_SOLVER:
@@ -141,7 +142,7 @@ class LinearSystem():
 	 __model: Linear model as an instance of the solver.
 	"""
 	__metaclass__ = abc.ABCMeta
-	model = None
+	model: optlang.Model = None
 
 	def was_built(self):
 		if self.model != None:
@@ -327,10 +328,20 @@ class LinearSystem():
 		  only_nonzero:
 		  indicator_rows:
 		"""
-		self.add_variables_to_model(var_names, lb, ub, var_types)
-		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows)
+		self.S = sprs.csc_matrix(S)
+		self.add_variables_to_model(var_names, lb, ub, var_types, update=False)
+		self.add_rows_to_model(S, b_lb, b_ub, only_nonzero, indicator_rows, update=False)
 
-	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False):
+	def populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False, update=True):
+		if S.shape[0] > MAX_DIM_CONST:
+			runs = np.array_split(np.array(range(S.shape[0])), max(S.shape[0] // MAX_DIM_CONST, 1))
+			for run in runs:
+				subs, subc, subv = S[run,:], [constraints[k] for k in run], vars
+				self._populate_constraints_from_matrix(subs, subc, subv, update)
+		else:
+			self._populate_constraints_from_matrix(S, constraints, vars, only_nonzero, update)
+
+	def _populate_constraints_from_matrix(self, S, constraints, vars, only_nonzero=False, update=True):
 		"""
 		Args:
 		  S: Two-dimensional np.ndarray instance
@@ -338,6 +349,8 @@ class LinearSystem():
 		  vars: list of variable instances
 		  only_nonzero:
 		"""
+
+
 		if not only_nonzero:
 			coef_list = [{vars[j]: S[i, j] for j in range(S.shape[1])} for i in range(S.shape[0])]
 		else:
@@ -348,9 +361,21 @@ class LinearSystem():
 				if len(coefs) > 0:
 					constraint.set_linear_coefficients(coefs)
 
+		var_name_map = {v.name:i for i,v in enumerate(self.model.variables)}
+		cns_name_map = {v.name:i for i,v in enumerate(self.model.constraints)}
+
+		v_ids, c_ids =[np.array([nmap[k.name] for k in container])
+		               for container, nmap in zip([vars,constraints],[var_name_map,cns_name_map])]
+
 		self.model.update()
 
-	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False, indicator_rows=None, vars=None, names=None):
+		if update:
+			if len(c_ids) > 0 and len(v_ids) > 0:
+				self.S[c_ids[:,None],v_ids] = S
+
+
+	def add_rows_to_model(self, S_new, b_lb, b_ub, only_nonzero=False,
+	                      indicator_rows=None, vars=None, names=None, update=True):
 		"""
 		Args:
 		  S_new:
@@ -361,8 +386,11 @@ class LinearSystem():
 		  vars:
 		  names:
 		"""
+
 		if not vars:
 			vars = self.model.variables
+
+
 		# dummy = self.dummy_variable()
 		if names != None:
 			constraints = [self.empty_constraint(b_lb[i], b_ub[i], name=names[i]) for i in range(S_new.shape[0])]
@@ -376,11 +404,15 @@ class LinearSystem():
 		self.model.add(constraints, sloppy=True)
 
 		self.model.update()
+		if update:
+			self.S = sprs.vstack([self.S, sprs.csc_matrix(np.zeros([S_new.shape[0], len(self.model.variables)]))]).tocsc()
 
-		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero)
+		self.populate_constraints_from_matrix(S_new, constraints, vars, only_nonzero, update)
+
 		# self.model.update()
 		# self.model.remove(dummy)
 		self.model.update()
+
 		return constraints
 
 	def remove_from_model(self, index, what):
@@ -405,7 +437,7 @@ class LinearSystem():
 
 		self.model.update()
 
-	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types, only_nonzero=False):
+	def add_columns_to_model(self, S_new, var_names, lb, ub, var_types, only_nonzero=False, update=True):
 		"""
 		Args:
 		  S_new:
@@ -414,11 +446,12 @@ class LinearSystem():
 		  ub:
 		  var_types:
 		"""
-		vars = self.add_variables_to_model(var_names, lb, ub, var_types)
+		vars = self.add_variables_to_model(var_names, lb, ub, var_types, update=update)
 
-		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero)
+		self.populate_constraints_from_matrix(S_new, self.model.constraints, vars, only_nonzero=only_nonzero,
+		                                      update=update)
 
-	def add_variables_to_model(self, var_names, lb, ub, var_types):
+	def add_variables_to_model(self, var_names, lb, ub, var_types, update=True):
 
 		"""
 		Args:
@@ -434,6 +467,8 @@ class LinearSystem():
 				zip(var_names, lb, ub, var_types)]
 		self.model.add(vars)
 		self.model.update()
+		if update:
+			self.S = sprs.hstack([self.S, sprs.csc_matrix(np.zeros([len(self.model.constraints), len(vars)]))])
 
 		return vars
 
