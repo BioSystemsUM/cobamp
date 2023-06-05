@@ -12,7 +12,7 @@ setup(
                         "matplotlib==3.5.2",
                         "optlang==1.5.2",
                         "pathos==0.2.9",
-                        "boolean.py==4.0"],
+                        "boolean.py==3.8"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',
