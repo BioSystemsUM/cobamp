@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name = 'cobamp',
-    version = '0.2.1',
+    version = '0.2.2',
     package_dir = {'':'src'},
     packages = find_packages('src'),
     install_requires = ["indexed==1.2.1",
@@ -12,7 +12,7 @@ setup(
                         "matplotlib==3.5.2",
                         "optlang==1.5.2",
                         "pathos==0.2.9",
-                        "boolean.py==4.0"],
+                        "boolean.py==3.8"],
 
     author = 'Vítor Vieira',
     author_email = 'vvieira@ceb.uminho.pt',

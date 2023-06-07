@@ -2,7 +2,7 @@ from cobamp.core.optimization import LinearSystemOptimizer
 from cobamp.core.linear_systems import SteadyStateLinearSystem
 from cobamp.wrappers.external_wrappers import COBRAModelObjectReader
 
-from cobra.io.sbml3 import read_sbml_model
+from cobra.io import read_sbml_model
 
 from urllib.request import urlretrieve
 import pandas as pd
@@ -17,7 +17,7 @@ if __name__ == '__main__':
 
 	S = cobamp_model.get_stoichiometric_matrix()
 	lb, ub = cobamp_model.get_model_bounds(False, True)
-	rx_names = cobamp_model.get_metabolite_and_reactions_ids()[0]
+	rx_names = cobamp_model.get_reaction_and_metabolite_ids()[0]
 
 	lsystem = SteadyStateLinearSystem(S, lb, ub, rx_names)
 

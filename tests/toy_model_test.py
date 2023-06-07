@@ -22,18 +22,14 @@ class ToyMetabolicNetworkTests(unittest.TestCase):
 		self.b = np.array([-1]).reshape(1, )
 
 	def enumerate_elementary_flux_modes(self):
-		lsystem = IrreversibleLinearSystem(self.S, self.lb, self.ub, solver='GUROBI')
-
+		lsystem = IrreversibleLinearSystem(self.S, self.lb, self.ub, solver='CPLEX')
 		ksh = KShortestEnumerator(lsystem)
 		solution_iterator = ksh.population_iterator(9)
-		efms = list(chain(*solution_iterator))
-		ksh.reset_enumerator_state()
 		efms = list(chain(*solution_iterator))
 		return efms
 
 	def enumerate_minimal_cut_sets(self):
-		dsystem = DualLinearSystem(self.S, self.lb, self.ub, self.T, self.b, solver='GUROBI')
-
+		dsystem = DualLinearSystem(self.S, self.lb, self.ub, self.T, self.b, solver='CPLEX')
 		ksh = KShortestEnumerator(dsystem)
 		solution_iterator = ksh.population_iterator(4)
 		mcss = list(chain(*solution_iterator))
