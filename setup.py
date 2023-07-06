@@ -7,7 +7,7 @@ setup(
     packages = find_packages('src'),
     install_requires = ["indexed==1.2.1",
                         "pandas==1.3.5",
-                        "scipy==1.7.3",
+                        "scipy==1.10.0",
                         "numpy==1.21.6",
                         "matplotlib==3.5.2",
                         "optlang==1.5.2",
