@@ -242,7 +242,7 @@ class ConstraintBasedModel(object):
 		col_index = [self.decode_index(i, 'reaction') for i in columns] if columns else None
 
 		if rows and columns:
-			return self.__S[row_index, col_index]
+			return self.__S[array(row_index)[:,None], array(col_index)]
 		elif rows:
 			return self.__S[row_index, :]
 		elif columns:
